@@ -4,10 +4,23 @@
  */
 import { authenticateLogin } from "../../../../lib/auth";
 import { createSession } from "../../../../lib/session";
+import { getMissingRequiredDbEnvVars } from "../../../../lib/db";
 import { cookies } from "next/headers";
 
 export async function POST(req) {
   try {
+    const missingDb = getMissingRequiredDbEnvVars();
+    if (missingDb.length) {
+      console.error("Login: missing database env vars:", missingDb.join(", "));
+      return Response.json(
+        {
+          error:
+            "Server is missing database configuration. Set DB_HOST, DB_USER, DB_PASS, and DB_NAME in Amplify environment variables.",
+        },
+        { status: 503 }
+      );
+    }
+
     // Expect JSON body: { email, password }
     const { email, password } = await req.json();
     const result = await authenticateLogin(email, password);
@@ -30,11 +43,24 @@ export async function POST(req) {
     const cookieStore = await cookies();
 
     // Store the session id in a cookie; the app uses it to resolve user on subsequent requests.
-    cookieStore.set("session", sid, { httpOnly: true, path: "/" });
+    const isProd = process.env.NODE_ENV === "production";
+    cookieStore.set("session", sid, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: isProd,
+    });
 
     return Response.json({ ok: true });
   } catch (error) {
-    console.error("Login API error:", error);
+    console.error("Login API error:", {
+      message: error?.message ?? String(error),
+      code: error?.code,
+      errno: error?.errno,
+      sqlState: error?.sqlState,
+      sqlMessage: error?.sqlMessage,
+      stack: error?.stack,
+    });
     return Response.json(
       { error: "Login failed on Server. Check DB Connection." },
       { status: 500 }
