@@ -1,0 +1,11 @@
+-- Matches `employees` row audit columns used when `recordAudit: true` in config/modules.js.
+-- Your live schema should look like this (already applied on your DB):
+
+-- CREATE TABLE `employees` (
+--   ...
+--   `createdBy` int(11) DEFAULT NULL,
+--   `createdDate` datetime DEFAULT NULL,
+--   `modifiedBy` int(11) DEFAULT NULL,
+--   `modifiedDate` datetime DEFAULT NULL,
+--   ...
+-- );
