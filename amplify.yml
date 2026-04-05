@@ -1,0 +1,21 @@
+# AWS Amplify: console env vars are not available to Next.js SSR/API by default.
+# Copy DB_* and SESSION_* into .env.production before build so server code can read them at runtime.
+# https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - env | grep -E '^(DB_|SESSION_)' > .env.production
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

@@ -7,6 +7,7 @@ out/
 
 # Env files with secrets (never commit)
 .env
+.env.production
 .env.local
 .env.development.local
 .env.test.local
