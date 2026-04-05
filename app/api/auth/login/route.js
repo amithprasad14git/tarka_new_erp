@@ -4,7 +4,7 @@
  */
 import { authenticateLogin } from "../../../../lib/auth";
 import { createSession } from "../../../../lib/session";
-import { getMissingRequiredDbEnvVars } from "../../../../lib/db";
+import { getLoopbackDbHostError, getMissingRequiredDbEnvVars } from "../../../../lib/db";
 import { cookies } from "next/headers";
 
 export async function POST(req) {
@@ -19,6 +19,12 @@ export async function POST(req) {
         },
         { status: 503 }
       );
+    }
+
+    const loopbackErr = getLoopbackDbHostError();
+    if (loopbackErr) {
+      console.error("Login:", loopbackErr);
+      return Response.json({ error: loopbackErr }, { status: 503 });
     }
 
     // Expect JSON body: { email, password }
