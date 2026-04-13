@@ -820,7 +820,21 @@ export const modules = {
       { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
         // DB: BIGINT; validate range in module-specific logic if needed.
       },
-      { name: "caseStatus", type: "text", rows:4, label: "Closure Balance", required: false, showInView: false },
+      { name: "caseNotes", type: "text", rows:"4", label: "Case Related Notes", required: false, showInView: false },
+      {
+        name: "caseStatus",
+        type: "lookup",
+        label: "Case Status",
+        required: false,
+        showInView: false,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "Case Status"
+        }
+      },
+      { name: "caseStatusRemarks", type: "text", rows:4, label: "Case Status Remarks", required: false, showInView: false },
       ...STANDARD_ROW_AUDIT_FIELDS
     ],
     /**

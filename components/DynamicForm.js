@@ -58,6 +58,10 @@ export default function DynamicForm({
         })}
         {(config.fields || []).filter((f) => !f.excludeFromForm).map((f) => {
           const fieldReadOnly = Boolean(readOnlyFields?.[f.name]);
+          const textareaRows = Number.parseInt(String(f.rows ?? ""), 10);
+          const useTextarea =
+            f.type === "textarea" ||
+            (f.type === "text" && Number.isFinite(textareaRows) && textareaRows > 1);
           return (
           <div key={f.name} className="form-field">
             <label htmlFor={`field-${f.name}`}>
@@ -114,6 +118,15 @@ export default function DynamicForm({
                   ))}
                 </select>
               </>
+            ) : useTextarea ? (
+              <textarea
+                id={`field-${f.name}`}
+                name={f.name}
+                rows={Number.isFinite(textareaRows) && textareaRows > 1 ? textareaRows : 3}
+                defaultValue={initialValues?.[f.name] ?? ""}
+                required={Boolean(f.required)}
+                readOnly={fieldReadOnly}
+              />
             ) : f.type === "date" ? (
               <input
                 id={`field-${f.name}`}

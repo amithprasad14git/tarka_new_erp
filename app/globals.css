@@ -1743,7 +1743,8 @@ button {
 
 /* Uniform control size: full width of cell + fixed height (Tailwind h-9 ≈ 36px). */
 .form-field input,
-.form-field select {
+.form-field select,
+.form-field textarea {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -1766,8 +1767,18 @@ button {
   color: color-mix(in srgb, var(--muted) 85%, transparent);
 }
 
+/* Multi-line text fields keep input look while honoring configured row count. */
+.form-field textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 8px 12px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
 .form-field input:focus-visible,
-.form-field select:focus-visible {
+.form-field select:focus-visible,
+.form-field textarea:focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
   box-shadow:
@@ -1782,14 +1793,17 @@ button {
 }
 
 .master-entry-form .form-field input,
-.master-entry-form .form-field select {
+.master-entry-form .form-field select,
+.master-entry-form .form-field textarea {
   border-color: color-mix(in srgb, var(--line) 70%, var(--muted));
 }
 
 .master-entry-form .form-field input:focus,
 .master-entry-form .form-field input:focus-visible,
 .master-entry-form .form-field select:focus,
-.master-entry-form .form-field select:focus-visible {
+.master-entry-form .form-field select:focus-visible,
+.master-entry-form .form-field textarea:focus,
+.master-entry-form .form-field textarea:focus-visible {
   outline: none;
   border-color: var(--brand);
   box-shadow:
@@ -2073,7 +2087,8 @@ button {
 }
 
 .form-field input:disabled,
-.form-field select:disabled {
+.form-field select:disabled,
+.form-field textarea:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
