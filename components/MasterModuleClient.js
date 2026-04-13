@@ -6,13 +6,119 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { modules } from "../config/modules";
+import { labelWithRequiredMark } from "../lib/formFieldLabel";
 import { formatViewCellValue } from "../lib/formatViewCellValue";
+// Grid rows may use mixed column name casing from MySQL; see lib/gridRowValue.js.
+import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import DynamicForm from "./DynamicForm";
 import LoadingOverlay from "./LoadingOverlay";
 import MasterActionsMenu from "./MasterActionsMenu";
+import ModuleChildTablesPanel, { newChildRowDraft } from "./ModuleChildTablesPanel";
 import PaginationBar from "./PaginationBar";
 import ToastNotice from "./ToastNotice";
+
+function emptyChildRowsState(childTables) {
+  if (!childTables?.length) return {};
+  const o = {};
+  for (const t of childTables) o[t.key || t.table] = [newChildRowDraft()];
+  return o;
+}
+
+/** Maps GET `/api/crud/:module/:id` `childTableRows` into grid state (saved lines, stable `_rowId`). */
+function childRowsStateFromApi(childTables, childTableRows) {
+  if (!childTables?.length) return {};
+  const o = {};
+  for (const ct of childTables) {
+    const key = ct.key || ct.table;
+    const rows = childTableRows?.[key];
+    if (Array.isArray(rows) && rows.length > 0) {
+      o[key] = rows.map((r, idx) => {
+        const { id: childId, ...rest } = r;
+        return {
+          ...rest,
+          _rowId:
+            childId != null
+              ? `db-${childId}`
+              : `tmp-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 9)}`,
+          _editing: false,
+          _lineSaved: true
+        };
+      });
+    } else {
+      o[key] = [newChildRowDraft()];
+    }
+  }
+  return o;
+}
+
+function rowHasAnyContent(row, fields) {
+  for (const f of fields) {
+    const v = row[f.name];
+    if (v !== null && v !== undefined && String(v).trim() !== "") return true;
+  }
+  return false;
+}
+
+function validateChildTableRows(moduleConfig, childRowsByKey) {
+  const tables = moduleConfig.childTables || [];
+  for (const ct of tables) {
+    const key = ct.key || ct.table;
+    const rows = childRowsByKey[key] || [];
+    const fields = ct.fields || [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!rowHasAnyContent(row, fields)) continue;
+      if (row._editing || !row._lineSaved) {
+        return `${ct.label || key}, row ${i + 1}: use Save on the line before saving the parent record.`;
+      }
+      for (const f of fields) {
+        if (!f.required) continue;
+        const v = row[f.name];
+        const empty = v === null || v === undefined || (typeof v === "string" && !String(v).trim());
+        if (empty) {
+          return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} is required.`;
+        }
+        if (f.type === "number") {
+          const n = Number(v);
+          if (!Number.isFinite(n)) {
+            return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} must be a valid number.`;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function stripChildRowsForApi(childTables, childRowsByKey) {
+  const out = {};
+  for (const ct of childTables) {
+    const key = ct.key || ct.table;
+    const fields = ct.fields || [];
+    out[key] = (childRowsByKey[key] || [])
+      .filter((row) => row._lineSaved && rowHasAnyContent(row, fields))
+      .map((row) => {
+        const obj = {};
+        for (const f of fields) {
+          const v = row[f.name];
+          if (f.type === "number") {
+            if (v === "" || v == null) obj[f.name] = null;
+            else {
+              const n = Number(v);
+              obj[f.name] = Number.isFinite(n) ? n : null;
+            }
+          } else if (v === "") {
+            obj[f.name] = null;
+          } else {
+            obj[f.name] = v;
+          }
+        }
+        return obj;
+      });
+  }
+  return out;
+}
 
 function SaveIcon() {
   return (
@@ -95,12 +201,45 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     canView: false,
     canCreate: false,
     canEdit: false,
-    canDelete: false
+    canDelete: false,
+    role: null,
+    unit: null
   });
   /** Blocks double-submit and shows full-screen loading overlay during I/O. */
   const [busy, setBusy] = useState(false);
 
+  /** In-memory rows for `config.childTables`, keyed by each child table's `key` (fallback: SQL `table` name). */
+  const [childRowsByKey, setChildRowsByKey] = useState(() =>
+    emptyChildRowsState(modules[moduleKey]?.childTables)
+  );
+
   const title = useMemo(() => config?.label || moduleKey, [config, moduleKey]);
+
+  /** New Case Inward: role 2 (non-admin) uses session unit on new entry only; role 1 picks any unit. */
+  const newCaseInwardSessionUnit = useMemo(() => {
+    if (moduleKey !== "new_case_inward") return null;
+    if (Number(permissions.role) !== 2) return null;
+    return permissions.unit;
+  }, [moduleKey, permissions.role, permissions.unit]);
+
+  const entryFormInitialValues = useMemo(() => {
+    if (editingRow) return editingRow;
+    const v = {};
+    if (newCaseInwardSessionUnit != null) v.unit = newCaseInwardSessionUnit;
+    return v;
+  }, [editingRow, newCaseInwardSessionUnit]);
+
+  const entryFormReadOnlyFields = useMemo(() => {
+    if (moduleKey !== "new_case_inward" || editingRow) return null;
+    if (
+      Number(permissions.role) !== 2 ||
+      permissions.unit == null ||
+      String(permissions.unit).trim() === ""
+    ) {
+      return null;
+    }
+    return { unit: true };
+  }, [moduleKey, editingRow, permissions.role, permissions.unit]);
 
   /** Client-side guard; server still enforces RBAC. List rows include `_canEdit` when row-level scope applies. */
   const canSave = useMemo(() => {
@@ -131,6 +270,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    setChildRowsByKey(emptyChildRowsState(config?.childTables));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- new blank grid when form session or module changes only
+  }, [formKey, moduleKey]);
 
   function showToast(kind, message) {
     setToast({ kind, message: String(message || "") });
@@ -216,7 +360,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             canView: Boolean(payload.canView),
             canCreate: Boolean(payload.canCreate),
             canEdit: Boolean(payload.canEdit),
-            canDelete: Boolean(payload.canDelete)
+            canDelete: Boolean(payload.canDelete),
+            role: payload.role != null ? Number(payload.role) : null,
+            unit:
+              payload.unit != null && String(payload.unit).trim() !== ""
+                ? payload.unit
+                : null
           });
         }
       } catch {
@@ -255,17 +404,34 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setToast(null);
   }
 
-  function handleEditSelected() {
+  async function handleEditSelected() {
     if (busy) return;
     if (!selectedId) return;
     if (!permissions.canEdit) return;
-    // Load the selected row into the entry form.
     const row = data.find((r) => String(r.id) === String(selectedId));
     if (!row || row._canEdit === false) return;
-    setEditingRow(row);
-    setFormKey((k) => k + 1);
-    setSelectedId(null);
-    setViewMode(false);
+
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/crud/${moduleKey}/${selectedId}`);
+      const text = await res.text();
+      const payload = text ? JSON.parse(text) : null;
+      if (!res.ok) throw new Error(payload?.error || "Failed to load record");
+
+      const parent = payload?.data;
+      if (!parent) throw new Error("Invalid response");
+
+      setEditingRow(parent);
+      if (config?.childTables?.length) {
+        setChildRowsByKey(childRowsStateFromApi(config.childTables, payload.childTableRows));
+      }
+      setSelectedId(null);
+      setViewMode(false);
+    } catch (err) {
+      showToast("error", err.message || "Failed to load record");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDeleteSelected() {
@@ -301,7 +467,20 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (!config || busy) return;
     if (!canSave) return;
 
+    if (config.childTables?.length) {
+      const childErr = validateChildTableRows(config, childRowsByKey);
+      if (childErr) {
+        showToast("error", childErr);
+        return;
+      }
+    }
+
     const form = Object.fromEntries(new FormData(e.target));
+    const body = { ...form };
+    if (config.childTables?.length) {
+      body.childTableRows = stripChildRowsForApi(config.childTables, childRowsByKey);
+    }
+
     setBusy(true);
     try {
       // Create when adding a new record, update when editing an existing one.
@@ -311,7 +490,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(body)
       });
 
       const text = await res.text();
@@ -365,21 +544,34 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       <ToastNotice toast={toast} onClose={() => setToast(null)} />
 
       {!effectiveViewMode ? (
-        // Entry mode: show the dynamic form for create/update.
-        <DynamicForm
-          key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
-          config={config}
-          onSubmit={handleSubmit}
-          initialValues={editingRow || {}}
-          submitLabel="Save"
-          hideButtons
-          formId={formId}
-          className="card master-entry-form"
-          formGridClassName="form-grid form-grid-master"
-        />
+        <>
+          {/* Entry mode: show the dynamic form for create/update. */}
+          <DynamicForm
+            key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
+            config={config}
+            onSubmit={handleSubmit}
+            initialValues={entryFormInitialValues}
+            readOnlyFields={entryFormReadOnlyFields}
+            submitLabel="Save"
+            hideButtons
+            formId={formId}
+            className="card master-entry-form"
+            formGridClassName="form-grid form-grid-master"
+          />
+          <ModuleChildTablesPanel
+            childTables={config.childTables}
+            value={childRowsByKey}
+            onChange={setChildRowsByKey}
+            disabled={busy}
+            onNotify={(kind, message) => showToast(kind, message)}
+          />
+        </>
       ) : (
         // View mode: show a table with per-column filters + checkbox selection.
         <div className="card table-section">
+          <p className="table-scroll-hint" role="note">
+            Swipe or scroll sideways to see all columns.
+          </p>
           <div className="table-wrap master-orders-table-wrap">
             <table className="data-table data-table-compact master-orders-table">
               <thead>
@@ -388,7 +580,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     ✔️
                   </th>
                   {viewFieldConfigs.map((f) => (
-                    <th key={f.name}>{f.label}</th>
+                    <th key={f.name}>{labelWithRequiredMark(f.label, Boolean(f.required))}</th>
                   ))}
                 </tr>
                 <tr>
@@ -474,9 +666,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       </td>
                       {viewFieldConfigs.map((f) => (
                         <td key={f.name}>
+                          {/* rowValueForField: MySQL may return column names in different casing than config. */}
                           {f.type === "lookup"
-                            ? r[getLookupRowLabelKey(f)] ?? r[f.name] ?? ""
-                            : formatViewCellValue(f, r[f.name])}
+                            ? rowValueForField(r, getLookupRowLabelKey(f)) ??
+                              rowValueForField(r, f.name) ??
+                              ""
+                            : formatViewCellValue(f, rowValueForField(r, f.name))}
                         </td>
                       ))}
                     </tr>

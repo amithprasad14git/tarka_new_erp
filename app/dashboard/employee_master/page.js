@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Dedicated route for Employee Master (same screen as `/dashboard/[module]` when module is `employee_master`).
+ * Employee Master screen (same behaviour as opening `employee_master` from the dashboard tabs).
  */
-import EmployeesModuleClient from "../../../components/EmployeesModuleClient";
+import MasterModuleClient from "../../../components/MasterModuleClient";
 
 export default function EmployeeMasterPage() {
-  return <EmployeesModuleClient isActive={true} />;
+  return <MasterModuleClient moduleKey="employee_master" isActive />;
 }

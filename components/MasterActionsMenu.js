@@ -3,7 +3,7 @@
 /**
  * Collapsible “Actions” menu in the master header: mirrors bottom-bar save/view/clear with RBAC-aware disables.
  */
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 function SaveIcon() {
   return (
@@ -64,6 +64,17 @@ export default function MasterActionsMenu({
     if (detailsRef.current) detailsRef.current.open = false;
   }
 
+  useEffect(() => {
+    function handlePointerDown(e) {
+      const el = detailsRef.current;
+      if (!el?.open) return;
+      if (el.contains(e.target)) return;
+      el.open = false;
+    }
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+  }, []);
+
   const clearDisabled = busy;
   const showSave =
     !readOnly && entryMode && (editingRow ? canEdit && canSaveThisRow : canCreate);
@@ -71,7 +82,7 @@ export default function MasterActionsMenu({
 
   return (
     <details ref={detailsRef} className="master-actions-details">
-      <summary className="master-actions-summary master-btn master-btn-primary" title="Open actions menu">
+      <summary className="master-actions-summary" title="Open actions menu">
         Actions
         <ChevronIcon />
       </summary>
@@ -82,7 +93,7 @@ export default function MasterActionsMenu({
               <button
                 type="submit"
                 form={formId}
-                className="master-actions-item master-btn master-btn-primary"
+                className="master-actions-item"
                 disabled={busy}
                 role="menuitem"
                 onClick={closeMenu}
@@ -94,7 +105,7 @@ export default function MasterActionsMenu({
             {showView ? (
               <button
                 type="button"
-                className="master-actions-item master-btn master-btn-info"
+                className="master-actions-item"
                 disabled={busy}
                 role="menuitem"
                 onClick={() => {
@@ -110,7 +121,7 @@ export default function MasterActionsMenu({
         ) : null}
         <button
           type="button"
-          className="master-actions-item master-btn master-btn-warning"
+          className="master-actions-item"
           disabled={clearDisabled}
           role="menuitem"
           onClick={() => {

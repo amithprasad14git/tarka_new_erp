@@ -4,12 +4,16 @@
  * URL-driven tabs under `/dashboard/:module`: keeps inactive modules mounted (state preserved) while
  * syncing the address bar for refresh and back/forward. Most tabs use `MasterModuleClient`;
  * `user_permissions` uses `UserPermissionsMatrixClient`.
+ * At most MAX_OPEN_TABS modules may be open; opening another shows a toast and keeps the current tab.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { modules } from "../config/modules";
 import MasterModuleClient from "./MasterModuleClient";
 import UserPermissionsMatrixClient from "./UserPermissionsMatrixClient";
+import ToastNotice from "./ToastNotice";
+
+const MAX_OPEN_TABS = 5;
 
 function extractModuleKey(pathname) {
   // Expected patterns: /dashboard/<module> or /dashboard/<module>/*
@@ -38,14 +42,44 @@ export default function DashboardTabs({ visibleModuleKeys = [] }) {
   // The currently active tab key (only one panel is visible at a time).
   const [activeKey, setActiveKey] = useState(() => initialActive);
 
+  const activeKeyRef = useRef(activeKey);
+  useEffect(() => {
+    activeKeyRef.current = activeKey;
+  }, [activeKey]);
+
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   useEffect(() => {
     const k = extractModuleKey(pathname);
     if (!k) return;
     if (!visibleSet.has(k)) return;
 
-    setActiveKey(k);
-    setOpenTabs((prev) => (prev.includes(k) ? prev : [...prev, k]));
-  }, [pathname, visibleSet]);
+    setOpenTabs((prev) => {
+      if (prev.includes(k)) {
+        setActiveKey(k);
+        return prev;
+      }
+      if (prev.length >= MAX_OPEN_TABS) {
+        setTimeout(() => {
+          setToast({
+            kind: "error",
+            message: `You can open at most ${MAX_OPEN_TABS} modules at once. Close a tab before opening another.`,
+          });
+          const stay = activeKeyRef.current;
+          if (stay) router.replace(`/dashboard/${stay}`);
+          else router.replace("/dashboard");
+        }, 0);
+        return prev;
+      }
+      setActiveKey(k);
+      return [...prev, k];
+    });
+  }, [pathname, visibleSet, router]);
 
   if (!activeKey) {
     return <div className="card">No module selected.</div>;
@@ -55,7 +89,7 @@ export default function DashboardTabs({ visibleModuleKeys = [] }) {
     // Activating a tab updates state and keeps the URL in sync for refresh/back navigation.
     setActiveKey(key);
     router.push(`/dashboard/${key}`);
-    setOpenTabs((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    setOpenTabs((prev) => (prev.includes(key) ? prev : prev.length < MAX_OPEN_TABS ? [...prev, key] : prev));
   }
 
   function closeTab(key, e) {
@@ -86,6 +120,7 @@ export default function DashboardTabs({ visibleModuleKeys = [] }) {
 
   return (
     <div className="dashboard-tabs">
+      <ToastNotice toast={toast} onClose={() => setToast(null)} />
       <div className="dashboard-tabs-bar" role="tablist" aria-label="Module tabs">
         {openTabs.map((k) => {
           const label = modules[k]?.label || k;

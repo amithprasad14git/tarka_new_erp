@@ -13,6 +13,7 @@ import TopbarGreeting from "../../components/TopbarGreeting";
 import { DashboardUserProvider } from "../../components/DashboardUserProvider";
 import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
+import AppFooter from "../../components/AppFooter";
 
 /** Authenticated shell: sidebar, theme, idle logout, and RBAC-filtered menu. */
 export default async function DashboardLayout({ children }) {
@@ -48,15 +49,18 @@ export default async function DashboardLayout({ children }) {
     <DashboardUserProvider email={user.email} unitId={user.unit != null ? Number(user.unit) : null}>
       <div className="flux-layout">
         <DashboardSidebar groups={groups} />
-        <main className="flux-main flux-main-scroll">
+        <main className="flux-main flux-main--with-footer">
           <InactivityLogout />
           <header className="flux-topbar">
             <TopbarGreeting />
             <DashboardTopbar userEmail={user.email} />
           </header>
-          <div className="flux-content">
-            <DashboardTabs visibleModuleKeys={visibleEntries.map(([k]) => k)} />
+          <div className="flux-main-scroll-region">
+            <div className="flux-content">
+              <DashboardTabs visibleModuleKeys={visibleEntries.map(([k]) => k)} />
+            </div>
           </div>
+          <AppFooter />
         </main>
       </div>
     </DashboardUserProvider>

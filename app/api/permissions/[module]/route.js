@@ -39,7 +39,10 @@ export async function GET(req, { params }) {
       canView,
       canCreate,
       canEdit,
-      canDelete
+      canDelete,
+      // Session context for module-specific UI (e.g. default unit for normal users).
+      role: user.role != null ? Number(user.role) : null,
+      unit: user.unit != null && String(user.unit).trim() !== "" ? user.unit : null
     });
   } catch (error) {
     console.error("RBAC permissions error:", error);

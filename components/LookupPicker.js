@@ -5,8 +5,9 @@
  * Columns: `lookup.pickerColumns` or default from lib/lookupUi.js.
  */
 import { useEffect, useMemo, useState } from "react";
+import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { getPickerColumns } from "../lib/lookupUi";
-import { resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
 
 function MagnifyingGlassIcon() {
   return (
@@ -19,9 +20,9 @@ function MagnifyingGlassIcon() {
 
 /**
  * Large-dataset lookup: readonly display + search icon opens modal with debounced search and double-click select.
- * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean }} props
+ * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean }} props
  */
-export default function LookupPicker({ name, id, fieldLabel, lookup, initialValue, initialLabel, required }) {
+export default function LookupPicker({ name, id, fieldLabel, lookup, initialValue, initialLabel, required, disabled }) {
   const pageSize = Math.min(Math.max(Number(lookup.pickerLimit) || 20, 5), 100);
   const { valueField } = lookup;
   const labelField =
@@ -77,6 +78,7 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
           sortDir: "asc",
           lov: "1"
         });
+        appendLookupValueMasterLovParams(q, lookup);
         const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
         const json = await res.json();
         const list = Array.isArray(json?.data) ? json.data : [];
@@ -94,7 +96,7 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
     return () => {
       cancelled = true;
     };
-  }, [selectedId, selectedLabel, lookup.module, valueField, labelField]);
+  }, [selectedId, selectedLabel, lookup, valueField]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,6 +112,7 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
           sortDir: "asc",
           lov: "1"
         });
+        appendLookupValueMasterLovParams(q, lookup);
         const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
         const json = await res.json();
         if (cancelled) return;
@@ -128,7 +131,7 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
     return () => {
       cancelled = true;
     };
-  }, [open, page, debouncedSearch, lookup.module, sortField, pageSize]);
+  }, [open, page, debouncedSearch, lookup, sortField, pageSize]);
 
   useEffect(() => {
     if (!open) return;
@@ -142,7 +145,7 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
   function selectRow(row) {
     const v = row[valueField];
     setSelectedId(String(v));
-    setSelectedLabel(String(row[labelField] ?? ""));
+    setSelectedLabel(formatLookupRowLabel(row, lookup));
     setOpen(false);
   }
 
@@ -165,13 +168,15 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
         <button
           type="button"
           className="lookup-picker-trigger"
+          disabled={Boolean(disabled)}
           onClick={() => {
+            if (disabled) return;
             setOpen(true);
             setSearchInput("");
             setDebouncedSearch("");
             setPage(1);
           }}
-          title="Open lookup search"
+          title={disabled ? undefined : "Open lookup search"}
           aria-haspopup="dialog"
           aria-expanded={open}
         >

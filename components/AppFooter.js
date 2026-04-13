@@ -1,0 +1,15 @@
+/**
+ * Site footer: copyright and tagline (dashboard shell).
+ */
+export default function AppFooter() {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="app-footer" role="contentinfo">
+      <div className="app-footer-inner">
+        <p className="app-footer-line">
+          Copyrights © {year} | All Rights Reserved | NPA Enforcement and Recovery Squad Private Limited
+        </p>
+      </div>
+    </footer>
+  );
+}

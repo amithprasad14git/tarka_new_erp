@@ -32,8 +32,10 @@
  *   unit, or all). See lib/rowScope.js — you cannot turn this off from modules.js.
  * - **readOnly**: The screen can show data but cannot create/update/delete through
  *   the generic API (used for Audit Logs).
- * - **lookupDisplayField**: When searching or showing labels for this module in lists,
- *   which column text is used (e.g. employee name).
+ * - **lookupDisplayField**: One column, or several real columns separated by ` - ` (space-hyphen-space),
+ *   e.g. `branchCode - branchName`. The app builds the shown label with CONCAT / join — no extra DB column.
+ * - **lookupSearchFields** (optional): real column names; list `?search=` and lookup popup search use OR + LIKE
+ *   on each. If omitted, search uses the same columns parsed from `lookupDisplayField`. Names must exist on `fields`.
  *
  * Lookup vs select:
  * - **select**: Fixed choices in config (Yes/No).
@@ -67,19 +69,23 @@
  *
  * Lookup fields (`type: "lookup"`):
  * - `lookup.module`, `valueField`, optional `labelField` (else referenced module’s `lookupDisplayField`).
- * - On each referenced module set **`lookupDisplayField`**: the DB column used for LoV/picker label, list `?search=`,
- *   FK text filters, and enrich (one column). Optional `lookup.searchField` overrides **only** the FK filter WHERE column.
+ * - On each referenced module set **`lookupDisplayField`**: one column or `col1 - col2` for LoV/picker label,
+ *   enrich, and (if `lookupSearchFields` omitted) search/FK filter columns. Optional **`lookupSearchFields`**:
+ *   explicit OR-search columns. Optional **`lookup.searchField`** on the field overrides FK filter columns only.
  * - Optional **`displayKey`** on the field: JSON key for the enriched label on list rows; if omitted, defaults to
  *   `{fieldName}Label` (e.g. `unit` → `unitLabel`). Audit fields may keep custom keys like `createdBy_fullName`.
+ * - **`lookup_value_master` only:** optional `lookup.filterLookupTypeName` (exact type name in Lookup Type Master,
+ *   compared case-insensitively with trim) or `lookup.filterLookupType` (numeric id of the type) limits LoV/picker
+ *   rows to that type when `lov=1` requests run.
  *
  * How to choose LoV vs popup (per field):
  * - List of values (dropdown `<select>`, up to 500 rows): omit `lookup.ui`, or set
  *   `lookup.ui` to `"lov"` | `"dropdown"` | `"select"` | `"list"`.
  * - Popup picker (search + table + double-click): `lookup.ui` =
  *   `"picker"` | `"popup"` | `"modal"` | `"dialog"`.
- * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default `labelField`).
+ * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column).
  * - Popup columns: `lookup.pickerColumns`: `[{ field: "name", header: "Name" }, { field: "email", header: "Email" }]`.
- *   `field` must match a column returned by the referenced module’s list API. If omitted, one column (`labelField`) is shown.
+ *   `field` must match a column returned by the referenced module’s list API. If omitted, one column or all parsed display columns are shown.
  */
 
 // -----------------------------------------------------------------------------
@@ -101,13 +107,13 @@ const STANDARD_ROW_AUDIT_FIELDS = [
     displayKey: "createdBy_fullName"
   },
   // Stored as text in list responses (often formatted for display).
-  { name: "createdDate", type: "text", label: "Created Date", excludeFromForm: true, showInView: true },
+  { name: "createdDate", type: "text", label: "Created Date", excludeFromForm: true, showInView: false },
   {
     name: "modifiedBy",
     type: "lookup",
     label: "Modified by",
     excludeFromForm: true,
-    showInView: false,
+    showInView: true,
     lookup: { module: "users", valueField: "id", labelField: "fullName" },
     displayKey: "modifiedBy_fullName"
   },
@@ -127,7 +133,7 @@ export const modules = {
   // can still open their own login row even if someone else created the record.
   users: {
     label: "Users",
-    icon: "👨‍💻",
+    icon: "👤",
     group: "Administration",
     table: "users",
     lookupDisplayField: "fullName",
@@ -332,7 +338,7 @@ export const modules = {
   // ---------------------------------------------------------------------------
   financial_year_master: {
     label: "Financial Year Master",
-    icon: "🏢",
+    icon: "🗓️",
     group: "Accounts",
     table: "financial_year_master",
     lookupDisplayField: "yearCode",
@@ -368,11 +374,46 @@ export const modules = {
   },
 
   // ---------------------------------------------------------------------------
+  // CURRENT ACCOUNT OPENING BALANCE
+  // ---------------------------------------------------------------------------
+  current_account_opening_balance: {
+    label: "Current AC OP Balance",
+    icon: "🏢",
+    group: "Accounts",
+    table: "current_account_opening_balance",
+    lookupDisplayField: "currentAccount",
+    fields: [
+      { name: "effectiveDate", type: "date", label: "Effective Date", required: true, showInView: true },
+      {
+        name: "currentAccount",
+        type: "lookup",
+        label: "Current Account",
+        required: true,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      {
+        name: "active",
+        type: "select",
+        label: "Active",
+        showInView: false,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
   // PARTY MASTER — Accounting CUSTOMER / PARTIES
   // ---------------------------------------------------------------------------
-  financial_year_master: {
+  party_master: {
     label: "Party Master",
-    icon: "🤝",
+    icon: "🧑‍💼",
     group: "Accounts",
     table: "party_master",
     lookupDisplayField: "partyName",
@@ -550,7 +591,8 @@ export const modules = {
     icon: "🏦",
     group: "Banks",
     table: "branch_master",
-    lookupDisplayField: "branchName",
+    lookupDisplayField: "branchCode - branchName",
+    lookupSearchFields: ["branchCode", "branchName"],
     fields: [
       {
         name: "rbo_ro",
@@ -582,6 +624,238 @@ export const modules = {
         default: "Yes"
       },
       ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // LOOKUP TYPE MASTER
+  // ---------------------------------------------------------------------------
+  lookup_type_master: {
+    label: "Lookup Type Master",
+    icon: "📂",
+    group: "Lookups",
+    table: "lookup_type_master",
+    lookupDisplayField: "lookupType",
+    fields: [
+      { name: "lookupType", type: "text", label: "Lookup Type", required: true, showInView: true },
+      {
+        name: "active",
+        type: "select",
+        label: "Active",
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // LOOKUP VALUES MASTER
+  // ---------------------------------------------------------------------------
+  lookup_value_master: {
+    label: "Lookup Value Master",
+    icon: "🗃️",
+    group: "Lookups",
+    table: "lookup_value_master",
+    lookupDisplayField: "lookupValue",
+    fields: [
+      {
+        name: "lookupType",
+        type: "lookup",
+        label: "Lookup Type",
+        required: true,
+        showInView: true,
+        lookup: { module: "lookup_type_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "lookupType",
+          pickerColumns: [
+            { field: "lookupType", header: "Lookup Type" }
+          ]
+        }
+      },
+      { name: "lookupValue", type: "text", label: "Lookup Value", required: true, showInView: true },
+      {
+        name: "active",
+        type: "select",
+        label: "Active",
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // NEW CASE INWARD — Parent transaction; line items in `new_case_inward_amount_recovered`
+  // Case No is filled by the server after save: {bank caseNoPrefix}/{loan category code}/{nnnnn}.
+  // Case No / sequences: lib/modules/newCaseInward.js (LOAN_CATEGORY_CASE_NO_CODES + assignNewCaseInwardCaseNo)
+  // ---------------------------------------------------------------------------
+  new_case_inward: {
+    label: "New Case Inward",
+    icon: "📥",
+    group: "Cases",
+    table: "new_case_inward",
+    lookupDisplayField: "caseNo",
+    searchField: "caseNo",
+    fields: [
+      {
+        name: "caseNo",
+        type: "text",
+        label: "Case No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "unit",
+        type: "lookup",
+        label: "Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id" }
+      },
+      {
+        name: "entrustmentDate",
+        type: "date",
+        label: "Entrustment Date",
+        required: true,
+        showInView: true
+      },
+      {
+        name: "receivedFrom",
+        type: "lookup",
+        label: "Received From",
+        required: true,
+        showInView: false,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "Case Received From"
+        }
+      },
+      {
+        name: "fileMaintenance",
+        type: "lookup",
+        label: "File Maintenance",
+        required: true,
+        showInView: false,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "File Maintenance"
+        }
+      },
+      {
+        name: "branch",
+        type: "lookup",
+        label: "Branch",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "branch_master",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "branchCode",
+          pickerColumns: [
+            { field: "rbo_roLabel", header: "RBO / RO" },
+            { field: "branchCode", header: "Branch Code" },
+            { field: "branchName", header: "Branch Name" },
+            { field: "place", header: "Place" }
+          ]
+        }
+      },
+      { name: "borrower", type: "text", label: "Borrower", required: true, showInView: true },
+      { name: "loanAccountNo", type: "text", label: "Loan Account No", required: true, showInView: true },
+      {
+        name: "loanCategory",
+        type: "lookup",
+        label: "Loan Category",
+        required: true,
+        showInView: false,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "Loan Category"
+        }
+      },
+      {
+        name: "loanType",
+        type: "lookup",
+        label: "Loan Type",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "Loan Type"
+        }
+      },
+      { name: "npaDate", type: "date", label: "NPA Date", required: false, showInView: false },
+      {
+        name: "npaStatus",
+        type: "lookup",
+        label: "NPA Status",
+        required: true,
+        showInView: false,
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          labelField: "lookupValue",
+          filterLookupTypeName: "NPA Status"
+        }
+      },
+      { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
+        // DB: BIGINT; validate range in module-specific logic if needed.
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    /**
+     * Child grid: shown on the entry form below parent fields (MasterModuleClient).
+     * `key` — stable id for React state and the save payload (`childTableRows[key]`); not the SQL table name.
+     * `table` — actual DB table for your custom save / triggers.
+     * Table width = sum of columns: `<colgroup>` uses `indexColumnWidth`, each field’s `columnWidth`
+     * (or type defaults: date 11rem, number 9rem, else 10rem), then `actionsColumnWidth` or ~11.25rem for four icon buttons in one row.
+     */
+    childTables: [
+      {
+        key: "amount_recovered",
+        table: "new_case_inward_amount_recovered",
+        parentFkField: "caseInwardId", // FK column on child table → new_case_inward.id
+        label: "Amount Recovered",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "recoveredDate",
+            type: "date",
+            label: "Recovered Date",
+            placeholder: "Date",
+            required: true,
+            columnWidth: "11rem"
+          },
+          {
+            name: "recoveredAmount",
+            type: "number",
+            label: "Recovered Amount",
+            placeholder: "Amount",
+            required: true,
+            columnWidth: "9rem"
+          }
+          // add more line fields, lookups, etc.
+        ]
+      }
     ]
   }
 };

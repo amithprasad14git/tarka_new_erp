@@ -27,9 +27,10 @@ import { enrichLookupDisplayRows } from "../../../../lib/crudLookupEnrich";
 import { buildListOrderByExpr, buildListSelectClause } from "../../../../lib/crudListSelect";
 import mysql from "mysql2";
 import { appendGlobalSearchClause, appendLookupFkFilter } from "../../../../lib/crudListSearch";
-import { escapeSqlLikePattern } from "../../../../lib/formatViewCellValue";
+import { escapeSqlLikePattern } from "../../../../lib/sqlLikeEscape";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
 import { createCrudRecord } from "../../../../lib/services/crud.service";
+import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAccess";
 
 /**
  * Reads the httpOnly session cookie and returns the logged-in user (or null).
@@ -112,15 +113,24 @@ export async function GET(req, { params }) {
     const canCreate = await hasModulePermission(user, module, "create");
     const canEdit = await hasModulePermission(user, module, "edit");
     const canDelete = await hasModulePermission(user, module, "delete");
-    if (!canView && !canCreate && !canEdit && !canDelete) {
+
+    const listUrl = new URL(req.url);
+    const forLookup = listUrl.searchParams.get("lov") === "1";
+
+    const canAnyOnModule = canView || canCreate || canEdit || canDelete;
+    let canList = canAnyOnModule;
+    if (forLookup && !canList) {
+      canList = await canAccessLovViaReferencingModule(user, module);
+    }
+    if (!canList) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { page, limit, sortBy, sortDir, offset, filters, search } = normalizeListQuery(req, m);
     const fieldsByName = Object.fromEntries((m.fields || []).map((f) => [f.name, f]));
 
-    // Create-only (no view / edit / delete): allow the screen to load but do not list rows.
-    if (!canView && canCreate && !canEdit && !canDelete) {
+    // Create-only (no view / edit / delete): empty grid — but LoV/picker requests still need rows.
+    if (!forLookup && !canView && canCreate && !canEdit && !canDelete) {
       return Response.json({
         data: [],
         meta: {
@@ -192,8 +202,26 @@ export async function GET(req, { params }) {
     appendGlobalSearchClause(m, search, whereParts, whereValues);
 
     // FK LoV / picker: full reference list for dropdowns. Row scope still applies to normal grid lists.
-    const listUrl = new URL(req.url);
-    const forLookup = listUrl.searchParams.get("lov") === "1";
+    if (module === "lookup_value_master" && forLookup) {
+      const filterName = (listUrl.searchParams.get("filterLookupTypeName") || "").trim().slice(0, 200);
+      const filterIdRaw = (listUrl.searchParams.get("filterLookupType") || "").trim();
+      if (filterName) {
+        const ltm = modules.lookup_type_master;
+        if (ltm?.table) {
+          const subTable = escapeSqlTableIdForModuleConfig(ltm);
+          whereParts.push(
+            `${mysql.escapeId("lookupType")} IN (SELECT id FROM ${subTable} WHERE LOWER(TRIM(lookupType)) = LOWER(TRIM(?)))`
+          );
+          whereValues.push(filterName);
+        }
+      } else if (filterIdRaw) {
+        const ltId = Number(filterIdRaw);
+        if (Number.isFinite(ltId)) {
+          whereParts.push(`${mysql.escapeId("lookupType")} = ?`);
+          whereValues.push(ltId);
+        }
+      }
+    }
 
     if (!forLookup) {
       const listScopeAction = canView ? "view" : canEdit ? "edit" : "delete";

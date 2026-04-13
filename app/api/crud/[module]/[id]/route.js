@@ -2,7 +2,7 @@
  * =============================================================================
  * CRUD BY RECORD ID — `/api/crud/<module>/<id>`
  * =============================================================================
- * Updates (HTTP PUT) or deletes (HTTP DELETE) **one** row identified by its primary
+ * Loads (HTTP GET), updates (HTTP PUT), or deletes (HTTP DELETE) **one** row identified by its primary
  * key `id` in the URL. The module name must match config/modules.js.
  *
  * These handlers stay intentionally thin: they only
@@ -15,6 +15,7 @@
  * All permission checks, validation, SQL, and audit logging happen in the service.
  *
  * Typical JSON responses:
+ * - GET success: `{ data: <parent row>, childTableRows?: { ... } }` with status 200.
  * - Success update/delete: `{ ok: true }` with status 200.
  * - Errors: `{ error: "..." }` with 400/401/403/404 as appropriate.
  * - Unexpected server failure: 500 with a generic message; details only in server logs.
@@ -22,13 +23,30 @@
  */
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
-import { updateCrudRecord, deleteCrudRecord } from "../../../../../lib/services/crud.service";
+import { deleteCrudRecord, getCrudRecordById, updateCrudRecord } from "../../../../../lib/services/crud.service";
 
 /** Same as the list route: cookie → session id → user object or null. */
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
+}
+
+/**
+ * GET — load one parent row (and configured child tables) for the entry form.
+ */
+export async function GET(req, { params }) {
+  try {
+    const user = await getRequestUser();
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { module, id } = await params;
+    const result = await getCrudRecordById(user, module, id);
+    return Response.json(result.body, { status: result.status });
+  } catch (error) {
+    console.error("CRUD GET by id error:", error);
+    return Response.json({ error: "Failed to load record" }, { status: 500 });
+  }
 }
 
 /**

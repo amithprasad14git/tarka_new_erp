@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * FK field: LoV loads up to 500 rows from `/api/crud/:module?lov=1` (skips row scope so dropdowns show full reference data).
+ * FK field: LoV loads up to 500 rows from `/api/crud/:module?lov=1` (skips row scope). For `lookup_value_master`,
+ * passes `filterLookupTypeName` / `filterLookupType` when set on `lookup` (see lib/lookupLovQueryParams.js).
  * `lookup.ui`: LoV — omit, `"lov"`, `"dropdown"`, `"select"`, `"list"`. Modal — `"picker"`, `"popup"`, `"modal"`, `"dialog"`.
  */
 import { useEffect, useMemo, useState } from "react";
+import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { normalizeLookupUi } from "../lib/lookupUi";
-import { resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
 import LookupPicker from "./LookupPicker";
 
 /**
@@ -27,8 +29,8 @@ function mergeMissingFkOption(options, lookup, labelField, val, initialLabel) {
   return [row, ...options];
 }
 
-/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean }} props */
-export default function LookupSelect({ name, id, fieldLabel, lookup, initialValue, initialLabel, required }) {
+/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean }} props */
+export default function LookupSelect({ name, id, fieldLabel, lookup, initialValue, initialLabel, required, disabled: disabledProp }) {
   const ui = normalizeLookupUi(lookup.ui);
   const labelField =
     resolveLookupLabelFieldName(lookup) || String(lookup?.valueField ?? "").trim() || "id";
@@ -56,6 +58,7 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
           sortDir: "asc",
           lov: "1"
         });
+        appendLookupValueMasterLovParams(q, lookup);
         const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
         const json = await res.json();
         if (!cancelled && Array.isArray(json?.data)) setOptions(json.data);
@@ -69,7 +72,7 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
     return () => {
       cancelled = true;
     };
-  }, [ui, lookup.module, labelField]);
+  }, [ui, lookup, labelField]);
 
   if (ui === "picker") {
     return (
@@ -81,6 +84,7 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
         initialValue={initialValue}
         initialLabel={initialLabel}
         required={required}
+        disabled={Boolean(disabledProp)}
       />
     );
   }
@@ -90,27 +94,35 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
     [options, lookup, labelField, value, initialLabel]
   );
 
+  // Disabled controls are omitted from form submission; use a hidden input when the value is locked.
+  const locked = Boolean(disabledProp);
+
   return (
-    <select
-      id={id}
-      name={name}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      required={Boolean(required)}
-      disabled={loading}
-      aria-busy={loading}
-    >
+    <>
+      {locked ? (
+        <input type="hidden" name={name} value={value} required={Boolean(required)} />
+      ) : null}
+      <select
+        id={id}
+        name={locked ? undefined : name}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        required={!locked && Boolean(required)}
+        disabled={loading || locked}
+        aria-busy={loading}
+      >
       <option value="">{loading ? "Loading…" : "Select…"}</option>
       {displayOptions.map((row) => {
         const v = row[lookup.valueField];
         const optKey = String(v);
-        const lab = labelField ? row[labelField] : null;
+        const lab = formatLookupRowLabel(row, lookup);
         return (
           <option key={optKey} value={optKey}>
-            {lab != null && lab !== "" ? String(lab) : optKey}
+            {lab !== "" ? lab : optKey}
           </option>
         );
       })}
     </select>
+    </>
   );
 }
