@@ -820,6 +820,7 @@ export const modules = {
       { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
         // DB: BIGINT; validate range in module-specific logic if needed.
       },
+      { name: "caseStatus", type: "text", rows:4, label: "Closure Balance", required: false, showInView: false },
       ...STANDARD_ROW_AUDIT_FIELDS
     ],
     /**
