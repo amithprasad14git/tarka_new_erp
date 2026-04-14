@@ -6,10 +6,15 @@
  */
 export default function ToastNotice({ toast, onClose }) {
   if (!toast) return null;
+  const isError = toast.kind === "error";
 
   return (
     // Uses global `.toast*` CSS classes so other modules can reuse this component.
-    <div className={`toast toast-${toast.kind}`} role="status" aria-live="polite">
+    <div
+      className={`toast toast-${toast.kind}`}
+      role={isError ? "alert" : "status"}
+      aria-live={isError ? "assertive" : "polite"}
+    >
       <div className="toast-message">{toast.message}</div>
       <button type="button" className="toast-ok" onClick={onClose} aria-label="Close notification">
         OK

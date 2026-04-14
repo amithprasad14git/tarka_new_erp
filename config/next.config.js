@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // enables static HTML export
+  output: "export", // enables static HTML export
+  // If you use this file as the active config (`next dev -c config/next.config.js`), keep pdfkit external:
+  serverExternalPackages: ["pdfkit"]
 };
 
 module.exports = nextConfig;

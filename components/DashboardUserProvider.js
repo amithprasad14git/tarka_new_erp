@@ -1,11 +1,16 @@
 "use client";
 
 /**
- * React context for the logged-in user’s email and a human-readable display name (used by greeting and future UI).
+ * React context for the logged-in user’s identity used by greeting and profile UI.
  */
 import { createContext, useContext, useMemo } from "react";
 
-const DashboardUserContext = createContext({ email: "", displayName: "", unitId: null });
+const DashboardUserContext = createContext({
+  fullName: "",
+  email: "",
+  displayName: "",
+  unitId: null
+});
 
 /**
  * Derives a friendly name from email local-part (e.g. john.doe → John Doe).
@@ -25,16 +30,18 @@ export function displayNameFromEmail(email) {
 
 /**
  * Supplies logged-in user to dashboard client pages (greeting, etc.).
- * @param {{ children: import("react").ReactNode, email: string, unitId?: number }} props
+ * @param {{ children: import("react").ReactNode, fullName?: string, email: string, unitId?: number }} props
  */
-export function DashboardUserProvider({ children, email, unitId = null }) {
+export function DashboardUserProvider({ children, fullName = "", email, unitId = null }) {
+  const normalizedFullName = String(fullName || "").trim();
   const value = useMemo(
     () => ({
+      fullName: normalizedFullName,
       email: email || "",
-      displayName: displayNameFromEmail(email || ""),
+      displayName: normalizedFullName || displayNameFromEmail(email || ""),
       unitId: unitId != null && Number.isFinite(Number(unitId)) ? Number(unitId) : null
     }),
-    [email, unitId]
+    [normalizedFullName, email, unitId]
   );
 
   return (

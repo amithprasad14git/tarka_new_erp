@@ -29,8 +29,18 @@ function mergeMissingFkOption(options, lookup, labelField, val, initialLabel) {
   return [row, ...options];
 }
 
-/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean }} props */
-export default function LookupSelect({ name, id, fieldLabel, lookup, initialValue, initialLabel, required, disabled: disabledProp }) {
+/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string) => void }} props */
+export default function LookupSelect({
+  name,
+  id,
+  fieldLabel,
+  lookup,
+  initialValue,
+  initialLabel,
+  required,
+  disabled: disabledProp,
+  onValueChange
+}) {
   const ui = normalizeLookupUi(lookup.ui);
   const labelField =
     resolveLookupLabelFieldName(lookup) || String(lookup?.valueField ?? "").trim() || "id";
@@ -85,6 +95,7 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
         initialLabel={initialLabel}
         required={required}
         disabled={Boolean(disabledProp)}
+        onValueChange={onValueChange}
       />
     );
   }
@@ -106,7 +117,10 @@ export default function LookupSelect({ name, id, fieldLabel, lookup, initialValu
         id={id}
         name={locked ? undefined : name}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          setValue(e.target.value);
+          if (typeof onValueChange === "function") onValueChange(e.target.value);
+        }}
         required={!locked && Boolean(required)}
         disabled={loading || locked}
         aria-busy={loading}

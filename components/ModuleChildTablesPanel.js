@@ -6,6 +6,7 @@
  */
 import { formatViewCellValue } from "../lib/formatViewCellValue";
 import { rowValueForField } from "../lib/gridRowValue";
+import InrNumberInput from "./InrNumberInput";
 
 function newRowId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -53,6 +54,19 @@ function fieldColumnWidth(f) {
   if (f.type === "date") return "11rem";
   if (f.type === "number") return "9rem";
   return "10rem";
+}
+
+function toNumberOrZero(value) {
+  const n = Number(String(value ?? "").replace(/,/g, "").trim());
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatInrAmount(value) {
+  const amount = new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value || 0);
+  return `₹ ${amount}`;
 }
 
 /**
@@ -130,6 +144,7 @@ function PlusIcon() {
  */
 export default function ModuleChildTablesPanel({ childTables, value, onChange, disabled = false, onNotify }) {
   if (!childTables?.length) return null;
+  const todayYmd = new Date().toISOString().slice(0, 10);
 
   function setRows(tableKey, rows) {
     onChange({ ...value, [tableKey]: rows });
@@ -183,6 +198,11 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
         const rows = value[tableKey] || [];
         const fields = ct.fields || [];
         const colWidths = childTableColumnWidths(ct, fields);
+        const numericFieldTotals = fields.reduce((acc, f) => {
+          if (f.type !== "number") return acc;
+          acc[f.name] = rows.reduce((sum, row) => sum + toNumberOrZero(row?.[f.name]), 0);
+          return acc;
+        }, {});
 
         return (
           <div key={tableKey} className="card table-section module-child-card">
@@ -203,7 +223,10 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                       #
                     </th>
                     {fields.map((f) => (
-                      <th key={f.name} className="master-child-field-col">
+                      <th
+                        key={f.name}
+                        className={`master-child-field-col${f.type === "number" ? " master-child-number-col" : ""}`}
+                      >
                         {f.label || f.name}
                         {f.required ? (
                           <span className="form-required-mark" aria-hidden="true" title="Required">
@@ -226,7 +249,10 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                       <tr key={String(row._rowId ?? index)}>
                         <td className="master-child-idx-col">{index + 1}</td>
                         {fields.map((f) => (
-                          <td key={f.name} className="master-child-field-col">
+                          <td
+                            key={f.name}
+                            className={`master-child-field-col${f.type === "number" ? " master-child-number-col" : ""}`}
+                          >
                             {isEditing ? (
                               f.type === "date" ? (
                                 <input
@@ -239,6 +265,7 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                                       : ""
                                   }
                                   disabled={inputsDisabled}
+                                  max={f.maxToday ? todayYmd : undefined}
                                   onChange={(e) => {
                                     const next = [...(value[tableKey] || [])];
                                     const prev = next[index] || {};
@@ -247,11 +274,25 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                                   }}
                                   aria-label={f.label || f.name}
                                 />
+                              ) : f.type === "number" ? (
+                                <InrNumberInput
+                                  id={`${tableKey}-${f.name}-${index}`}
+                                  defaultValue={row[f.name] ?? ""}
+                                  disabled={inputsDisabled}
+                                  className="master-inline-input master-inline-input-number"
+                                  placeholder={inputPlaceholder(f)}
+                                  ariaLabel={f.label || f.name}
+                                  onRawValueChange={(nextRawValue) => {
+                                    const next = [...(value[tableKey] || [])];
+                                    const prev = next[index] || {};
+                                    next[index] = { ...prev, [f.name]: nextRawValue, _lineSaved: false };
+                                    setRows(tableKey, next);
+                                  }}
+                                />
                               ) : (
                                 <input
                                   className="master-inline-input"
-                                  type={f.type === "number" ? "number" : "text"}
-                                  step={f.type === "number" ? "any" : undefined}
+                                  type="text"
                                   placeholder={inputPlaceholder(f)}
                                   value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
                                   disabled={inputsDisabled}
@@ -266,7 +307,9 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                               )
                             ) : (
                               <span className="master-child-readonly">
-                                {formatViewCellValue(f, rowValueForField(row, f.name))}
+                                {f.type === "number"
+                                  ? formatInrAmount(toNumberOrZero(rowValueForField(row, f.name)))
+                                  : formatViewCellValue(f, rowValueForField(row, f.name))}
                               </span>
                             )}
                           </td>
@@ -319,6 +362,28 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                     );
                   })}
                 </tbody>
+                {fields.some((f) => f.type === "number") ? (
+                  <tfoot>
+                    <tr>
+                      <td className="master-child-idx-col" />
+                      {fields.map((f) => (
+                        <td
+                          key={`total-${f.name}`}
+                          className={`master-child-field-col${f.type === "number" ? " master-child-number-col" : ""}`}
+                        >
+                          {f.type === "number" ? (
+                            <strong>{formatInrAmount(numericFieldTotals[f.name] || 0)}</strong>
+                          ) : f === fields[0] ? (
+                            <strong className="master-child-total-label">Total</strong>
+                          ) : (
+                            ""
+                          )}
+                        </td>
+                      ))}
+                      <td className="data-table-actions-col master-child-actions-col" />
+                    </tr>
+                  </tfoot>
+                ) : null}
               </table>
             </div>
           </div>

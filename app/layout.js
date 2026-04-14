@@ -4,8 +4,11 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Tarka 2.0",
-  description: "NPA ERP"
+  title: "NPA Squad",
+  description: "Tarka 2.0",
+  icons: {
+    icon: "/images/favicon.ico"
+  }
 };
 
 /** Root HTML shell for all routes (global CSS, hydration warning for extensions). */

@@ -11,6 +11,8 @@ import { formatViewCellValue } from "../lib/formatViewCellValue";
 // Grid rows may use mixed column name casing from MySQL; see lib/gridRowValue.js.
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
+import { getNewCaseInwardStatusDotTone } from "../lib/newCaseInwardViewRowTone";
+import PostCreateAckModal from "./PostCreateAckModal";
 import DynamicForm from "./DynamicForm";
 import LoadingOverlay from "./LoadingOverlay";
 import MasterActionsMenu from "./MasterActionsMenu";
@@ -120,6 +122,105 @@ function stripChildRowsForApi(childTables, childRowsByKey) {
   return out;
 }
 
+function prettyAuditJsonText(raw) {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}
+
+function auditJsonPreview(raw, max = 34) {
+  const p = prettyAuditJsonText(raw).replace(/\s+/g, " ").trim();
+  if (!p) return "";
+  return p.length > max ? `${p.slice(0, max)}...` : p;
+}
+
+function parseAuditJson(raw) {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function looksLikeDateField(fieldName) {
+  const k = String(fieldName || "").toLowerCase();
+  return k.includes("date") || k.endsWith("_at") || k.endsWith("at");
+}
+
+function isDateOnlyField(fieldName) {
+  const k = String(fieldName || "").toLowerCase();
+  // Business date fields that should not show time.
+  return (
+    k === "npadate" ||
+    k === "entrustmentdate" ||
+    k === "date" ||
+    k.endsWith("_date")
+  );
+}
+
+function formatReadableDateTime(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  const d = new Date(text);
+  if (Number.isNaN(d.getTime())) return text;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
+
+function formatReadableDateOnly(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  const d = new Date(text);
+  if (Number.isNaN(d.getTime())) return text;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function valueTextForCompare(fieldName, v) {
+  if (v == null) return "";
+  if (looksLikeDateField(fieldName) && (typeof v === "string" || typeof v === "number")) {
+    if (isDateOnlyField(fieldName)) return formatReadableDateOnly(v);
+    return formatReadableDateTime(v);
+  }
+  if (typeof v === "object") {
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return String(v);
+    }
+  }
+  return String(v);
+}
+
+function buildAuditCompareRows(oldRaw, newRaw) {
+  const oldObj = parseAuditJson(oldRaw);
+  const newObj = parseAuditJson(newRaw);
+  if (!oldObj && !newObj) return [];
+  const keys = new Set([
+    ...Object.keys(oldObj || {}),
+    ...Object.keys(newObj || {})
+  ]);
+  return [...keys]
+    .sort((a, b) => a.localeCompare(b))
+    .map((k) => {
+      const oldVal = valueTextForCompare(k, oldObj?.[k] ?? "");
+      const newVal = valueTextForCompare(k, newObj?.[k] ?? "");
+      return { key: k, oldVal, newVal, changed: oldVal !== newVal };
+    });
+}
+
 function SaveIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -167,6 +268,16 @@ function TrashIcon() {
   );
 }
 
+function PrintCaseDetailsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M6 9V2h12v7" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" rx="1" />
+    </svg>
+  );
+}
+
 /**
  * Generic "master" screen:
  * - Entry mode: shows full-width form; Save submits and switches to View.
@@ -207,11 +318,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   });
   /** Blocks double-submit and shows full-screen loading overlay during I/O. */
   const [busy, setBusy] = useState(false);
+  /** When `modules[moduleKey].postCreateAck` is set and create returns `postCreateAck`, show modal before view. */
+  const [postCreateAckOpen, setPostCreateAckOpen] = useState(null);
+  /** Audit Logs only: side-by-side old/new compare popup. */
+  const [auditCompareDialog, setAuditCompareDialog] = useState(null);
 
   /** In-memory rows for `config.childTables`, keyed by each child table's `key` (fallback: SQL `table` name). */
   const [childRowsByKey, setChildRowsByKey] = useState(() =>
     emptyChildRowsState(modules[moduleKey]?.childTables)
   );
+  const [selectedBranchIdForLoanRule, setSelectedBranchIdForLoanRule] = useState(null);
+  const [loanAccountNoDraft, setLoanAccountNoDraft] = useState("");
+  const [loanAccountRule, setLoanAccountRule] = useState({
+    bankName: "",
+    loanAccountNoLength: null
+  });
 
   const title = useMemo(() => config?.label || moduleKey, [config, moduleKey]);
 
@@ -241,6 +362,84 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     return { unit: true };
   }, [moduleKey, editingRow, permissions.role, permissions.unit]);
 
+  useEffect(() => {
+    if (moduleKey !== "new_case_inward") {
+      setSelectedBranchIdForLoanRule(null);
+      setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
+      return;
+    }
+    const branchRaw = editingRow ? editingRow?.branch : entryFormInitialValues?.branch;
+    const branchNum = Number(branchRaw);
+    setSelectedBranchIdForLoanRule(Number.isFinite(branchNum) ? branchNum : null);
+    const loanNoRaw = editingRow ? editingRow?.loanAccountNo : entryFormInitialValues?.loanAccountNo;
+    setLoanAccountNoDraft(String(loanNoRaw ?? ""));
+  }, [moduleKey, editingRow, entryFormInitialValues]);
+
+  useEffect(() => {
+    if (moduleKey !== "new_case_inward") return;
+    const branchId = Number(selectedBranchIdForLoanRule);
+    if (!Number.isFinite(branchId)) {
+      setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
+      return;
+    }
+    let cancelled = false;
+    async function loadRule() {
+      try {
+        const res = await fetch(`/api/new-case-inward/loan-account-rule?branchId=${branchId}`);
+        const payload = await res.json();
+        if (cancelled) return;
+        const len = Number(payload?.loanAccountNoLength);
+        setLoanAccountRule({
+          bankName: String(payload?.bankName ?? "").trim(),
+          loanAccountNoLength: Number.isFinite(len) && len > 0 ? len : null
+        });
+      } catch {
+        if (!cancelled) setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
+      }
+    }
+    loadRule();
+    return () => {
+      cancelled = true;
+    };
+  }, [moduleKey, selectedBranchIdForLoanRule]);
+
+  const entryFieldUiOverrides = useMemo(() => {
+    if (moduleKey !== "new_case_inward") return null;
+    const len = Number(loanAccountRule.loanAccountNoLength);
+    const hasRule = Number.isFinite(len) && len > 0;
+    if (!hasRule) {
+      return { loanAccountNo: { placeholder: "Enter Loan Account No" } };
+    }
+    const currentLen = String(loanAccountNoDraft ?? "").trim().length;
+    const mismatch = currentLen !== len;
+    const bank = String(loanAccountRule.bankName || "").trim();
+    const bankSuffix = bank ? ` for ${bank}` : "";
+    return {
+      loanAccountNo: {
+        placeholder: `Enter ${len}-character Loan Account No`,
+        maxLength: len,
+        helperText: mismatch ? `Required length${bankSuffix}: ${len} characters` : "",
+        helperTone: "error"
+      }
+    };
+  }, [moduleKey, loanAccountRule, loanAccountNoDraft]);
+
+  const entryModeConfig = useMemo(() => {
+    if (!config) return config;
+    if (moduleKey !== "new_case_inward" || editingRow) return config;
+    const hiddenOnNew = new Set(["caseStatus", "caseStatusRemarks"]);
+    return {
+      ...config,
+      fields: (config.fields || []).filter((f) => !hiddenOnNew.has(f.name))
+    };
+  }, [config, moduleKey, editingRow]);
+
+  const showEntryChildTables = useMemo(() => {
+    if (!config?.childTables?.length) return false;
+    if (moduleKey === "new_case_inward" && !editingRow) return false;
+    return true;
+  }, [config?.childTables, moduleKey, editingRow]);
+
   /** Client-side guard; server still enforces RBAC. List rows include `_canEdit` when row-level scope applies. */
   const canSave = useMemo(() => {
     if (config?.readOnly) return false;
@@ -259,15 +458,36 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     return data.find((r) => String(r.id) === String(selectedId)) ?? null;
   }, [data, selectedId]);
 
+  const canOpenSelectedRecord = useMemo(() => {
+    if (!selectedId || !permissions.canEdit || !selectedRow) return false;
+    if (selectedRow._canEdit !== false) return true;
+    // New Case Inward final-stage rows are view-only for role 2; still allow opening full form data.
+    return moduleKey === "new_case_inward";
+  }, [selectedId, permissions.canEdit, selectedRow, moduleKey]);
+
   // View table columns: per-field `showInView` in config/modules.js (default true if omitted).
   const viewFieldConfigs = useMemo(() => {
-    return (config?.fields || []).filter((f) => f.showInView !== false);
-  }, [config]);
+    return (config?.fields || []).filter((f) => {
+      if (f.showInView === false) return false;
+      if (moduleKey === "audit_logs" && f.name === "record_id") return false;
+      return true;
+    });
+  }, [config, moduleKey]);
+  const auditLogsCompareEnabled = moduleKey === "audit_logs";
+  const auditLogsSimpleView = moduleKey === "audit_logs";
+  const nciStatusDotEnabled = moduleKey === "new_case_inward";
+
+  const nciCaseStatusField = useMemo(() => {
+    if (moduleKey !== "new_case_inward") return null;
+    const f = (config?.fields || []).find((x) => x.name === "caseStatus");
+    return f && f.type === "lookup" ? f : null;
+  }, [moduleKey, config]);
 
   // Auto-dismiss toast after a short delay.
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3000);
+    const timeoutMs = toast.kind === "error" ? 9000 : 3000;
+    const t = setTimeout(() => setToast(null), timeoutMs);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -276,8 +496,29 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- new blank grid when form session or module changes only
   }, [formKey, moduleKey]);
 
+  function normalizeToastMessage(kind, message) {
+    const text = String(message || "").trim();
+    if (kind !== "error") return text;
+    if (text.toLowerCase() === "unauthorized") {
+      return "Session expired. Please login again.";
+    }
+    return text;
+  }
+
   function showToast(kind, message) {
-    setToast({ kind, message: String(message || "") });
+    setToast({ kind, message: normalizeToastMessage(kind, message) });
+  }
+
+  function handleEntryFieldValueChange(fieldName, value) {
+    if (moduleKey !== "new_case_inward") return;
+    if (fieldName === "branch") {
+      const n = Number(value);
+      setSelectedBranchIdForLoanRule(Number.isFinite(n) ? n : null);
+      return;
+    }
+    if (fieldName === "loanAccountNo") {
+      setLoanAccountNoDraft(String(value ?? ""));
+    }
   }
 
   const loadRecords = async () => {
@@ -409,7 +650,8 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (!selectedId) return;
     if (!permissions.canEdit) return;
     const row = data.find((r) => String(r.id) === String(selectedId));
-    if (!row || row._canEdit === false) return;
+    if (!row) return;
+    if (row._canEdit === false && moduleKey !== "new_case_inward") return;
 
     setBusy(true);
     try {
@@ -462,6 +704,70 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** View mode: selected grid row. Entry mode: saved record being edited (`editingRow.id`). */
+  const printCaseDetailsTargetId =
+    moduleKey === "new_case_inward" && permissions.canView
+      ? effectiveViewMode
+        ? selectedId
+        : editingRow?.id ?? null
+      : null;
+
+  async function handlePrintCaseDetails() {
+    if (busy) return;
+    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
+    const id = printCaseDetailsTargetId;
+    if (id == null) return;
+
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/new-case-inward/case-details-pdf/${id}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = "Failed to generate PDF";
+        try {
+          const j = JSON.parse(text);
+          if (j?.error) msg = j.error;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const rowForName = effectiveViewMode ? selectedRow : editingRow;
+      const caseNo = rowValueForField(rowForName || {}, "caseNo");
+      const safe = String(caseNo ?? id)
+        .trim()
+        .replace(/[/\\?%*:|"<>]/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 120) || "case";
+      const name = `CASE_DETAILS_${safe}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handlePostCreateAckContinue() {
+    const ack = postCreateAckOpen;
+    setPostCreateAckOpen(null);
+    if (!ack) return;
+    setEditingRow(null);
+    setFormKey((k) => k + 1);
+    setSelectedId(ack.id);
+    setViewMode(true);
+    showToast("success", `${config.label || moduleKey}: saved successfully.`);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!config || busy) return;
@@ -481,6 +787,19 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       body.childTableRows = stripChildRowsForApi(config.childTables, childRowsByKey);
     }
 
+    if (moduleKey === "new_case_inward") {
+      const cs = body.caseStatus;
+      const hasCaseStatus =
+        cs != null &&
+        String(cs).trim() !== "" &&
+        Number.isFinite(Number(cs)) &&
+        Number(cs) > 0;
+      if (hasCaseStatus && String(body.caseStatusRemarks ?? "").trim() === "") {
+        showToast("error", "Case Status Remarks is required when Case Status is selected.");
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       // Create when adding a new record, update when editing an existing one.
@@ -496,6 +815,26 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       const text = await res.text();
       const payload = text ? JSON.parse(text) : null;
       if (!res.ok) throw new Error(payload?.error || `Failed to save record`);
+
+      const ackCfg = config.postCreateAck;
+      const pAck = payload?.postCreateAck;
+      const wantsAck =
+        !editingRow &&
+        ackCfg &&
+        pAck?.value != null &&
+        String(pAck.value).trim() !== "" &&
+        (!pAck.field || !ackCfg.field || pAck.field === ackCfg.field);
+
+      if (wantsAck) {
+        setPostCreateAckOpen({
+          id: Number(payload.id),
+          value: String(pAck.value).trim(),
+          title: ackCfg.title,
+          hint: ackCfg.hint,
+          showPrintPdf: ackCfg.showPrintPdf === true
+        });
+        return;
+      }
 
       setEditingRow(null);
       setFormKey((k) => k + 1);
@@ -520,6 +859,15 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
   return (
     <div className="master-module-page">
+      <PostCreateAckModal
+        open={postCreateAckOpen != null}
+        value={postCreateAckOpen?.value}
+        title={postCreateAckOpen?.title}
+        hint={postCreateAckOpen?.hint}
+        showPrintPdf={postCreateAckOpen?.showPrintPdf}
+        recordId={postCreateAckOpen?.id}
+        onContinue={handlePostCreateAckContinue}
+      />
       <LoadingOverlay busy={busy} />
 
       <div className="master-module-header">
@@ -542,29 +890,101 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       </div>
 
       <ToastNotice toast={toast} onClose={() => setToast(null)} />
+      {auditCompareDialog ? (
+        <div
+          className="audit-json-modal-backdrop"
+          role="presentation"
+          onClick={() => setAuditCompareDialog(null)}
+        >
+          <div
+            className="audit-json-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={auditCompareDialog.title || "Audit compare"}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="audit-json-modal-header">
+              <h3 className="audit-json-modal-title">{auditCompareDialog.title}</h3>
+              <button
+                type="button"
+                className="audit-json-modal-close"
+                onClick={() => setAuditCompareDialog(null)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="audit-compare-legend" role="note" aria-label="Compare legend">
+              <span className="audit-compare-legend-dot" aria-hidden />
+              Highlighted rows indicate changed values.
+            </div>
+            {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).length ? (
+              <div className="audit-compare-table-wrap">
+                <table className="audit-compare-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Old Data</th>
+                      <th>New Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).map((row) => (
+                      <tr key={row.key} className={row.changed ? "audit-compare-row-changed" : undefined}>
+                        <td>{row.key}</td>
+                        <td>{row.oldVal || "—"}</td>
+                        <td>{row.newVal || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="audit-json-modal-split">
+                <div>
+                  <h4>Old Data</h4>
+                  <pre className="audit-json-modal-pre">
+                    {prettyAuditJsonText(auditCompareDialog.oldRaw) || "—"}
+                  </pre>
+                </div>
+                <div>
+                  <h4>New Data</h4>
+                  <pre className="audit-json-modal-pre">
+                    {prettyAuditJsonText(auditCompareDialog.newRaw) || "—"}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {!effectiveViewMode ? (
         <>
           {/* Entry mode: show the dynamic form for create/update. */}
           <DynamicForm
             key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
-            config={config}
+            config={entryModeConfig}
             onSubmit={handleSubmit}
             initialValues={entryFormInitialValues}
             readOnlyFields={entryFormReadOnlyFields}
+            fieldUiOverrides={entryFieldUiOverrides}
+            onFieldValueChange={handleEntryFieldValueChange}
             submitLabel="Save"
             hideButtons
             formId={formId}
             className="card master-entry-form"
             formGridClassName="form-grid form-grid-master"
           />
-          <ModuleChildTablesPanel
-            childTables={config.childTables}
-            value={childRowsByKey}
-            onChange={setChildRowsByKey}
-            disabled={busy}
-            onNotify={(kind, message) => showToast(kind, message)}
-          />
+          {showEntryChildTables ? (
+            <ModuleChildTablesPanel
+              childTables={config.childTables}
+              value={childRowsByKey}
+              onChange={setChildRowsByKey}
+              disabled={busy}
+              onNotify={(kind, message) => showToast(kind, message)}
+            />
+          ) : null}
         </>
       ) : (
         // View mode: show a table with per-column filters + checkbox selection.
@@ -576,17 +996,24 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             <table className="data-table data-table-compact master-orders-table">
               <thead>
                 <tr>
-                  <th className="master-select-col" scope="col">
-                    ✔️
-                  </th>
+                  {!auditLogsSimpleView ? (
+                    <th className="master-select-col" scope="col">
+                      ✔️
+                    </th>
+                  ) : null}
+                  {nciStatusDotEnabled ? <th className="master-status-dot-col">Status</th> : null}
                   {viewFieldConfigs.map((f) => (
-                    <th key={f.name}>{labelWithRequiredMark(f.label, Boolean(f.required))}</th>
+                    <th key={f.name}>{f.label || f.name}</th>
                   ))}
+                  {auditLogsCompareEnabled ? <th className="audit-compare-col">Compare</th> : null}
                 </tr>
                 <tr>
-                  <th className="master-filter-th" aria-hidden>
-                    {/* selection column has no filter */}
-                  </th>
+                  {!auditLogsSimpleView ? (
+                    <th className="master-filter-th" aria-hidden>
+                      {/* selection column has no filter */}
+                    </th>
+                  ) : null}
+                  {nciStatusDotEnabled ? <th className="master-filter-th" aria-hidden /> : null}
                   {viewFieldConfigs.map((f) => {
                     // Per-column filter input.
                     // Values are sent to the server as `f_<fieldName>` and applied server-side.
@@ -648,32 +1075,106 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       </th>
                     );
                   })}
+                  {auditLogsCompareEnabled ? <th className="master-filter-th" aria-hidden /> : null}
                 </tr>
               </thead>
               <tbody>
                 {data.map((r) => {
                   const isChecked = selectedId != null && String(r.id) === String(selectedId);
+                  const nciDotTone =
+                    nciCaseStatusField != null
+                      ? getNewCaseInwardStatusDotTone(
+                          rowValueForField(r, getLookupRowLabelKey(nciCaseStatusField)) ??
+                            rowValueForField(r, "caseStatus") ??
+                            ""
+                        )
+                      : null;
+                  const trClass = [isChecked && "master-row-selected"].filter(Boolean).join(" ");
                   return (
-                    <tr key={r.id} className={isChecked ? "master-row-selected" : undefined}>
-                      <td className="master-select-col">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          // Only one row can be selected at a time; clicking again clears selection.
-                          onChange={() => setSelectedId(isChecked ? null : r.id)}
-                          aria-label={`Select ${moduleKey} ${r.id}`}
-                        />
-                      </td>
+                    <tr key={r.id} className={trClass || undefined}>
+                      {!auditLogsSimpleView ? (
+                        <td className="master-select-col">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            // Only one row can be selected at a time; clicking again clears selection.
+                            onChange={() => setSelectedId(isChecked ? null : r.id)}
+                            aria-label={`Select ${moduleKey} ${r.id}`}
+                          />
+                        </td>
+                      ) : null}
+                      {nciStatusDotEnabled ? (
+                        <td className="master-status-dot-col">
+                          <span
+                            className={`master-status-dot master-status-dot--${nciDotTone || "ongoing"}`}
+                            title={
+                              nciDotTone === "returned"
+                                ? "Returned case"
+                                : nciDotTone === "final"
+                                  ? "Final stage case"
+                                  : "Ongoing case"
+                            }
+                            aria-label={
+                              nciDotTone === "returned"
+                                ? "Returned case"
+                                : nciDotTone === "final"
+                                  ? "Final stage case"
+                                  : "Ongoing case"
+                            }
+                          />
+                        </td>
+                      ) : null}
                       {viewFieldConfigs.map((f) => (
                         <td key={f.name}>
                           {/* rowValueForField: MySQL may return column names in different casing than config. */}
-                          {f.type === "lookup"
-                            ? rowValueForField(r, getLookupRowLabelKey(f)) ??
-                              rowValueForField(r, f.name) ??
-                              ""
-                            : formatViewCellValue(f, rowValueForField(r, f.name))}
+                          {moduleKey === "audit_logs" && (f.name === "old_data" || f.name === "new_data") ? (
+                            (() => {
+                              const raw = rowValueForField(r, f.name);
+                              const preview = auditJsonPreview(raw);
+                              return preview ? (
+                                <span className="audit-json-preview">{preview}</span>
+                              ) : (
+                                "—"
+                              );
+                            })()
+                          ) : moduleKey === "audit_logs" && f.name === "created_at" ? (
+                            (() => {
+                              const raw = rowValueForField(r, f.name);
+                              const d = raw ? new Date(raw) : null;
+                              if (!d || Number.isNaN(d.getTime())) return raw ? String(raw) : "";
+                              const dd = String(d.getDate()).padStart(2, "0");
+                              const mm = String(d.getMonth() + 1).padStart(2, "0");
+                              const yyyy = d.getFullYear();
+                              const hh = String(d.getHours()).padStart(2, "0");
+                              const min = String(d.getMinutes()).padStart(2, "0");
+                              return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+                            })()
+                          ) : f.type === "lookup" ? (
+                            rowValueForField(r, getLookupRowLabelKey(f)) ??
+                            rowValueForField(r, f.name) ??
+                            ""
+                          ) : (
+                            formatViewCellValue(f, rowValueForField(r, f.name))
+                          )}
                         </td>
                       ))}
+                      {auditLogsCompareEnabled ? (
+                        <td className="audit-compare-col">
+                          <button
+                            type="button"
+                            className="audit-json-open"
+                            onClick={() =>
+                              setAuditCompareDialog({
+                                title: `Record ${rowValueForField(r, "id") || ""} — Old vs New`,
+                                oldRaw: rowValueForField(r, "old_data"),
+                                newRaw: rowValueForField(r, "new_data")
+                              })
+                            }
+                          >
+                            Compare
+                          </button>
+                        </td>
+                      ) : null}
                     </tr>
                   );
                 })}
@@ -716,44 +1217,60 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             }
           />
 
-          <div className="master-view-actions">
-            <div className="master-view-actions-left">
-              {selectedId && permissions.canEdit && selectedRow?._canEdit !== false ? (
+          {!auditLogsSimpleView ? (
+            <div className="master-view-actions">
+              <div className="master-view-actions-left">
+                {canOpenSelectedRecord ? (
+                  <button
+                    type="button"
+                    className="master-btn master-btn-primary"
+                    onClick={handleEditSelected}
+                    title={selectedRow?._canEdit === false ? "View full record" : "Edit record"}
+                    disabled={busy}
+                  >
+                    <EditIcon />
+                    {selectedRow?._canEdit === false ? "View record" : "Edit record"}
+                  </button>
+                ) : null}
+                {selectedId && permissions.canDelete && selectedRow?._canDelete !== false ? (
+                  <button
+                    type="button"
+                    className="master-btn master-btn-danger"
+                    onClick={handleDeleteSelected}
+                    title="Delete record"
+                    disabled={busy}
+                  >
+                    <TrashIcon />
+                    Delete record
+                  </button>
+                ) : null}
+                {printCaseDetailsTargetId != null ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintCaseDetails}
+                    title="Download PDF with parent and line-item details"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    Print Case Details
+                  </button>
+                ) : null}
+              </div>
+              <div className="master-view-actions-right">
                 <button
                   type="button"
-                  className="master-btn master-btn-primary"
-                  onClick={handleEditSelected}
-                  title="Edit record"
+                  onClick={handleNew}
+                  title="Clear screen"
+                  className="master-btn master-btn-warning"
                   disabled={busy}
                 >
-                  <EditIcon />
-                  Edit record
+                  <ClearIcon />
+                  Clear Screen
                 </button>
-              ) : null}
-              {selectedId && permissions.canDelete && selectedRow?._canDelete !== false ? (
-                <button
-                  type="button"
-                  className="master-btn master-btn-danger"
-                  onClick={handleDeleteSelected}
-                  title="Delete record"
-                  disabled={busy}
-                >
-                  <TrashIcon />
-                  Delete record
-                </button>
-              ) : null}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleNew}
-              title="Clear screen"
-              className="master-btn master-btn-warning master-view-actions-clear"
-              disabled={busy}
-            >
-              <ClearIcon />
-              Clear Screen
-            </button>
-          </div>
+          ) : null}
         </div>
       )}
 
@@ -776,6 +1293,18 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               >
                 <EyeIcon />
                 View
+              </button>
+            ) : null}
+            {printCaseDetailsTargetId != null ? (
+              <button
+                type="button"
+                onClick={handlePrintCaseDetails}
+                title="Download PDF with parent and line-item details"
+                className="master-btn master-btn-outline"
+                disabled={busy}
+              >
+                <PrintCaseDetailsIcon />
+                Print Case Details
               </button>
             ) : null}
             <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>

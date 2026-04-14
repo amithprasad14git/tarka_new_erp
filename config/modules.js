@@ -86,6 +86,15 @@
  * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column).
  * - Popup columns: `lookup.pickerColumns`: `[{ field: "name", header: "Name" }, { field: "email", header: "Email" }]`.
  *   `field` must match a column returned by the referenced module’s list API. If omitted, one column or all parsed display columns are shown.
+ *
+ * **postCreateAck** (optional, per module):
+ * After a successful **create**, if the server fills a running number / reference on that column, you can
+ * show a blocking acknowledgement modal so users can copy it before returning to the grid. Omit on simple
+ * masters that have no auto-generated key.
+ * - `field` — database column name (camelCase) on the parent row; must match what your after-create logic sets.
+ * - `title` — modal heading (e.g. “Case number assigned”).
+ * - `hint` — short line under the title (optional; sensible default in the UI).
+ * - `showPrintPdf` — if `true`, show a “Print PDF” slot (wire handler later); if `false`, hide it.
  */
 
 // -----------------------------------------------------------------------------
@@ -216,11 +225,23 @@ export const modules = {
     readOnly: true,
     // Append-only via lib/audit.js; generic POST/PUT blocked when `readOnly` is set.
     fields: [
-      { name: "user_id", type: "number", label: "User ID", showInView: true },
+      {
+        // Show friendly user full name instead of numeric id in grid.
+        name: "user_id",
+        type: "lookup",
+        label: "User",
+        showInView: true,
+        lookup: { module: "users", valueField: "id", labelField: "fullName" }
+      },
       { name: "module", type: "text", label: "Module", showInView: true },
       { name: "action", type: "text", label: "Action", showInView: true },
       { name: "record_id", type: "number", label: "Record ID", showInView: true },
-      ...STANDARD_ROW_AUDIT_FIELDS
+      // DB timestamp when audit entry was inserted.
+      { name: "created_at", type: "text", label: "Created At", showInView: true },
+      // Raw JSON snapshot before change (create => null).
+      { name: "old_data", type: "text", label: "Old Data", showInView: true },
+      // Raw JSON snapshot after change (delete => null).
+      { name: "new_data", type: "text", label: "New Data", showInView: true }
     ]
   },
 
@@ -449,6 +470,7 @@ export const modules = {
       { name: "bankName", type: "text", label: "Name", required: true, showInView: true },
       { name: "logoPath", type: "text", label: "Logo Path", required: false, showInView: false },
       { name: "caseNoPrefix", type: "text", label: "Case No Prefix", required: true, showInView: false },
+      { name: "loanAccountNoLength", type: "number", label: "Loan AC No Length", required: true, showInView: false },
       {
         name: "active",
         type: "select",
@@ -703,6 +725,12 @@ export const modules = {
     table: "new_case_inward",
     lookupDisplayField: "caseNo",
     searchField: "caseNo",
+    postCreateAck: {
+      field: "caseNo",
+      title: "Case Number Assigned",
+      hint: "Note this number for your reference before continuing.",
+      showPrintPdf: true
+    },
     fields: [
       {
         name: "caseNo",
@@ -727,7 +755,8 @@ export const modules = {
         type: "date",
         label: "Entrustment Date",
         required: true,
-        showInView: true
+        showInView: true,
+        maxToday: true
       },
       {
         name: "receivedFrom",
@@ -803,7 +832,7 @@ export const modules = {
           filterLookupTypeName: "Loan Type"
         }
       },
-      { name: "npaDate", type: "date", label: "NPA Date", required: false, showInView: false },
+      { name: "npaDate", type: "date", label: "NPA Date", required: false, showInView: false, maxToday: true },
       {
         name: "npaStatus",
         type: "lookup",
@@ -820,7 +849,6 @@ export const modules = {
       { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
         // DB: BIGINT; validate range in module-specific logic if needed.
       },
-      { name: "caseNotes", type: "text", rows:"4", label: "Case Related Notes", required: false, showInView: false },
       {
         name: "caseStatus",
         type: "lookup",
@@ -858,6 +886,7 @@ export const modules = {
             label: "Recovered Date",
             placeholder: "Date",
             required: true,
+            maxToday: true,
             columnWidth: "11rem"
           },
           {

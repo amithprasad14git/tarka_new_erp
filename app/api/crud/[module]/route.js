@@ -31,6 +31,7 @@ import { escapeSqlLikePattern } from "../../../../lib/sqlLikeEscape";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
 import { createCrudRecord } from "../../../../lib/services/crud.service";
 import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAccess";
+import { applyRole2FinalStageEditLock } from "../../../../lib/modules/newCaseInward";
 
 /**
  * Reads the httpOnly session cookie and returns the logged-in user (or null).
@@ -244,6 +245,14 @@ export async function GET(req, { params }) {
 
     if (!forLookup && rows.length) {
       await annotateRowsModifyAccess(module, m, user, rows, { canEdit, canDelete });
+      if (module === "new_case_inward" && Number(user?.role) === 2) {
+        const conn = await pool.getConnection();
+        try {
+          await applyRole2FinalStageEditLock(conn, rows);
+        } finally {
+          conn.release();
+        }
+      }
     }
 
     return Response.json({

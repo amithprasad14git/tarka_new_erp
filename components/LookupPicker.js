@@ -20,9 +20,19 @@ function MagnifyingGlassIcon() {
 
 /**
  * Large-dataset lookup: readonly display + search icon opens modal with debounced search and double-click select.
- * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean }} props
+ * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string) => void }} props
  */
-export default function LookupPicker({ name, id, fieldLabel, lookup, initialValue, initialLabel, required, disabled }) {
+export default function LookupPicker({
+  name,
+  id,
+  fieldLabel,
+  lookup,
+  initialValue,
+  initialLabel,
+  required,
+  disabled,
+  onValueChange
+}) {
   const pageSize = Math.min(Math.max(Number(lookup.pickerLimit) || 20, 5), 100);
   const { valueField } = lookup;
   const labelField =
@@ -144,7 +154,9 @@ export default function LookupPicker({ name, id, fieldLabel, lookup, initialValu
 
   function selectRow(row) {
     const v = row[valueField];
-    setSelectedId(String(v));
+    const nextValue = String(v);
+    setSelectedId(nextValue);
+    if (typeof onValueChange === "function") onValueChange(nextValue);
     setSelectedLabel(formatLookupRowLabel(row, lookup));
     setOpen(false);
   }

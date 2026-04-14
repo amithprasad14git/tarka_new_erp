@@ -10,6 +10,7 @@
 import { labelWithRequiredMark } from "../lib/formFieldLabel";
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
+import InrNumberInput from "./InrNumberInput";
 import LookupSelect from "./LookupSelect";
 
 export default function DynamicForm({
@@ -24,12 +25,16 @@ export default function DynamicForm({
   formGridClassName = "form-grid",
   submitDisabled = false,
   /** Field name → non-editable (still submitted). Used for session-derived FKs. */
-  readOnlyFields = null
+  readOnlyFields = null,
+  /** Field name → UI overrides { placeholder?, maxLength?, helperText? }. */
+  fieldUiOverrides = null,
+  onFieldValueChange = null
 }) {
   // Server-only fields to display when viewing/editing a saved row (not on blank “new” form).
   const displayOnEditFields = (config.fields || []).filter(
     (f) => f.excludeFromForm && f.displayOnEdit && initialValues?.id != null && String(initialValues.id).trim() !== ""
   );
+  const todayYmd = new Date().toISOString().slice(0, 10);
 
   return (
     <form
@@ -58,6 +63,7 @@ export default function DynamicForm({
         })}
         {(config.fields || []).filter((f) => !f.excludeFromForm).map((f) => {
           const fieldReadOnly = Boolean(readOnlyFields?.[f.name]);
+          const ui = fieldUiOverrides?.[f.name] || {};
           const textareaRows = Number.parseInt(String(f.rows ?? ""), 10);
           const useTextarea =
             f.type === "textarea" ||
@@ -77,6 +83,9 @@ export default function DynamicForm({
                 initialLabel={initialValues?.[getLookupRowLabelKey(f)]}
                 required={Boolean(f.required)}
                 disabled={fieldReadOnly}
+                onValueChange={(nextValue) => {
+                  if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, nextValue);
+                }}
               />
             ) : f.type === "select" && Array.isArray(f.options) ? (
               <>
@@ -126,6 +135,19 @@ export default function DynamicForm({
                 defaultValue={initialValues?.[f.name] ?? ""}
                 required={Boolean(f.required)}
                 readOnly={fieldReadOnly}
+                placeholder={ui.placeholder || undefined}
+                maxLength={ui.maxLength != null ? Number(ui.maxLength) : undefined}
+                onChange={(e) => {
+                  if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+                }}
+              />
+            ) : f.type === "number" ? (
+              <InrNumberInput
+                id={`field-${f.name}`}
+                name={f.name}
+                defaultValue={initialValues?.[f.name] ?? ""}
+                required={Boolean(f.required)}
+                readOnly={fieldReadOnly}
               />
             ) : f.type === "date" ? (
               <input
@@ -140,20 +162,35 @@ export default function DynamicForm({
                 }
                 required={Boolean(f.required)}
                 readOnly={fieldReadOnly}
+                max={f.maxToday ? todayYmd : undefined}
+                onChange={(e) => {
+                  if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+                }}
               />
             ) : (
               <input
                 id={`field-${f.name}`}
                 name={f.name}
-                type={f.type === "number" ? "number" : f.type}
-                step={f.type === "number" ? "any" : undefined}
+                type={f.type}
                 defaultValue={initialValues?.[f.name] ?? ""}
                 // Password fields are intentionally not required so edits/new flows
                 // can omit password unless the module explicitly enforces it.
                 required={Boolean(f.required) && f.type !== "password"}
                 readOnly={fieldReadOnly}
+                placeholder={ui.placeholder || undefined}
+                maxLength={ui.maxLength != null ? Number(ui.maxLength) : undefined}
+                onChange={(e) => {
+                  if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+                }}
               />
             )}
+            {ui.helperText ? (
+              <div
+                className={`form-field-hint${ui.helperTone === "error" ? " form-field-hint-error" : ""}`}
+              >
+                {String(ui.helperText)}
+              </div>
+            ) : null}
           </div>
           );
         })}

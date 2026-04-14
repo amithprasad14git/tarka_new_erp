@@ -5,6 +5,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { modules } from "../../config/modules";
+import { dashboards } from "../../config/dashboards";
 import { getSessionUser } from "../../lib/session";
 import { hasAnyModuleAccess } from "../../lib/rbac";
 import DashboardSidebar from "../../components/DashboardSidebar";
@@ -45,8 +46,21 @@ export default async function DashboardLayout({ children }) {
     return acc;
   }, {});
 
+  // Landing dashboards: visible only when user has permission on dashboard permission key.
+  const visibleDashboards = [];
+  for (const d of dashboards) {
+    const permissionKey = String(d.permissionKey || d.key || "").trim();
+    if (!permissionKey) continue;
+    const canSee = await hasAnyModuleAccess(user, permissionKey);
+    if (canSee) visibleDashboards.push(d);
+  }
+
   return (
-    <DashboardUserProvider email={user.email} unitId={user.unit != null ? Number(user.unit) : null}>
+    <DashboardUserProvider
+      fullName={user.fullName}
+      email={user.email}
+      unitId={user.unit != null ? Number(user.unit) : null}
+    >
       <div className="flux-layout">
         <DashboardSidebar groups={groups} />
         <main className="flux-main flux-main--with-footer">
@@ -57,7 +71,10 @@ export default async function DashboardLayout({ children }) {
           </header>
           <div className="flux-main-scroll-region">
             <div className="flux-content">
-              <DashboardTabs visibleModuleKeys={visibleEntries.map(([k]) => k)} />
+              <DashboardTabs
+                visibleModuleKeys={visibleEntries.map(([k]) => k)}
+                visibleDashboards={visibleDashboards}
+              />
             </div>
           </div>
           <AppFooter />
