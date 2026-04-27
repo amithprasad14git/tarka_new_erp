@@ -9,6 +9,7 @@ import { getRbacMatrixModuleEntries, getRbacMatrixModuleKeySet } from "../../../
 import { getSessionUser } from "../../../lib/session";
 import { hasModulePermission } from "../../../lib/rbac";
 import { escapeSqlTableId } from "../../../lib/sqlModuleTable";
+import { formatInstantAsMysqlDatetimeIST } from "../../../lib/istDateTime";
 
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
 
@@ -166,7 +167,7 @@ export async function POST(req) {
         [userId, ...modKeys]
       );
 
-      const now = new Date();
+      const now = formatInstantAsMysqlDatetimeIST();
       const actorId = user.id;
 
       for (const r of normalized) {

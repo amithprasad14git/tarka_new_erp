@@ -6,6 +6,8 @@
  */
 import { formatViewCellValue } from "../lib/formatViewCellValue";
 import { rowValueForField } from "../lib/gridRowValue";
+import { getYmdISTFromInstant } from "../lib/istDateTime";
+import { toYyyyMmDdForSqlDateField } from "../lib/sqlDateFieldValue";
 import InrNumberInput from "./InrNumberInput";
 
 function newRowId() {
@@ -138,13 +140,21 @@ function PlusIcon() {
  *   }>,
  *   value: Record<string, Array<Record<string, unknown>>>,
  *   onChange: (next: Record<string, Array<Record<string, unknown>>>) => void,
+ *   childFieldUiOverrides?: Record<string, Record<string, { helperText?: string, min?: string }>>,
  *   disabled?: boolean,
  *   onNotify?: (kind: "success" | "error", message: string) => void
  * }} props
  */
-export default function ModuleChildTablesPanel({ childTables, value, onChange, disabled = false, onNotify }) {
+export default function ModuleChildTablesPanel({
+  childTables,
+  value,
+  onChange,
+  childFieldUiOverrides = null,
+  disabled = false,
+  onNotify
+}) {
   if (!childTables?.length) return null;
-  const todayYmd = new Date().toISOString().slice(0, 10);
+  const todayYmd = getYmdISTFromInstant(new Date());
 
   function setRows(tableKey, rows) {
     onChange({ ...value, [tableKey]: rows });
@@ -197,6 +207,9 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
         const tableKey = ct.key || ct.table;
         const rows = value[tableKey] || [];
         const fields = ct.fields || [];
+        const helperMessages = Object.values(childFieldUiOverrides?.[tableKey] || {})
+          .map((v) => String(v?.helperText || "").trim())
+          .filter(Boolean);
         const colWidths = childTableColumnWidths(ct, fields);
         const numericFieldTotals = fields.reduce((acc, f) => {
           if (f.type !== "number") return acc;
@@ -253,65 +266,89 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                             key={f.name}
                             className={`master-child-field-col${f.type === "number" ? " master-child-number-col" : ""}`}
                           >
-                            {isEditing ? (
-                              f.type === "date" ? (
-                                <input
-                                  className="master-inline-input"
-                                  type="date"
-                                  placeholder={inputPlaceholder(f)}
-                                  value={
-                                    row[f.name] != null && row[f.name] !== ""
-                                      ? String(row[f.name]).slice(0, 10)
-                                      : ""
-                                  }
-                                  disabled={inputsDisabled}
-                                  max={f.maxToday ? todayYmd : undefined}
-                                  onChange={(e) => {
-                                    const next = [...(value[tableKey] || [])];
-                                    const prev = next[index] || {};
-                                    next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
-                                    setRows(tableKey, next);
-                                  }}
-                                  aria-label={f.label || f.name}
-                                />
-                              ) : f.type === "number" ? (
-                                <InrNumberInput
-                                  id={`${tableKey}-${f.name}-${index}`}
-                                  defaultValue={row[f.name] ?? ""}
-                                  disabled={inputsDisabled}
-                                  className="master-inline-input master-inline-input-number"
-                                  placeholder={inputPlaceholder(f)}
-                                  ariaLabel={f.label || f.name}
-                                  onRawValueChange={(nextRawValue) => {
-                                    const next = [...(value[tableKey] || [])];
-                                    const prev = next[index] || {};
-                                    next[index] = { ...prev, [f.name]: nextRawValue, _lineSaved: false };
-                                    setRows(tableKey, next);
-                                  }}
-                                />
+                            {(() => {
+                              const ui = childFieldUiOverrides?.[tableKey]?.[f.name] || {};
+                              const hasUiMin = Object.prototype.hasOwnProperty.call(ui, "min");
+                              const hasUiMax = Object.prototype.hasOwnProperty.call(ui, "max");
+                              return isEditing ? (
+                                f.type === "date" ? (
+                                  <>
+                                    <input
+                                      className="master-inline-input"
+                                      type="date"
+                                      placeholder={inputPlaceholder(f)}
+                                      value={
+                                        row[f.name] != null && row[f.name] !== ""
+                                          ? toYyyyMmDdForSqlDateField(row[f.name])
+                                          : ""
+                                      }
+                                      disabled={inputsDisabled}
+                                      min={
+                                        hasUiMin
+                                          ? ui.min != null && String(ui.min).trim() !== ""
+                                            ? String(ui.min).trim()
+                                            : undefined
+                                          : undefined
+                                      }
+                                      max={
+                                        hasUiMax
+                                          ? ui.max != null && String(ui.max).trim() !== ""
+                                            ? String(ui.max).trim()
+                                            : undefined
+                                          : f.maxToday
+                                            ? todayYmd
+                                            : undefined
+                                      }
+                                      onChange={(e) => {
+                                        const next = [...(value[tableKey] || [])];
+                                        const prev = next[index] || {};
+                                        next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
+                                        setRows(tableKey, next);
+                                      }}
+                                      aria-label={f.label || f.name}
+                                    />
+                                  </>
+                                ) : f.type === "number" ? (
+                                  <InrNumberInput
+                                    id={`${tableKey}-${f.name}-${index}`}
+                                    defaultValue={row[f.name] ?? ""}
+                                    disabled={inputsDisabled}
+                                    className="master-inline-input master-inline-input-number"
+                                    placeholder={inputPlaceholder(f)}
+                                    ariaLabel={f.label || f.name}
+                                    onRawValueChange={(nextRawValue) => {
+                                      const next = [...(value[tableKey] || [])];
+                                      const prev = next[index] || {};
+                                      next[index] = { ...prev, [f.name]: nextRawValue, _lineSaved: false };
+                                      setRows(tableKey, next);
+                                    }}
+                                  />
+                                ) : (
+                                  <>
+                                    <input
+                                      className="master-inline-input"
+                                      type="text"
+                                      placeholder={inputPlaceholder(f)}
+                                      value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
+                                      disabled={inputsDisabled}
+                                      onChange={(e) => {
+                                        const next = [...(value[tableKey] || [])];
+                                        const prev = next[index] || {};
+                                        next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
+                                        setRows(tableKey, next);
+                                      }}
+                                      aria-label={f.label || f.name}
+                                    />
+                                  </>
+                                )
                               ) : (
-                                <input
-                                  className="master-inline-input"
-                                  type="text"
-                                  placeholder={inputPlaceholder(f)}
-                                  value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
-                                  disabled={inputsDisabled}
-                                  onChange={(e) => {
-                                    const next = [...(value[tableKey] || [])];
-                                    const prev = next[index] || {};
-                                    next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
-                                    setRows(tableKey, next);
-                                  }}
-                                  aria-label={f.label || f.name}
-                                />
-                              )
-                            ) : (
-                              <span className="master-child-readonly">
-                                {f.type === "number"
-                                  ? formatInrAmount(toNumberOrZero(rowValueForField(row, f.name)))
-                                  : formatViewCellValue(f, rowValueForField(row, f.name))}
-                              </span>
-                            )}
+                                <span className="master-child-readonly">
+                                  {f.type === "number"
+                                    ? formatInrAmount(toNumberOrZero(rowValueForField(row, f.name)))
+                                    : formatViewCellValue(f, rowValueForField(row, f.name))}
+                                </span>
+                              );
+                            })()}
                           </td>
                         ))}
                         <td className="data-table-actions-col master-child-actions-col">
@@ -386,6 +423,11 @@ export default function ModuleChildTablesPanel({ childTables, value, onChange, d
                 ) : null}
               </table>
             </div>
+            {helperMessages.length ? (
+              <p className="form-field-hint" role="note" style={{ marginTop: "6px" }}>
+                {helperMessages[0]}
+              </p>
+            ) : null}
           </div>
         );
       })}

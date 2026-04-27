@@ -69,14 +69,12 @@ export default function DashboardSidebar({ groups }) {
 
   useEffect(() => {
     setOpenGroups((prev) => {
-      const next = { ...prev };
-      for (const [name, items] of groupEntries) {
-        if (!(name in next)) {
-          next[name] = items.some((item) => pathname === `/dashboard/${item.key}`);
-        }
-        if (items.some((item) => pathname === `/dashboard/${item.key}`)) {
-          next[name] = true;
-        }
+      const activeGroup = groupEntries.find(([, items]) =>
+        items.some((item) => pathname === `/dashboard/${item.key}`)
+      )?.[0];
+      const next = {};
+      for (const [name] of groupEntries) {
+        next[name] = activeGroup ? name === activeGroup : Boolean(prev[name]);
       }
       return next;
     });
@@ -136,9 +134,19 @@ export default function DashboardSidebar({ groups }) {
     document.documentElement.setAttribute("data-sidebar", mode);
   }
 
-  const toggleGroup = useCallback((name) => {
-    setOpenGroups((p) => ({ ...p, [name]: !p[name] }));
-  }, []);
+  const toggleGroup = useCallback(
+    (name) => {
+      setOpenGroups((prev) => {
+        const closingCurrent = Boolean(prev[name]);
+        const next = {};
+        for (const [groupName] of groupEntries) {
+          next[groupName] = closingCurrent ? false : groupName === name;
+        }
+        return next;
+      });
+    },
+    [groupEntries]
+  );
 
   const isGroupOpen = useCallback((name) => openGroups[name] === true, [openGroups]);
 

@@ -152,6 +152,11 @@ Current implemented behavior includes:
 - auto-case number generation based on bank prefix + loan category
 - role-2 unit auto-fill/lock on new entry
 - controlled field visibility (new entry vs edit mode)
+- dedicated "Case Status Update" section in edit mode (separate card):
+  - `caseStatus`
+  - `caseStatusUpdatedDate`
+  - `caseStatusRemarks`
+  - all three are required in edit mode
 - date max-today validation
 - bank-wise Loan Account No length validation
 - Loan Account No numeric-only validation
@@ -160,10 +165,22 @@ Current implemented behavior includes:
 - role-2 edit lock for final-stage rows (view-only open still allowed)
 - case-status/recovered-amount dependency checks
 - case-status remarks mandatory when case status is selected
+- transaction-control based backdate validation before save/update:
+  - `Entrustment Date` lock/unlock via control table
+  - `Amount Recovered` `recoveredDate` lock/unlock via control table
+  - `Case Status Update` (`caseStatusUpdatedDate`) lock/unlock via control table
+  - when locked, allowed backdate days enforced server-side
+- role-based date behavior for New Case Inward:
+  - non-admin edit mode: `entrustmentDate` is read-only
+  - admin (role 1): date-picker restrictions and related server date checks are skipped for:
+    - `entrustmentDate`
+    - `caseStatusUpdatedDate`
+    - `amount_recovered.recoveredDate`
 - child table INR formatting, right alignment, and footer totals
-- New Case Inward view-grid row tone:
-  - Returned -> red tint
-  - Closed / Settled under Compromise / Regularized-Upgraded / Auctioned -> green tint
+- New Case Inward view-grid status dot:
+  - Returned -> red dot
+  - Closed / Settled under Compromise / Regularized-Upgraded / Auctioned -> green dot
+  - Others / blank -> yellow dot
 - post-create acknowledgement modal for generated Case No (copy support; optional print slot)
 - Print Case Details button (visible in view mode for selected row, and in edit mode for saved rows)
 - case details PDF download with filename: `CASE_DETAILS_<caseNo>.pdf`
@@ -175,7 +192,16 @@ Current implemented behavior includes:
 - Large validation/error toast appears at top-center for readability.
 - Error toast stays longer than success toast.
 - Numbers in key forms are shown in INR-style grouping.
+- Required `*` marker is shown in entry forms only (hidden in view tables).
+- New Case Inward entry shows helper hints for backdate policy (based on transaction control setup).
 - Child table totals show `₹` and highlighted footer band.
+- Audit Logs screen is simplified for administrators:
+  - no row checkbox/edit/delete controls
+  - technical `record_id` hidden from view table
+  - single "Compare" button per row for old/new data
+  - compact JSON preview in table cells
+  - compare modal shows side-by-side values with changed rows highlighted
+  - date fields in compare modal are shown in readable `dd-mm-yyyy` / `dd-mm-yyyy HH:mm`
 - New Case Inward case-details PDF follows a report layout (A4):
   - logo + title + case reference header
   - single-column key detail rows
@@ -232,3 +258,20 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 3. Run app:
    - `npm run dev`
 4. Login with active user account and open dashboard modules.
+
+---
+
+## 16) Babel/Jest Sanity Checklist
+
+When changing test/build config, quickly verify both app runtime and tests still work:
+
+1. Check `babel.config.js` has environment split:
+   - `test` env -> `@babel/preset-env` (Node/Jest)
+   - non-test env -> `next/babel` (Next.js + JSX)
+2. Run Jest once:
+   - `npm test -- --runInBand`
+3. Run Next dev once:
+   - `npm run dev`
+4. If you see JSX parse errors (`experimental syntax 'jsx'`), confirm non-test env is using `next/babel`.
+5. If needed, inspect effective Babel config:
+   - `npx cross-env BABEL_SHOW_CONFIG_FOR=app/layout.js npm run dev`

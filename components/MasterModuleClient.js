@@ -11,6 +11,8 @@ import { formatViewCellValue } from "../lib/formatViewCellValue";
 // Grid rows may use mixed column name casing from MySQL; see lib/gridRowValue.js.
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
+import { FINAL_CASE_STATUS_SET, normalizeNciCaseStatusLabel } from "../lib/newCaseInwardCaseStatus";
+import { getYmdISTFromInstant, subtractCalendarDaysFromYmd } from "../lib/istDateTime";
 import { getNewCaseInwardStatusDotTone } from "../lib/newCaseInwardViewRowTone";
 import PostCreateAckModal from "./PostCreateAckModal";
 import DynamicForm from "./DynamicForm";
@@ -133,6 +135,7 @@ function prettyAuditJsonText(raw) {
 }
 
 function auditJsonPreview(raw, max = 34) {
+  // Keep cell text intentionally short so wide JSON columns do not break table layout.
   const p = prettyAuditJsonText(raw).replace(/\s+/g, " ").trim();
   if (!p) return "";
   return p.length > max ? `${p.slice(0, max)}...` : p;
@@ -190,6 +193,7 @@ function formatReadableDateOnly(value) {
 
 function valueTextForCompare(fieldName, v) {
   if (v == null) return "";
+  // Audit logs store many date fields in ISO; convert to business-friendly display format.
   if (looksLikeDateField(fieldName) && (typeof v === "string" || typeof v === "number")) {
     if (isDateOnlyField(fieldName)) return formatReadableDateOnly(v);
     return formatReadableDateTime(v);
@@ -219,6 +223,51 @@ function buildAuditCompareRows(oldRaw, newRaw) {
       const newVal = valueTextForCompare(k, newObj?.[k] ?? "");
       return { key: k, oldVal, newVal, changed: oldVal !== newVal };
     });
+}
+
+function nciTxnCtrlHintByField(rows, fieldName) {
+  const needle = String(fieldName || "")
+    .trim()
+    .toLowerCase();
+  const row = (rows || []).find(
+    (r) =>
+      String(rowValueForField(r, "field_name") || "")
+        .trim()
+        .toLowerCase() === needle
+  );
+  if (!row) return "";
+  const allow = String(rowValueForField(row, "allow_flag") || "Yes")
+    .trim()
+    .toLowerCase();
+  if (allow === "yes") return `${fieldName}: no backdate restriction (Allow = Yes).`;
+  const n = Number(rowValueForField(row, "days"));
+  const days = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  return `${fieldName}: backdate allowed up to ${days} day(s).`;
+}
+
+function ymdDaysAgoIST(days) {
+  const n = Math.max(0, Math.floor(Number(days) || 0));
+  return subtractCalendarDaysFromYmd(getYmdISTFromInstant(new Date()), n);
+}
+
+function nciTxnCtrlMinDateByField(rows, fieldName) {
+  const needle = String(fieldName || "")
+    .trim()
+    .toLowerCase();
+  const row = (rows || []).find(
+    (r) =>
+      String(rowValueForField(r, "field_name") || "")
+        .trim()
+        .toLowerCase() === needle
+  );
+  if (!row) return "";
+  const allow = String(rowValueForField(row, "allow_flag") || "Yes")
+    .trim()
+    .toLowerCase();
+  if (allow === "yes") return "";
+  const n = Number(rowValueForField(row, "days"));
+  const days = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  return ymdDaysAgoIST(days);
 }
 
 function SaveIcon() {
@@ -333,8 +382,20 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     bankName: "",
     loanAccountNoLength: null
   });
+  const [nciTxnCtrlHints, setNciTxnCtrlHints] = useState({
+    entrustmentDate: "",
+    amountRecoveredDate: "",
+    caseStatusUpdatedDate: ""
+  });
+  const [nciTxnCtrlMinDate, setNciTxnCtrlMinDate] = useState({
+    entrustmentDate: "",
+    amountRecoveredDate: "",
+    caseStatusUpdatedDate: ""
+  });
 
   const title = useMemo(() => config?.label || moduleKey, [config, moduleKey]);
+  // Module-specific switch used to bypass NCI date-picker limits for role 1 only.
+  const isNewCaseInwardAdmin = moduleKey === "new_case_inward" && Number(permissions.role) === 1;
 
   /** New Case Inward: role 2 (non-admin) uses session unit on new entry only; role 1 picks any unit. */
   const newCaseInwardSessionUnit = useMemo(() => {
@@ -351,7 +412,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   }, [editingRow, newCaseInwardSessionUnit]);
 
   const entryFormReadOnlyFields = useMemo(() => {
-    if (moduleKey !== "new_case_inward" || editingRow) return null;
+    if (moduleKey !== "new_case_inward") return null;
+    if (editingRow) {
+      // In edit mode, only admin can modify Entrustment Date.
+      if (Number(permissions.role) !== 1) return { entrustmentDate: true };
+      return null;
+    }
     if (
       Number(permissions.role) !== 2 ||
       permissions.unit == null ||
@@ -403,12 +469,65 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     };
   }, [moduleKey, selectedBranchIdForLoanRule]);
 
+  useEffect(() => {
+    if (moduleKey !== "new_case_inward" || !isActive) {
+      setNciTxnCtrlHints({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
+      setNciTxnCtrlMinDate({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
+      return;
+    }
+    let cancelled = false;
+    async function loadNciTxnControlHints() {
+      try {
+        // Read New Case Inward transaction-control rows once and convert them into:
+        // 1) user helper text, and 2) minimum allowed dates for date pickers.
+        const res = await fetch(
+          "/api/crud/new_case_inward_transaction_control?page=1&limit=50&sortBy=id&sortDir=desc"
+        );
+        const text = await res.text();
+        const payload = text ? JSON.parse(text) : null;
+        if (!res.ok || cancelled) return;
+        const rows = Array.isArray(payload?.data) ? payload.data : [];
+        setNciTxnCtrlHints({
+          entrustmentDate: nciTxnCtrlHintByField(rows, "Entrustment Date"),
+          amountRecoveredDate: nciTxnCtrlHintByField(rows, "Amount Recovered"),
+          caseStatusUpdatedDate: nciTxnCtrlHintByField(rows, "Case Status Update")
+        });
+        setNciTxnCtrlMinDate({
+          entrustmentDate: nciTxnCtrlMinDateByField(rows, "Entrustment Date"),
+          amountRecoveredDate: nciTxnCtrlMinDateByField(rows, "Amount Recovered"),
+          caseStatusUpdatedDate: nciTxnCtrlMinDateByField(rows, "Case Status Update")
+        });
+      } catch {
+        if (!cancelled) {
+          setNciTxnCtrlHints({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
+          setNciTxnCtrlMinDate({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
+        }
+      }
+    }
+    loadNciTxnControlHints();
+    return () => {
+      cancelled = true;
+    };
+  }, [moduleKey, isActive]);
+
   const entryFieldUiOverrides = useMemo(() => {
     if (moduleKey !== "new_case_inward") return null;
     const len = Number(loanAccountRule.loanAccountNoLength);
     const hasRule = Number.isFinite(len) && len > 0;
     if (!hasRule) {
-      return { loanAccountNo: { placeholder: "Enter Loan Account No" } };
+      return {
+        loanAccountNo: { placeholder: "Enter Loan Account No" },
+        entrustmentDate: {
+          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.entrustmentDate || "",
+          // Backdate floor comes from transaction-control "Entrustment Date".
+          min: isNewCaseInwardAdmin ? "" : !editingRow ? nciTxnCtrlMinDate.entrustmentDate || undefined : undefined
+        },
+        caseStatusUpdatedDate: {
+          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.caseStatusUpdatedDate || "",
+          // Backdate floor comes from transaction-control "Case Status Update".
+          min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.caseStatusUpdatedDate || undefined
+        }
+      };
     }
     const currentLen = String(loanAccountNoDraft ?? "").trim().length;
     const mismatch = currentLen !== len;
@@ -420,14 +539,44 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         maxLength: len,
         helperText: mismatch ? `Required length${bankSuffix}: ${len} characters` : "",
         helperTone: "error"
+      },
+      entrustmentDate: {
+        helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.entrustmentDate || "",
+        min: isNewCaseInwardAdmin ? "" : !editingRow ? nciTxnCtrlMinDate.entrustmentDate || undefined : undefined
+      },
+      caseStatusUpdatedDate: {
+        helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.caseStatusUpdatedDate || "",
+        min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.caseStatusUpdatedDate || undefined
       }
     };
-  }, [moduleKey, loanAccountRule, loanAccountNoDraft]);
+  }, [
+    moduleKey,
+    loanAccountRule,
+    loanAccountNoDraft,
+    isNewCaseInwardAdmin,
+    nciTxnCtrlHints.entrustmentDate,
+    nciTxnCtrlHints.caseStatusUpdatedDate,
+    nciTxnCtrlMinDate.entrustmentDate,
+    nciTxnCtrlMinDate.caseStatusUpdatedDate,
+    editingRow
+  ]);
+
+  const childFieldUiOverrides = useMemo(() => {
+    if (moduleKey !== "new_case_inward") return null;
+    return {
+      amount_recovered: {
+        recoveredDate: {
+          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.amountRecoveredDate || "",
+          min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.amountRecoveredDate || undefined
+        }
+      }
+    };
+  }, [moduleKey, isNewCaseInwardAdmin, nciTxnCtrlHints.amountRecoveredDate, nciTxnCtrlMinDate.amountRecoveredDate]);
 
   const entryModeConfig = useMemo(() => {
     if (!config) return config;
     if (moduleKey !== "new_case_inward" || editingRow) return config;
-    const hiddenOnNew = new Set(["caseStatus", "caseStatusRemarks"]);
+    const hiddenOnNew = new Set(["caseStatus", "caseStatusUpdatedDate", "caseStatusRemarks"]);
     return {
       ...config,
       fields: (config.fields || []).filter((f) => !hiddenOnNew.has(f.name))
@@ -474,7 +623,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     });
   }, [config, moduleKey]);
   const auditLogsCompareEnabled = moduleKey === "audit_logs";
+  // Audit logs acts like a report screen, not a data-entry module.
   const auditLogsSimpleView = moduleKey === "audit_logs";
+  // New Case Inward uses a dot marker instead of row background tint for case status.
   const nciStatusDotEnabled = moduleKey === "new_case_inward";
 
   const nciCaseStatusField = useMemo(() => {
@@ -712,10 +863,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         : editingRow?.id ?? null
       : null;
 
-  async function handlePrintCaseDetails() {
-    if (busy) return;
-    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
-    const id = printCaseDetailsTargetId;
+  async function downloadNewCaseInwardPdfById(id, caseNoHint = null) {
     if (id == null) return;
 
     setBusy(true);
@@ -734,7 +882,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       }
       const blob = await res.blob();
       const rowForName = effectiveViewMode ? selectedRow : editingRow;
-      const caseNo = rowValueForField(rowForName || {}, "caseNo");
+      const caseNo = caseNoHint ?? rowValueForField(rowForName || {}, "caseNo");
       const safe = String(caseNo ?? id)
         .trim()
         .replace(/[/\\?%*:|"<>]/g, "_")
@@ -757,13 +905,104 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  async function handlePrintCaseDetails() {
+    if (busy) return;
+    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
+    const id = printCaseDetailsTargetId;
+    await downloadNewCaseInwardPdfById(id);
+  }
+
+  async function handlePrintBranchCopy() {
+    if (busy) return;
+    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
+    const id = effectiveViewMode ? selectedId : editingRow?.id ?? null;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const caseNoHint = String(rowValueForField(rowForName || {}, "caseNo") ?? "").trim();
+    await downloadNewCaseInwardBranchCopyPdfById(id, caseNoHint || null);
+  }
+
+  async function downloadNewCaseInwardBranchCopyPdfById(id, caseNoHint = null) {
+    if (id == null) return;
+
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/new-case-inward/branch-copy-pdf/${id}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = "Failed to generate Branch Copy PDF";
+        try {
+          const j = JSON.parse(text);
+          if (j?.error) msg = j.error;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const safe = String(caseNoHint ?? id)
+        .trim()
+        .replace(/[/\\?%*:|"<>]/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 120) || "CASE";
+      const name = `${safe}_BRANCH_COPY.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download Branch Copy PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePostCreateAckPrintPdf(recordId, valueText) {
+    if (busy) return;
+    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
+    if (postCreateAckOpen?.suppressValue) return;
+    // UX: once user chooses print from acknowledgement, close the modal immediately.
+    setPostCreateAckOpen(null);
+
+    let caseNoForFile = String(valueText ?? "").trim();
+    // Prefer saved case number for branch-copy filename if modal value is unavailable.
+    if (!caseNoForFile) {
+      try {
+        const res = await fetch(`/api/crud/${moduleKey}/${recordId}`);
+        const text = await res.text();
+        const payload = text ? JSON.parse(text) : null;
+        if (res.ok && payload?.data) {
+          caseNoForFile = String(rowValueForField(payload.data, "caseNo") ?? "").trim();
+        }
+      } catch {
+        // Non-blocking: download still proceeds with fallback naming inside downloader.
+      }
+    }
+
+    await downloadNewCaseInwardBranchCopyPdfById(recordId, caseNoForFile || null);
+
+    // After print from acknowledgement, move user to clean view mode.
+    setEditingRow(null);
+    setFormKey((k) => k + 1);
+    setSelectedId(null);
+    setViewColumnFilterInput({});
+    setViewColumnFilters({});
+    setViewMode(true);
+  }
+
   function handlePostCreateAckContinue() {
     const ack = postCreateAckOpen;
     setPostCreateAckOpen(null);
     if (!ack) return;
     setEditingRow(null);
     setFormKey((k) => k + 1);
-    setSelectedId(ack.id);
+    // After acknowledgement, open clean view list without auto-selecting any row.
+    setSelectedId(null);
     setViewMode(true);
     showToast("success", `${config.label || moduleKey}: saved successfully.`);
   }
@@ -788,6 +1027,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
 
     if (moduleKey === "new_case_inward") {
+      if (editingRow) {
+        const hasCaseStatus =
+          body.caseStatus != null &&
+          String(body.caseStatus).trim() !== "" &&
+          Number.isFinite(Number(body.caseStatus)) &&
+          Number(body.caseStatus) > 0;
+        const hasCaseStatusUpdatedDate = String(body.caseStatusUpdatedDate ?? "").trim() !== "";
+        const hasCaseStatusRemarks = String(body.caseStatusRemarks ?? "").trim() !== "";
+        if (!hasCaseStatus || !hasCaseStatusUpdatedDate || !hasCaseStatusRemarks) {
+          showToast(
+            "error",
+            "Case Status, Case Status Updated Date, and Case Status Remarks are required in edit mode."
+          );
+          return;
+        }
+      }
       const cs = body.caseStatus;
       const hasCaseStatus =
         cs != null &&
@@ -831,9 +1086,43 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           value: String(pAck.value).trim(),
           title: ackCfg.title,
           hint: ackCfg.hint,
+          suppressValue: false,
           showPrintPdf: ackCfg.showPrintPdf === true
         });
         return;
+      }
+
+      // New Case Inward (module-specific): after editing and saving any final status,
+      // show a print-focused acknowledgement modal (no case number block).
+      if (editingRow && moduleKey === "new_case_inward") {
+        const savedIdRaw = payload?.id ?? editingRow?.id;
+        const savedId = Number(savedIdRaw);
+        if (Number.isFinite(savedId) && savedId > 0) {
+          try {
+            const statusRes = await fetch(`/api/crud/${moduleKey}/${savedId}`);
+            const statusTextRaw = await statusRes.text();
+            const statusPayload = statusTextRaw ? JSON.parse(statusTextRaw) : null;
+            if (statusRes.ok && statusPayload?.data) {
+              const statusLabel =
+                rowValueForField(statusPayload.data, getLookupRowLabelKey(nciCaseStatusField)) ??
+                rowValueForField(statusPayload.data, "caseStatus") ??
+                "";
+              if (FINAL_CASE_STATUS_SET.has(normalizeNciCaseStatusLabel(statusLabel))) {
+                setPostCreateAckOpen({
+                  id: savedId,
+                  value: "",
+                  title: "Final Status Saved",
+                  hint: "Final stage status is saved successfully. You can now print the Case Details PDF.",
+                  suppressValue: true,
+                  showPrintPdf: false
+                });
+                return;
+              }
+            }
+          } catch {
+            // If status re-check fails, do normal post-save flow (already saved on server).
+          }
+        }
       }
 
       setEditingRow(null);
@@ -864,9 +1153,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         value={postCreateAckOpen?.value}
         title={postCreateAckOpen?.title}
         hint={postCreateAckOpen?.hint}
+        suppressValue={postCreateAckOpen?.suppressValue === true}
         showPrintPdf={postCreateAckOpen?.showPrintPdf}
         recordId={postCreateAckOpen?.id}
         onContinue={handlePostCreateAckContinue}
+        onPrintPdf={handlePostCreateAckPrintPdf}
       />
       <LoadingOverlay busy={busy} />
 
@@ -964,6 +1255,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           {/* Entry mode: show the dynamic form for create/update. */}
           <DynamicForm
             key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
+            moduleKey={moduleKey}
             config={entryModeConfig}
             onSubmit={handleSubmit}
             initialValues={entryFormInitialValues}
@@ -977,13 +1269,16 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             formGridClassName="form-grid form-grid-master"
           />
           {showEntryChildTables ? (
-            <ModuleChildTablesPanel
-              childTables={config.childTables}
-              value={childRowsByKey}
-              onChange={setChildRowsByKey}
-              disabled={busy}
-              onNotify={(kind, message) => showToast(kind, message)}
-            />
+            <>
+              <ModuleChildTablesPanel
+                childTables={config.childTables}
+                value={childRowsByKey}
+                onChange={setChildRowsByKey}
+                childFieldUiOverrides={childFieldUiOverrides}
+                disabled={busy}
+                onNotify={(kind, message) => showToast(kind, message)}
+              />
+            </>
           ) : null}
         </>
       ) : (
@@ -992,6 +1287,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           <p className="table-scroll-hint" role="note">
             Swipe or scroll sideways to see all columns.
           </p>
+          {nciStatusDotEnabled ? (
+            <div className="master-status-legend" role="note" aria-label="Case status legend">
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--ongoing" aria-hidden />
+                Ongoing Case
+              </span>
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--final" aria-hidden />
+                Completed Case
+              </span>
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--returned" aria-hidden />
+                Returned Case
+              </span>
+            </div>
+          ) : null}
           <div className="table-wrap master-orders-table-wrap">
             <table className="data-table data-table-compact master-orders-table">
               <thead>
@@ -1081,6 +1392,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               <tbody>
                 {data.map((r) => {
                   const isChecked = selectedId != null && String(r.id) === String(selectedId);
+                  // Dot color comes from current case status label (lookup label preferred).
                   const nciDotTone =
                     nciCaseStatusField != null
                       ? getNewCaseInwardStatusDotTone(
@@ -1256,6 +1568,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     Print Case Details
                   </button>
                 ) : null}
+                {moduleKey === "new_case_inward" &&
+                effectiveViewMode &&
+                selectedId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintBranchCopy}
+                    title="Download Branch Copy PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    Print Branch Copy
+                  </button>
+                ) : null}
               </div>
               <div className="master-view-actions-right">
                 <button
@@ -1276,6 +1603,32 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
       {!effectiveViewMode ? (
         <div className="master-actions-bottom">
+          <div className="master-actions-left">
+            {moduleKey === "new_case_inward" && permissions.canView && printCaseDetailsTargetId != null ? (
+              <button
+                type="button"
+                onClick={handlePrintCaseDetails}
+                title="Download PDF with parent and line-item details"
+                className="master-btn master-btn-outline"
+                disabled={busy}
+              >
+                <PrintCaseDetailsIcon />
+                Print Case Details
+              </button>
+            ) : null}
+            {moduleKey === "new_case_inward" && permissions.canView && printCaseDetailsTargetId != null ? (
+              <button
+                type="button"
+                onClick={handlePrintBranchCopy}
+                title="Download Branch Copy PDF"
+                className="master-btn master-btn-outline"
+                disabled={busy}
+              >
+                <PrintCaseDetailsIcon />
+                Print Branch Copy
+              </button>
+            ) : null}
+          </div>
           <div className="master-actions-right">
             {canSave ? (
               <button form={formId} type="submit" className="master-btn master-btn-primary" disabled={busy}>
@@ -1293,18 +1646,6 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               >
                 <EyeIcon />
                 View
-              </button>
-            ) : null}
-            {printCaseDetailsTargetId != null ? (
-              <button
-                type="button"
-                onClick={handlePrintCaseDetails}
-                title="Download PDF with parent and line-item details"
-                className="master-btn master-btn-outline"
-                disabled={busy}
-              >
-                <PrintCaseDetailsIcon />
-                Print Case Details
               </button>
             ) : null}
             <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>

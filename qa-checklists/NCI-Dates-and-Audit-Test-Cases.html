@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NCI Dates and Audit — Test cases (layman)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Segoe UI, system-ui, sans-serif;
+      line-height: 1.45;
+      color: #111;
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+    h1 { font-size: 1.35rem; margin: 0 0 0.5rem; text-align: center; }
+    .sub { text-align: center; color: #444; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .how-pdf {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .test {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 0;
+      break-inside: avoid;
+    }
+    .test h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+    .test p { margin: 0.35rem 0; font-size: 0.95rem; }
+    .test .label { font-weight: 600; }
+    .sign { margin-top: 0.75rem; font-size: 0.9rem; }
+    @media print {
+      .how-pdf { border: none; background: none; padding: 0; }
+      body { padding: 0; max-width: none; }
+      .test { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <h1>NCI Dates and Audit — Test cases (layman)</h1>
+  <p class="sub">Indian Standard Time (IST) is used for business dates and audit times. Use Pass/Fail and Notes when you test.</p>
+
+  <div class="how-pdf">
+    <strong>Save as PDF:</strong> In Chrome or Edge, press <kbd>Ctrl+P</kbd> → choose <strong>Save as PDF</strong> (or Microsoft Print to PDF) → Save.
+    <br /><br />
+    <strong>Or generate a .pdf file:</strong> from the project folder run <code>npm run qa:pdf</code> (creates <code>NCI-Dates-and-Audit-Test-Cases.pdf</code> next to this checklist).
+  </div>
+
+  <article class="test">
+    <h2>Test 1 — New Case Inward · Entrustment date</h2>
+    <p><span class="label">In plain English:</span> You should not be able to save a case if the entrustment date is in the future.</p>
+    <p><span class="label">What you do:</span> Open New Case Inward. Set Entrustment Date to tomorrow’s date. Try to save.</p>
+    <p><span class="label">What you should see:</span> The system should stop you and show a message that the date cannot be in the future.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 2 — New Case Inward · Entrustment date</h2>
+    <p><span class="label">In plain English:</span> Today’s date for entrustment should be allowed (if everything else is OK).</p>
+    <p><span class="label">What you do:</span> Set Entrustment Date to today. Fill other required fields. Save.</p>
+    <p><span class="label">What you should see:</span> Save should work unless another rule fails (for example transaction control).</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 3 — New Case Inward · Entrustment date</h2>
+    <p><span class="label">In plain English:</span> If your office rules say you cannot backdate more than X days on entrustment, check that rule.</p>
+    <p><span class="label">What you do:</span> Ask your admin what “transaction control” says for Entrustment Date (how many days back are allowed). Set the date exactly on the oldest allowed day. Save.</p>
+    <p><span class="label">What you should see:</span> Save should work if all other fields are valid.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 4 — New Case Inward · Entrustment date</h2>
+    <p><span class="label">In plain English:</span> Same rule but one day too old.</p>
+    <p><span class="label">What you do:</span> Set Entrustment Date one day earlier than the oldest allowed day. Save.</p>
+    <p><span class="label">What you should see:</span> The system should reject and mention the limit (for example cannot be older than X days).</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 5 — New Case Inward · NPA date</h2>
+    <p><span class="label">In plain English:</span> You should not save if NPA date is in the future.</p>
+    <p><span class="label">What you do:</span> Set NPA Date to tomorrow. Save.</p>
+    <p><span class="label">What you should see:</span> Should fail with a message that NPA date cannot be in the future.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 6 — New Case Inward · NPA date</h2>
+    <p><span class="label">In plain English:</span> NPA date can be left blank if your form allows it.</p>
+    <p><span class="label">What you do:</span> Leave NPA Date empty if optional. Save with other required fields filled.</p>
+    <p><span class="label">What you should see:</span> Should save if everything else is valid.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 7 — List and form show the same date</h2>
+    <p><span class="label">In plain English:</span> The date on the list screen and the date when you open edit should match.</p>
+    <p><span class="label">What you do:</span> Save a case with a known entrustment date (for example 15th of this month). Find it in the list. Open edit.</p>
+    <p><span class="label">What you should see:</span> The date in the calendar box should be the same day as in the list (no one-day shift).</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 8 — Amount recovered (child table)</h2>
+    <p><span class="label">In plain English:</span> Some case statuses need money recovered; check that rule.</p>
+    <p><span class="label">What you do:</span> Pick a case status that requires recovery but enter zero recovered amount. Save.</p>
+    <p><span class="label">What you should see:</span> Should ask for recovery or block save with a clear message.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 9 — Amount recovered (child table)</h2>
+    <p><span class="label">In plain English:</span> Same as above but with a real recovered amount.</p>
+    <p><span class="label">What you do:</span> Pick that status. Add a line with recovered amount greater than zero. Save.</p>
+    <p><span class="label">What you should see:</span> Should save if other rules pass.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 10 — Who changed what (on each record)</h2>
+    <p><span class="label">In plain English:</span> When you create a new record the system should remember who and when.</p>
+    <p><span class="label">What you do:</span> Create any record that has Created / Modified columns. After save open the record again or check the list if those columns show.</p>
+    <p><span class="label">What you should see:</span> You should see who created it and the date-time of create; modified should match create on first save.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 11 — Who changed what (on each record)</h2>
+    <p><span class="label">In plain English:</span> When you change a record only “last changed” should move.</p>
+    <p><span class="label">What you do:</span> Edit an existing record. Change one field. Save. Open again.</p>
+    <p><span class="label">What you should see:</span> Created date and creator should stay the same. Modified date-time should be newer.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 12 — Audit log</h2>
+    <p><span class="label">In plain English:</span> After you save a business record a line should appear in the audit log.</p>
+    <p><span class="label">What you do:</span> Create or update a record. Open the Audit Logs screen (if you have access). Find the latest entry for that action.</p>
+    <p><span class="label">What you should see:</span> You should see who did it, what action (create/update), and a time that looks like Indian office time—not a confusing foreign time zone.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 13 — Audit log (delete)</h2>
+    <p><span class="label">In plain English:</span> After delete (if you are allowed).</p>
+    <p><span class="label">What you do:</span> Delete a record if your role allows. Check audit log.</p>
+    <p><span class="label">What you should see:</span> There should be a delete entry with old data captured.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 14 — Permissions grid (if you use it)</h2>
+    <p><span class="label">In plain English:</span> Saving user permissions should stamp dates.</p>
+    <p><span class="label">What you do:</span> Save changes on the user permissions matrix (if you use that screen). Open that user’s permission rows or any screen that shows created/modified on those rows.</p>
+    <p><span class="label">What you should see:</span> Created and modified times should look sensible in Indian time for when you clicked save.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 15 — Printed PDF (New Case Inward)</h2>
+    <p><span class="label">In plain English:</span> The “Printed on” line on the case details PDF should show today’s date in India.</p>
+    <p><span class="label">What you do:</span> Open a case. Print or download Case Details PDF. Read the “Printed on” line.</p>
+    <p><span class="label">What you should see:</span> The date should be today’s calendar date in India (dd-mm-yyyy style).</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 16 — Stress check (dates stay correct)</h2>
+    <p><span class="label">In plain English:</span> Sometimes a saved date looked one day wrong in the past; quick check.</p>
+    <p><span class="label">What you do:</span> Pick any saved case. Note the date in the grid. Click edit.</p>
+    <p><span class="label">What you should see:</span> The date in the form must be exactly the same day—not one day before or after.</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+
+  <article class="test">
+    <h2>Test 17 — Final stage case and editing</h2>
+    <p><span class="label">In plain English:</span> Some users cannot edit a case that is already closed or in a final stage (depends on role).</p>
+    <p><span class="label">What you do:</span> Log in as the restricted role. Open a case that is already in a final status. Try to edit.</p>
+    <p><span class="label">What you should see:</span> Edit may be blocked with a short message (exact text depends on your setup).</p>
+    <p class="sign">Pass or Fail: __________ &nbsp; Notes: ________________________________</p>
+  </article>
+</body>
+</html>

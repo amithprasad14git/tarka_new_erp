@@ -2,7 +2,7 @@
 
 /**
  * Shown after create when `config/modules.js` sets `postCreateAck` and the API returns `postCreateAck.value`.
- * Copy + Continue; optional Print PDF (per-module via `showPrintPdf`).
+ * Copy + Continue; optional Print Branch Copy slot (per-module via `showPrintPdf`).
  */
 import { useEffect, useId, useState } from "react";
 
@@ -12,6 +12,7 @@ export default function PostCreateAckModal({
   title,
   hint,
   recordId,
+  suppressValue = false,
   showPrintPdf = false,
   onContinue,
   onPrintPdf
@@ -23,11 +24,12 @@ export default function PostCreateAckModal({
     if (!open) setCopied(false);
   }, [open]);
 
-  if (!open || value == null || String(value).trim() === "") return null;
+  if (!open) return null;
 
   const heading = title?.trim() || "Reference assigned";
   const hintText =
     hint != null && String(hint).trim() !== "" ? String(hint).trim() : "Note this reference before continuing.";
+  const hasValue = !suppressValue && value != null && String(value).trim() !== "";
 
   async function handleCopy() {
     try {
@@ -39,7 +41,7 @@ export default function PostCreateAckModal({
     }
   }
 
-  function handlePrintPdfClick() {
+  function handlePrintBranchCopyClick() {
     if (typeof onPrintPdf === "function") {
       onPrintPdf(recordId, value);
     }
@@ -61,23 +63,27 @@ export default function PostCreateAckModal({
         </div>
         <div className="post-create-ack-modal-body">
           <p className="post-create-ack-hint">{hintText}</p>
-          <div className="post-create-ack-value" tabIndex={0}>
-            {value}
-          </div>
+          {hasValue ? (
+            <div className="post-create-ack-value" tabIndex={0}>
+              {value}
+            </div>
+          ) : null}
         </div>
         <div className="post-create-ack-modal-footer">
-          <button type="button" className="master-btn master-btn-outline" onClick={handleCopy}>
-            {copied ? "Copied" : "Copy"}
-          </button>
+          {hasValue ? (
+            <button type="button" className="master-btn master-btn-outline" onClick={handleCopy}>
+              {copied ? "Copied" : "Copy"}
+            </button>
+          ) : null}
           {showPrintPdf ? (
             <button
               type="button"
               className="master-btn master-btn-outline"
-              onClick={handlePrintPdfClick}
-              disabled
-              title="PDF export — coming soon"
+              onClick={handlePrintBranchCopyClick}
+              disabled={recordId == null}
+              title={recordId == null ? "Save record first to enable Branch Copy print" : "Branch Copy print will be available soon"}
             >
-              Print PDF
+              Print Branch Copy
             </button>
           ) : null}
           <button type="button" className="master-btn master-btn-primary" onClick={onContinue}>

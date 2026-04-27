@@ -5,9 +5,22 @@
  */
 import { useDashboardUser } from "./DashboardUserProvider";
 
-/** Local hour buckets: morning / afternoon / evening / night */
-function greetingForHour(date) {
-  const h = date.getHours();
+/** Current hour 0–23 in IST (for greeting buckets only). */
+function clockHourIST() {
+  const raw = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "numeric",
+    hour12: false
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === "hour")?.value;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** IST hour buckets: morning / afternoon / evening / night */
+function greetingForHour(hour) {
+  const h = hour;
   if (h >= 5 && h < 12) return "Good morning";
   if (h >= 12 && h < 17) return "Good afternoon";
   if (h >= 17 && h < 22) return "Good evening";
@@ -17,7 +30,7 @@ function greetingForHour(date) {
 /** Greeting in the white top header bar (left), next to theme + profile. */
 export default function TopbarGreeting() {
   const { displayName } = useDashboardUser();
-  const phrase = greetingForHour(new Date());
+  const phrase = greetingForHour(clockHourIST());
 
   // Hide the greeting if we cannot derive a display name.
   if (!displayName) return <div className="topbar-greeting-slot" aria-hidden />;

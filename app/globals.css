@@ -653,6 +653,7 @@ body {
 
 .user-menu-logout {
   width: 100%;
+  margin-top: 8px;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -666,6 +667,130 @@ body {
   background: var(--danger-bg);
   border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
   color: var(--danger);
+}
+
+.user-menu-logout-danger {
+  background: color-mix(in srgb, var(--danger) 12%, var(--panel));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  color: var(--danger);
+}
+
+.user-menu-change-password-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #8fb5ff;
+  background: #eaf1ff;
+  color: #1f5fd6;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.user-menu-change-password-btn:hover:not(:disabled) {
+  background: #dbe8ff;
+  border-color: #6f9af3;
+}
+
+.user-menu-password-form {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.user-menu-password-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2f3f66;
+}
+
+[data-theme="dark"] .user-menu-password-label {
+  color: #dbe8ff;
+}
+
+.user-menu-password-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 36px 8px 10px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.user-menu-password-row {
+  position: relative;
+}
+
+.user-menu-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.user-menu-password-toggle:hover {
+  color: var(--text);
+}
+
+.user-menu-password-actions {
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  justify-content: stretch;
+}
+
+.user-menu-password-cancel,
+.user-menu-password-save {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.user-menu-password-cancel {
+  background: #fff4df;
+  border-color: #f2c27a;
+  color: #9a5a00;
+}
+
+.user-menu-password-save {
+  border-color: #7ca8ff;
+  background: #dce8ff;
+  color: #1e57c3;
+  font-weight: 600;
+}
+
+.user-menu-password-save:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.user-menu-password-message {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.user-menu-password-message-error {
+  color: var(--danger);
+}
+
+.user-menu-password-message-success {
+  color: var(--success);
 }
 
 .flux-content {
@@ -1863,14 +1988,26 @@ button {
 .master-actions-bottom {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding-top: 14px;
 }
 
+.master-actions-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 36px;
+}
+
 .master-actions-right {
+  margin-left: auto;
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .master-select-col {
@@ -1935,13 +2072,44 @@ button {
 .master-status-dot-col {
   width: 64px;
   text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Center the dot inside both header and body cells. */
+.master-orders-table th.master-status-dot-col,
+.master-orders-table td.master-status-dot-col {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .master-status-dot {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  display: inline-block;
+  display: block;
+  margin: 0 auto;
+}
+
+.master-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.master-status-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--brand));
+  white-space: nowrap;
 }
 
 .master-status-dot--ongoing {
@@ -2404,6 +2572,11 @@ button {
 
 /* Master module entry forms: stronger labels and focus while typing. */
 .master-entry-form .form-field label {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.master-entry-form-case-status .form-field label {
   color: var(--text);
   font-weight: 700;
 }
@@ -3325,6 +3498,21 @@ button {
 .master-inline-input-number,
 .master-child-table .master-child-readonly {
   text-align: right;
+}
+
+.master-child-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.master-child-header-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .master-child-table tfoot td {

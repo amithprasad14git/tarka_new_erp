@@ -383,7 +383,7 @@ export const modules = {
         name: "freezeTransactions",
         type: "select",
         label: "Freeze Transactions",
-        showInView: false,
+        showInView: true,
         options: [
           { label: "Yes", value: "Yes" },
           { label: "No", value: "No" }
@@ -714,6 +714,57 @@ export const modules = {
   },
 
   // ---------------------------------------------------------------------------
+  // NEW CASE INWARD TRANSACTION CONTROL — Backdate lock/unlock for NCI save/update
+  // ---------------------------------------------------------------------------
+  // Business control table for NCI validations:
+  // - Field Name = Entrustment Date / Amount Recovered
+  // - Allow Flag = Yes (unrestricted) / No (restrict by Days)
+  // - Days = allowed backdated range when Allow Flag = No
+  new_case_inward_transaction_control: {
+    label: "New Case Inward Transaction Control",
+    icon: "⏱️",
+    group: "Cases",
+    table: "new_case_inward_transaction_control",
+    lookupDisplayField: "field_name",
+    fields: [
+      {
+        name: "field_name",
+        type: "select",
+        label: "Field",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Entrustment Date", value: "Entrustment Date" },
+          { label: "Amount Recovered", value: "Amount Recovered" },
+          { label: "Case Status Update", value: "Case Status Update" }
+        ]
+      },
+      {
+        name: "allow_flag",
+        type: "select",
+        label: "Allow",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      {
+        name: "days",
+        type: "number",
+        label: "Days",
+        required: true,
+        showInView: true
+      },
+      { name: "is_active", type: "number", label: "Active (1/0)", showInView: false },
+      { name: "remarks", type: "text", label: "Remarks", showInView: false },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
   // NEW CASE INWARD — Parent transaction; line items in `new_case_inward_amount_recovered`
   // Case No is filled by the server after save: {bank caseNoPrefix}/{loan category code}/{nnnnn}.
   // Case No / sequences: lib/modules/newCaseInward.js (LOAN_CATEGORY_CASE_NO_CODES + assignNewCaseInwardCaseNo)
@@ -848,6 +899,14 @@ export const modules = {
       },
       { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
         // DB: BIGINT; validate range in module-specific logic if needed.
+      },
+      {
+        name: "caseStatusUpdatedDate",
+        type: "date",
+        label: "Date",
+        required: false,
+        showInView: false,
+        maxToday: true
       },
       {
         name: "caseStatus",
