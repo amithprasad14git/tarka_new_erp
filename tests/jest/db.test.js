@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Comprehensive tests for lib/db.js
  */

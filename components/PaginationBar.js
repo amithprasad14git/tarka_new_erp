@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * List footer: range summary, page-size dropdown, ellipsis page numbers, and optional `leftExtra` slot (e.g. filters).
  */

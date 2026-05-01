@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Comprehensive tests for lib/services/crud.service.js
  */
@@ -37,13 +40,17 @@ jest.mock("../../config/modules", () => ({
   }
 }));
 
-jest.mock("../../lib/db", () => ({
-  __esModule: true,
-  default: {
-    query: jest.fn(),
-    getConnection: jest.fn()
-  }
-}));
+jest.mock("../../lib/db", () => {
+  const query = jest.fn();
+  return {
+    __esModule: true,
+    default: {
+      query,
+      getConnection: jest.fn()
+    },
+    queryWithRetry: (sql, values) => query(sql, values)
+  };
+});
 
 jest.mock("../../lib/rbac", () => ({
   hasModulePermission: jest.fn(),
@@ -104,7 +111,10 @@ jest.mock("../../lib/childTablesSync", () => ({
 jest.mock("../../lib/modules/newCaseInward", () => ({
   applyRole2FinalStageEditLock: jest.fn(),
   isNewCaseInwardFinalStatusById: jest.fn(),
-  validateNewCaseInwardBeforeWrite: jest.fn()
+  validateNewCaseInwardBeforeWrite: jest.fn(),
+  assertNewCaseInwardRowEditableByUser: jest.fn(),
+  applyNewCaseInwardBeforeWrite: jest.fn(),
+  applyNewCaseInwardGetByIdLocks: jest.fn()
 }));
 
 const pool = require("../../lib/db").default;
@@ -125,7 +135,10 @@ const {
 const {
   applyRole2FinalStageEditLock,
   isNewCaseInwardFinalStatusById,
-  validateNewCaseInwardBeforeWrite
+  validateNewCaseInwardBeforeWrite,
+  assertNewCaseInwardRowEditableByUser,
+  applyNewCaseInwardBeforeWrite,
+  applyNewCaseInwardGetByIdLocks
 } = require("../../lib/modules/newCaseInward");
 const {
   createCrudRecord,
@@ -162,6 +175,9 @@ describe("crud.service", () => {
     loadChildTableRowsForParent.mockReset();
     enrichLookupDisplayRows.mockReset();
     validateNewCaseInwardBeforeWrite.mockReset();
+    assertNewCaseInwardRowEditableByUser.mockReset();
+    applyNewCaseInwardBeforeWrite.mockReset();
+    applyNewCaseInwardGetByIdLocks.mockReset();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -286,9 +302,14 @@ describe("crud.service", () => {
 
       await createCrudRecord(admin, "new_case_inward", { loanAccountNo: "123456" });
 
-      expect(validateNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
+      expect(applyNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
         conn,
-        expect.objectContaining({ skipDateValidationsForAdmin: true })
+        expect.objectContaining({
+          user: admin,
+          merged: expect.objectContaining({ loanAccountNo: "123456" }),
+          childTableRows: undefined,
+          parentId: null
+        })
       );
     });
   });
@@ -394,7 +415,9 @@ describe("crud.service", () => {
       canUserModifyRow.mockResolvedValueOnce(true);
       const conn = makeTxConn();
       pool.getConnection.mockResolvedValueOnce(conn);
-      isNewCaseInwardFinalStatusById.mockResolvedValueOnce(true);
+      assertNewCaseInwardRowEditableByUser.mockRejectedValueOnce(
+        Object.assign(new Error("Final-stage cases cannot be edited."), { code: "NCI_EDIT_LOCKED" })
+      );
 
       const result = await updateCrudRecord(role2, "new_case_inward", 1, async () => ({ loanAccountNo: "123" }));
       expect(result).toEqual({ status: 403, body: { error: "Final-stage cases cannot be edited." } });
@@ -408,7 +431,6 @@ describe("crud.service", () => {
         .mockResolvedValueOnce([[{ id: 1, caseStatus: 999, loanAccountNo: "123" }]])
         .mockResolvedValueOnce([[{ id: 1, caseStatus: 999, loanAccountNo: "123" }]]);
       canUserModifyRow.mockResolvedValueOnce(true);
-      isNewCaseInwardFinalStatusById.mockResolvedValueOnce(false);
       const finalCheckConn = makeTxConn();
       const txConn = makeTxConn();
       pool.getConnection.mockResolvedValueOnce(finalCheckConn).mockResolvedValueOnce(txConn);
@@ -416,9 +438,14 @@ describe("crud.service", () => {
       const result = await updateCrudRecord(role2, "new_case_inward", 1, async () => ({ loanAccountNo: "123" }));
 
       expect(result).toEqual({ status: 200, body: { ok: true } });
-      expect(validateNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
+      expect(applyNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
         txConn,
-        expect.objectContaining({ parentId: 1, skipDateValidationsForAdmin: false })
+        expect.objectContaining({
+          user: role2,
+          oldRow: expect.objectContaining({ id: 1 }),
+          merged: expect.objectContaining({ loanAccountNo: "123" }),
+          parentId: 1
+        })
       );
     });
 
@@ -429,15 +456,21 @@ describe("crud.service", () => {
         .mockResolvedValueOnce([[{ id: 1, caseStatus: 999, loanAccountNo: "123" }]])
         .mockResolvedValueOnce([[{ id: 1, caseStatus: 999, loanAccountNo: "123" }]]);
       canUserModifyRow.mockResolvedValueOnce(true);
-      const conn = makeTxConn();
-      pool.getConnection.mockResolvedValueOnce(conn);
+      const preCheckConn = makeTxConn();
+      const txConn = makeTxConn();
+      pool.getConnection.mockResolvedValueOnce(preCheckConn).mockResolvedValueOnce(txConn);
 
       const result = await updateCrudRecord(admin, "new_case_inward", 1, async () => ({ loanAccountNo: "123" }));
 
       expect(result).toEqual({ status: 200, body: { ok: true } });
-      expect(validateNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
-        conn,
-        expect.objectContaining({ parentId: 1, skipDateValidationsForAdmin: true })
+      expect(applyNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
+        txConn,
+        expect.objectContaining({
+          user: admin,
+          oldRow: expect.objectContaining({ id: 1 }),
+          merged: expect.objectContaining({ loanAccountNo: "123" }),
+          parentId: 1
+        })
       );
     });
   });
@@ -551,7 +584,11 @@ describe("crud.service", () => {
 
       const result = await getCrudRecordById(role2, "new_case_inward", 7);
       expect(result.status).toBe(200);
-      expect(applyRole2FinalStageEditLock).toHaveBeenCalled();
+      expect(applyNewCaseInwardGetByIdLocks).toHaveBeenCalledWith(
+        conn,
+        role2,
+        expect.objectContaining({ id: 7 })
+      );
       expect(conn.release).toHaveBeenCalled();
     });
   });

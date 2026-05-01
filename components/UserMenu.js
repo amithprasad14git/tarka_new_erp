@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Top-right avatar dropdown: shows email and triggers POST `/api/auth/logout` before navigating away.
  */
@@ -23,6 +26,7 @@ function initialsFromEmail(email) {
 export default function UserMenu({ email }) {
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  // Inline change-password card state inside the user popover.
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -62,6 +66,7 @@ export default function UserMenu({ email }) {
   }
 
   function openChangePassword() {
+    // Always reset old values/messages so every attempt starts clean.
     setShowChangePassword(true);
     setPasswordMessage({ kind: "", text: "" });
     setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -70,6 +75,7 @@ export default function UserMenu({ email }) {
 
   async function handleChangePasswordSubmit(e) {
     e.preventDefault();
+    // Clear previous result and show button loader while API call runs.
     setPasswordMessage({ kind: "", text: "" });
     setChangingPassword(true);
     try {
@@ -80,6 +86,7 @@ export default function UserMenu({ email }) {
       });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload?.error || "Failed to change password.");
+      // Success path: show toast-like message and close form.
       setPasswordMessage({ kind: "success", text: payload?.message || "Password changed successfully." });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setShowChangePassword(false);

@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
@@ -6,14 +9,27 @@ import { rowValueForField } from "../../../../../lib/gridRowValue";
 import {
   buildNewCaseInwardBranchCopyPdf,
   safeBranchCopyPdfFilename
-} from "../../../../../lib/newCaseInwardBranchCopyPdf";
+} from "../../../../../lib/modules/newCaseInwardBranchCopyPdf";
 
+/**
+ * Session helper for API routes in this file.
+ * Returns logged-in user object or null when session is missing/expired.
+ */
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
 }
 
+/**
+ * GET /api/new-case-inward/branch-copy-pdf/:id
+ *
+ * Layman flow:
+ * 1) Verify user session.
+ * 2) Load target NCI row using existing CRUD permission/scope checks.
+ * 3) Load bank/branch/unit context needed by the Branch Copy layout.
+ * 4) Build PDF buffer and return it as a downloadable file.
+ */
 export async function GET(_req, { params }) {
   try {
     const user = await getRequestUser();
@@ -26,6 +42,7 @@ export async function GET(_req, { params }) {
     }
 
     const { data } = result.body;
+    // Parent record stores branch and unit references; resolve labels/details below.
     const branchId = Number(rowValueForField(data, "branch"));
     const unitId = Number(rowValueForField(data, "unit"));
 
@@ -41,6 +58,7 @@ export async function GET(_req, { params }) {
     const conn = await pool.getConnection();
     try {
       if (Number.isFinite(branchId)) {
+        // Resolve hierarchy (Branch -> RBO/RO -> HO/ZO -> Bank) for PDF header lines.
         const [branchRows] = await conn.query(
           `
           SELECT
@@ -72,6 +90,7 @@ export async function GET(_req, { params }) {
       }
 
       if (Number.isFinite(unitId)) {
+        // Unit holds person-in-charge and unit code used for signature logic.
         const [unitRows] = await conn.query(
           `SELECT personIncharge, unitCode FROM unit_master WHERE id = ? LIMIT 1`,
           [unitId]
@@ -86,6 +105,7 @@ export async function GET(_req, { params }) {
     const branchLabel =
       branchName && branchCode ? `${branchName} (${branchCode})` : branchName || branchCode || "";
 
+    // Dedicated Branch Copy PDF (separate from Case Details PDF flow).
     const pdfBuffer = await buildNewCaseInwardBranchCopyPdf({
       data,
       bankName,

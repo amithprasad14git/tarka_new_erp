@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Dashboard sidebar: module links grouped by `config.group`, with collapsible sections when expanded.
  * Desktop: expanded = grouped lists; collapsed = one icon per **group** (main menu), submenus in a flyout.
@@ -68,6 +71,7 @@ export default function DashboardSidebar({ groups }) {
   }, []);
 
   useEffect(() => {
+    // Keep only the active module's parent group expanded on route change.
     setOpenGroups((prev) => {
       const activeGroup = groupEntries.find(([, items]) =>
         items.some((item) => pathname === `/dashboard/${item.key}`)
@@ -137,6 +141,9 @@ export default function DashboardSidebar({ groups }) {
   const toggleGroup = useCallback(
     (name) => {
       setOpenGroups((prev) => {
+        // Single-expand behavior:
+        // - click open group -> close all
+        // - click closed group -> open only that one
         const closingCurrent = Boolean(prev[name]);
         const next = {};
         for (const [groupName] of groupEntries) {

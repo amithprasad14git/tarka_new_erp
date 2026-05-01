@@ -3,17 +3,65 @@
 /**
  * “Master” style screen for one module: single-record entry form, saved-rows grid, filters, and
  * Flux-style actions (save / view / clear). Uses RBAC from `/api/permissions/:module` for buttons.
+ *
+ * IMPORTANT ARCHITECTURE RULE (layman):
+ * - This file is a generic container only.
+ * - Do NOT add module-specific business checks, validation rules, or hardcoded module labels here.
+ * - If behavior belongs to one module (like new_case_inward/public_notice/return_case/transfer_case),
+ *   place that logic in `lib/modules/<module>*.js`, then call it from here.
+ * - Think of this file as a "common frame" used by all modules.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { modules } from "../config/modules";
 import { labelWithRequiredMark } from "../lib/formFieldLabel";
 import { formatViewCellValue } from "../lib/formatViewCellValue";
 // Grid rows may use mixed column name casing from MySQL; see lib/gridRowValue.js.
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
-import { FINAL_CASE_STATUS_SET, normalizeNciCaseStatusLabel } from "../lib/newCaseInwardCaseStatus";
-import { getYmdISTFromInstant, subtractCalendarDaysFromYmd } from "../lib/istDateTime";
-import { getNewCaseInwardStatusDotTone } from "../lib/newCaseInwardViewRowTone";
+import {
+  canOpenNciFinalReadonlyRow,
+  downloadNciBranchCopyPdf,
+  downloadNciCaseDetailsPdf,
+  fetchNciFinalStatusAckPayload,
+  fetchSavedNciCaseNo,
+  getNciAckPrintLabel,
+  getNciBranchCopyPrintButtonText,
+  getNciCaseStatusField,
+  getNciCaseDetailsPrintButtonText,
+  getNciDotTone,
+  getNciEntryReadOnlyFields,
+  getNciPrintTargetId,
+  getNciSessionUnitForNewEntry,
+  isNewCaseInwardModule,
+  shouldShowNciChildTables,
+  useNewCaseInwardClientModel,
+  isNewCaseInwardAdmin,
+  validateNciSubmitBody
+} from "../lib/modules/newCaseInwardClient";
+import {
+  downloadPublicNoticePdf,
+  getPublicNoticeAckPrintLabel,
+  getPublicNoticeAckPrintMode,
+  getPublicNoticePrintButtonText,
+  getPublicNoticePrintTargetId,
+  isPublicNoticeModule,
+  publicNoticeRefHintFromRow,
+  shouldShowPublicNoticeAckOnEdit,
+  usePublicNoticeClientModel
+} from "../lib/modules/publicNoticeClient";
+import { useCaseSnapshotModel } from "../lib/modules/caseSnapshotClient";
+import { isTransferCaseModule, useTransferCaseClientModel } from "../lib/modules/transferCaseClient";
+import {
+  applyReturnCaseSubmitBody,
+  shouldShowReturnCaseAckOnEdit,
+  useReturnCaseClientModel
+} from "../lib/modules/returnCaseClient";
+import {
+  isAuditLogsCreatedAtField,
+  isAuditLogsJsonField,
+  isAuditLogsModule,
+  shouldHideAuditLogsRecordId
+} from "../lib/modules/auditLogs";
 import PostCreateAckModal from "./PostCreateAckModal";
 import DynamicForm from "./DynamicForm";
 import LoadingOverlay from "./LoadingOverlay";
@@ -21,11 +69,12 @@ import MasterActionsMenu from "./MasterActionsMenu";
 import ModuleChildTablesPanel, { newChildRowDraft } from "./ModuleChildTablesPanel";
 import PaginationBar from "./PaginationBar";
 import ToastNotice from "./ToastNotice";
+import CaseSnapshotModal from "./CaseSnapshotModal";
 
 function emptyChildRowsState(childTables) {
   if (!childTables?.length) return {};
   const o = {};
-  for (const t of childTables) o[t.key || t.table] = [newChildRowDraft()];
+  for (const t of childTables) o[t.key || t.table] = [newChildRowDraft(t)];
   return o;
 }
 
@@ -50,7 +99,7 @@ function childRowsStateFromApi(childTables, childTableRows) {
         };
       });
     } else {
-      o[key] = [newChildRowDraft()];
+      o[key] = [newChildRowDraft(ct)];
     }
   }
   return o;
@@ -59,6 +108,10 @@ function childRowsStateFromApi(childTables, childTableRows) {
 function rowHasAnyContent(row, fields) {
   for (const f of fields) {
     const v = row[f.name];
+    if (f.type === "checkbox") {
+      if (v === true || Number(v) === 1 || String(v).trim() === "1") return true;
+      continue;
+    }
     if (v !== null && v !== undefined && String(v).trim() !== "") return true;
   }
   return false;
@@ -89,6 +142,27 @@ function validateChildTableRows(moduleConfig, childRowsByKey) {
             return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} must be a valid number.`;
           }
         }
+        if (f.type === "checkbox") {
+          const n = v === true ? 1 : v === false ? 0 : Number(v);
+          if (n !== 0 && n !== 1) {
+            return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} must be checked or unchecked (0/1).`;
+          }
+        }
+      }
+      for (const f of fields) {
+        const rwc = f.requiredWhenChecked;
+        if (!rwc?.checkboxField) continue;
+        const cbName = rwc.checkboxField;
+        const cv = row[cbName];
+        const checked =
+          cv === true || Number(cv) === 1 || (typeof cv === "string" && String(cv).trim() === "1");
+        if (!checked) continue;
+        const v = row[f.name];
+        const empty = v === null || v === undefined || (typeof v === "string" && !String(v).trim());
+        if (empty) {
+          const cb = fields.find((x) => x.name === cbName);
+          return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} is required when ${cb?.label || cbName} is selected.`;
+        }
       }
     }
   }
@@ -104,6 +178,14 @@ function stripChildRowsForApi(childTables, childRowsByKey) {
       .filter((row) => row._lineSaved && rowHasAnyContent(row, fields))
       .map((row) => {
         const obj = {};
+        // Preserve DB child id in edit mode so server can detect unchanged legacy rows.
+        const rowIdText = String(row?._rowId ?? "").trim();
+        if (rowIdText.startsWith("db-")) {
+          const n = Number(rowIdText.slice(3));
+          if (Number.isFinite(n) && n > 0) obj.id = n;
+        } else if (Number.isFinite(Number(row?.id)) && Number(row.id) > 0) {
+          obj.id = Number(row.id);
+        }
         for (const f of fields) {
           const v = row[f.name];
           if (f.type === "number") {
@@ -112,6 +194,8 @@ function stripChildRowsForApi(childTables, childRowsByKey) {
               const n = Number(v);
               obj[f.name] = Number.isFinite(n) ? n : null;
             }
+          } else if (f.type === "checkbox") {
+            obj[f.name] = v === true || Number(v) === 1 ? 1 : 0;
           } else if (v === "") {
             obj[f.name] = null;
           } else {
@@ -225,51 +309,6 @@ function buildAuditCompareRows(oldRaw, newRaw) {
     });
 }
 
-function nciTxnCtrlHintByField(rows, fieldName) {
-  const needle = String(fieldName || "")
-    .trim()
-    .toLowerCase();
-  const row = (rows || []).find(
-    (r) =>
-      String(rowValueForField(r, "field_name") || "")
-        .trim()
-        .toLowerCase() === needle
-  );
-  if (!row) return "";
-  const allow = String(rowValueForField(row, "allow_flag") || "Yes")
-    .trim()
-    .toLowerCase();
-  if (allow === "yes") return `${fieldName}: no backdate restriction (Allow = Yes).`;
-  const n = Number(rowValueForField(row, "days"));
-  const days = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
-  return `${fieldName}: backdate allowed up to ${days} day(s).`;
-}
-
-function ymdDaysAgoIST(days) {
-  const n = Math.max(0, Math.floor(Number(days) || 0));
-  return subtractCalendarDaysFromYmd(getYmdISTFromInstant(new Date()), n);
-}
-
-function nciTxnCtrlMinDateByField(rows, fieldName) {
-  const needle = String(fieldName || "")
-    .trim()
-    .toLowerCase();
-  const row = (rows || []).find(
-    (r) =>
-      String(rowValueForField(r, "field_name") || "")
-        .trim()
-        .toLowerCase() === needle
-  );
-  if (!row) return "";
-  const allow = String(rowValueForField(row, "allow_flag") || "Yes")
-    .trim()
-    .toLowerCase();
-  if (allow === "yes") return "";
-  const n = Number(rowValueForField(row, "days"));
-  const days = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
-  return ymdDaysAgoIST(days);
-}
-
 function SaveIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -376,217 +415,76 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const [childRowsByKey, setChildRowsByKey] = useState(() =>
     emptyChildRowsState(modules[moduleKey]?.childTables)
   );
-  const [selectedBranchIdForLoanRule, setSelectedBranchIdForLoanRule] = useState(null);
-  const [loanAccountNoDraft, setLoanAccountNoDraft] = useState("");
-  const [loanAccountRule, setLoanAccountRule] = useState({
-    bankName: "",
-    loanAccountNoLength: null
-  });
-  const [nciTxnCtrlHints, setNciTxnCtrlHints] = useState({
-    entrustmentDate: "",
-    amountRecoveredDate: "",
-    caseStatusUpdatedDate: ""
-  });
-  const [nciTxnCtrlMinDate, setNciTxnCtrlMinDate] = useState({
-    entrustmentDate: "",
-    amountRecoveredDate: "",
-    caseStatusUpdatedDate: ""
-  });
+  const recordsFetchKeyRef = useRef("");
+  const permissionsFetchKeyRef = useRef("");
 
   const title = useMemo(() => config?.label || moduleKey, [config, moduleKey]);
-  // Module-specific switch used to bypass NCI date-picker limits for role 1 only.
-  const isNewCaseInwardAdmin = moduleKey === "new_case_inward" && Number(permissions.role) === 1;
+  const isNciModule = isNewCaseInwardModule(moduleKey);
+  const isPublicNotice = isPublicNoticeModule(moduleKey);
+  const isTransferCase = isTransferCaseModule(moduleKey);
+  const isAuditLogs = isAuditLogsModule(moduleKey);
+  const isNciAdmin = isNewCaseInwardAdmin(moduleKey, permissions.role);
+  const transferClient = useTransferCaseClientModel({ moduleKey, editingRow, formKey });
 
   /** New Case Inward: role 2 (non-admin) uses session unit on new entry only; role 1 picks any unit. */
-  const newCaseInwardSessionUnit = useMemo(() => {
-    if (moduleKey !== "new_case_inward") return null;
-    if (Number(permissions.role) !== 2) return null;
-    return permissions.unit;
-  }, [moduleKey, permissions.role, permissions.unit]);
+  const newCaseInwardSessionUnit = useMemo(
+    () => getNciSessionUnitForNewEntry(moduleKey, permissions.role, permissions.unit),
+    [moduleKey, permissions.role, permissions.unit]
+  );
 
   const entryFormInitialValues = useMemo(() => {
-    if (editingRow) return editingRow;
-    const v = {};
+    const v = editingRow ? { ...editingRow } : {};
     if (newCaseInwardSessionUnit != null) v.unit = newCaseInwardSessionUnit;
+    if (isTransferCase) {
+      return { ...v, ...transferClient.autoValues };
+    }
     return v;
-  }, [editingRow, newCaseInwardSessionUnit]);
+  }, [editingRow, newCaseInwardSessionUnit, isTransferCase, transferClient.autoValues]);
 
-  const entryFormReadOnlyFields = useMemo(() => {
-    if (moduleKey !== "new_case_inward") return null;
-    if (editingRow) {
-      // In edit mode, only admin can modify Entrustment Date.
-      if (Number(permissions.role) !== 1) return { entrustmentDate: true };
-      return null;
-    }
-    if (
-      Number(permissions.role) !== 2 ||
-      permissions.unit == null ||
-      String(permissions.unit).trim() === ""
-    ) {
-      return null;
-    }
-    return { unit: true };
-  }, [moduleKey, editingRow, permissions.role, permissions.unit]);
+  const entryFormReadOnlyFields = useMemo(
+    () => (isTransferCase ? transferClient.entryReadOnlyFields : getNciEntryReadOnlyFields(moduleKey, editingRow, permissions.role, permissions.unit)),
+    [moduleKey, editingRow, permissions.role, permissions.unit, transferClient.entryReadOnlyFields]
+  );
 
-  useEffect(() => {
-    if (moduleKey !== "new_case_inward") {
-      setSelectedBranchIdForLoanRule(null);
-      setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
-      return;
-    }
-    const branchRaw = editingRow ? editingRow?.branch : entryFormInitialValues?.branch;
-    const branchNum = Number(branchRaw);
-    setSelectedBranchIdForLoanRule(Number.isFinite(branchNum) ? branchNum : null);
-    const loanNoRaw = editingRow ? editingRow?.loanAccountNo : entryFormInitialValues?.loanAccountNo;
-    setLoanAccountNoDraft(String(loanNoRaw ?? ""));
-  }, [moduleKey, editingRow, entryFormInitialValues]);
+  const caseSnapshot = useCaseSnapshotModel({ moduleKey, editingRow });
+  const publicNoticeClient = usePublicNoticeClientModel({ moduleKey, editingRow });
+  const createChildDraftRow = useCallback((ct) => newChildRowDraft(ct), []);
+  const returnCaseClient = useReturnCaseClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    childTables: config?.childTables || [],
+    createDraftRow: createChildDraftRow,
+    setChildRowsByKey
+  });
 
-  useEffect(() => {
-    if (moduleKey !== "new_case_inward") return;
-    const branchId = Number(selectedBranchIdForLoanRule);
-    if (!Number.isFinite(branchId)) {
-      setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
-      return;
-    }
-    let cancelled = false;
-    async function loadRule() {
-      try {
-        const res = await fetch(`/api/new-case-inward/loan-account-rule?branchId=${branchId}`);
-        const payload = await res.json();
-        if (cancelled) return;
-        const len = Number(payload?.loanAccountNoLength);
-        setLoanAccountRule({
-          bankName: String(payload?.bankName ?? "").trim(),
-          loanAccountNoLength: Number.isFinite(len) && len > 0 ? len : null
-        });
-      } catch {
-        if (!cancelled) setLoanAccountRule({ bankName: "", loanAccountNoLength: null });
-      }
-    }
-    loadRule();
-    return () => {
-      cancelled = true;
-    };
-  }, [moduleKey, selectedBranchIdForLoanRule]);
-
-  useEffect(() => {
-    if (moduleKey !== "new_case_inward" || !isActive) {
-      setNciTxnCtrlHints({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
-      setNciTxnCtrlMinDate({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
-      return;
-    }
-    let cancelled = false;
-    async function loadNciTxnControlHints() {
-      try {
-        // Read New Case Inward transaction-control rows once and convert them into:
-        // 1) user helper text, and 2) minimum allowed dates for date pickers.
-        const res = await fetch(
-          "/api/crud/new_case_inward_transaction_control?page=1&limit=50&sortBy=id&sortDir=desc"
-        );
-        const text = await res.text();
-        const payload = text ? JSON.parse(text) : null;
-        if (!res.ok || cancelled) return;
-        const rows = Array.isArray(payload?.data) ? payload.data : [];
-        setNciTxnCtrlHints({
-          entrustmentDate: nciTxnCtrlHintByField(rows, "Entrustment Date"),
-          amountRecoveredDate: nciTxnCtrlHintByField(rows, "Amount Recovered"),
-          caseStatusUpdatedDate: nciTxnCtrlHintByField(rows, "Case Status Update")
-        });
-        setNciTxnCtrlMinDate({
-          entrustmentDate: nciTxnCtrlMinDateByField(rows, "Entrustment Date"),
-          amountRecoveredDate: nciTxnCtrlMinDateByField(rows, "Amount Recovered"),
-          caseStatusUpdatedDate: nciTxnCtrlMinDateByField(rows, "Case Status Update")
-        });
-      } catch {
-        if (!cancelled) {
-          setNciTxnCtrlHints({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
-          setNciTxnCtrlMinDate({ entrustmentDate: "", amountRecoveredDate: "", caseStatusUpdatedDate: "" });
-        }
-      }
-    }
-    loadNciTxnControlHints();
-    return () => {
-      cancelled = true;
-    };
-  }, [moduleKey, isActive]);
+  const nciClient = useNewCaseInwardClientModel({
+    moduleKey,
+    isActive,
+    config,
+    editingRow,
+    entryFormInitialValues,
+    isAdmin: isNciAdmin
+  });
 
   const entryFieldUiOverrides = useMemo(() => {
-    if (moduleKey !== "new_case_inward") return null;
-    const len = Number(loanAccountRule.loanAccountNoLength);
-    const hasRule = Number.isFinite(len) && len > 0;
-    if (!hasRule) {
-      return {
-        loanAccountNo: { placeholder: "Enter Loan Account No" },
-        entrustmentDate: {
-          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.entrustmentDate || "",
-          // Backdate floor comes from transaction-control "Entrustment Date".
-          min: isNewCaseInwardAdmin ? "" : !editingRow ? nciTxnCtrlMinDate.entrustmentDate || undefined : undefined
-        },
-        caseStatusUpdatedDate: {
-          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.caseStatusUpdatedDate || "",
-          // Backdate floor comes from transaction-control "Case Status Update".
-          min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.caseStatusUpdatedDate || undefined
-        }
-      };
-    }
-    const currentLen = String(loanAccountNoDraft ?? "").trim().length;
-    const mismatch = currentLen !== len;
-    const bank = String(loanAccountRule.bankName || "").trim();
-    const bankSuffix = bank ? ` for ${bank}` : "";
-    return {
-      loanAccountNo: {
-        placeholder: `Enter ${len}-character Loan Account No`,
-        maxLength: len,
-        helperText: mismatch ? `Required length${bankSuffix}: ${len} characters` : "",
-        helperTone: "error"
-      },
-      entrustmentDate: {
-        helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.entrustmentDate || "",
-        min: isNewCaseInwardAdmin ? "" : !editingRow ? nciTxnCtrlMinDate.entrustmentDate || undefined : undefined
-      },
-      caseStatusUpdatedDate: {
-        helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.caseStatusUpdatedDate || "",
-        min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.caseStatusUpdatedDate || undefined
-      }
-    };
+    if (publicNoticeClient.entryFieldUiOverrides) return publicNoticeClient.entryFieldUiOverrides;
+    if (returnCaseClient.entryFieldUiOverrides) return returnCaseClient.entryFieldUiOverrides;
+    if (transferClient.entryFieldUiOverrides) return transferClient.entryFieldUiOverrides;
+    return nciClient.entryFieldUiOverrides;
   }, [
-    moduleKey,
-    loanAccountRule,
-    loanAccountNoDraft,
-    isNewCaseInwardAdmin,
-    nciTxnCtrlHints.entrustmentDate,
-    nciTxnCtrlHints.caseStatusUpdatedDate,
-    nciTxnCtrlMinDate.entrustmentDate,
-    nciTxnCtrlMinDate.caseStatusUpdatedDate,
-    editingRow
+    publicNoticeClient.entryFieldUiOverrides,
+    returnCaseClient.entryFieldUiOverrides,
+    transferClient.entryFieldUiOverrides,
+    nciClient.entryFieldUiOverrides,
   ]);
 
-  const childFieldUiOverrides = useMemo(() => {
-    if (moduleKey !== "new_case_inward") return null;
-    return {
-      amount_recovered: {
-        recoveredDate: {
-          helperText: isNewCaseInwardAdmin ? "" : nciTxnCtrlHints.amountRecoveredDate || "",
-          min: isNewCaseInwardAdmin ? "" : nciTxnCtrlMinDate.amountRecoveredDate || undefined
-        }
-      }
-    };
-  }, [moduleKey, isNewCaseInwardAdmin, nciTxnCtrlHints.amountRecoveredDate, nciTxnCtrlMinDate.amountRecoveredDate]);
-
-  const entryModeConfig = useMemo(() => {
-    if (!config) return config;
-    if (moduleKey !== "new_case_inward" || editingRow) return config;
-    const hiddenOnNew = new Set(["caseStatus", "caseStatusUpdatedDate", "caseStatusRemarks"]);
-    return {
-      ...config,
-      fields: (config.fields || []).filter((f) => !hiddenOnNew.has(f.name))
-    };
-  }, [config, moduleKey, editingRow]);
+  const nciDisableLookupRemoteByField = nciClient.disableLookupRemoteByField;
+  const childFieldUiOverrides = nciClient.childFieldUiOverrides;
+  const entryModeConfig = nciClient.entryModeConfig;
 
   const showEntryChildTables = useMemo(() => {
-    if (!config?.childTables?.length) return false;
-    if (moduleKey === "new_case_inward" && !editingRow) return false;
-    return true;
+    return shouldShowNciChildTables(moduleKey, Boolean(config?.childTables?.length), editingRow);
   }, [config?.childTables, moduleKey, editingRow]);
 
   /** Client-side guard; server still enforces RBAC. List rows include `_canEdit` when row-level scope applies. */
@@ -611,28 +509,24 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (!selectedId || !permissions.canEdit || !selectedRow) return false;
     if (selectedRow._canEdit !== false) return true;
     // New Case Inward final-stage rows are view-only for role 2; still allow opening full form data.
-    return moduleKey === "new_case_inward";
+    return canOpenNciFinalReadonlyRow(moduleKey, selectedRow);
   }, [selectedId, permissions.canEdit, selectedRow, moduleKey]);
 
   // View table columns: per-field `showInView` in config/modules.js (default true if omitted).
   const viewFieldConfigs = useMemo(() => {
     return (config?.fields || []).filter((f) => {
       if (f.showInView === false) return false;
-      if (moduleKey === "audit_logs" && f.name === "record_id") return false;
+      if (isAuditLogs && shouldHideAuditLogsRecordId(f.name)) return false;
       return true;
     });
   }, [config, moduleKey]);
-  const auditLogsCompareEnabled = moduleKey === "audit_logs";
+  const auditLogsCompareEnabled = isAuditLogs;
   // Audit logs acts like a report screen, not a data-entry module.
-  const auditLogsSimpleView = moduleKey === "audit_logs";
+  const auditLogsSimpleView = isAuditLogs;
   // New Case Inward uses a dot marker instead of row background tint for case status.
-  const nciStatusDotEnabled = moduleKey === "new_case_inward";
+  const nciStatusDotEnabled = isNewCaseInwardModule(moduleKey);
 
-  const nciCaseStatusField = useMemo(() => {
-    if (moduleKey !== "new_case_inward") return null;
-    const f = (config?.fields || []).find((x) => x.name === "caseStatus");
-    return f && f.type === "lookup" ? f : null;
-  }, [moduleKey, config]);
+  const nciCaseStatusField = useMemo(() => getNciCaseStatusField(config, moduleKey), [moduleKey, config]);
 
   // Auto-dismiss toast after a short delay.
   useEffect(() => {
@@ -661,15 +555,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   }
 
   function handleEntryFieldValueChange(fieldName, value) {
-    if (moduleKey !== "new_case_inward") return;
-    if (fieldName === "branch") {
-      const n = Number(value);
-      setSelectedBranchIdForLoanRule(Number.isFinite(n) ? n : null);
+    // Let snapshot model observe caseNo changes first.
+    caseSnapshot.handleCaseFieldValueChange(fieldName, value);
+    if (nciClient.onFieldValueChange(fieldName, value)) {
       return;
     }
-    if (fieldName === "loanAccountNo") {
-      setLoanAccountNoDraft(String(value ?? ""));
-    }
+    if (transferClient.handleFieldValueChange(fieldName, value)) return;
   }
 
   const loadRecords = async () => {
@@ -711,9 +602,19 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   useEffect(() => {
     if (!isActive) return;
     if (!config) return;
+    const filtersKey = JSON.stringify(viewColumnFilters || {});
+    const fetchKey = `${moduleKey}|${String(page)}|${String(limit)}|${String(viewMode)}|${filtersKey}`;
+    if (recordsFetchKeyRef.current === fetchKey) return;
+    recordsFetchKeyRef.current = fetchKey;
     loadRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, page, limit, viewMode, viewColumnFilters]);
+
+  useEffect(() => {
+    if (isActive) return;
+    recordsFetchKeyRef.current = "";
+    permissionsFetchKeyRef.current = "";
+  }, [isActive]);
 
   /**
    * Commit staged inputs to server filters (resets to page 1). Text filters apply on Enter; selects on change.
@@ -737,6 +638,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
   useEffect(() => {
     if (!isActive) return;
+    const fetchKey = `${moduleKey}|permissions`;
+    if (permissionsFetchKeyRef.current === fetchKey) return;
+    permissionsFetchKeyRef.current = fetchKey;
     let cancelled = false;
 
     async function loadPermissions() {
@@ -775,6 +679,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (busy) return;
     // "Clear Screen" resets this module back to a fresh entry form.
     setEditingRow(null);
+    caseSnapshot.reset();
     setFormKey((k) => k + 1);
     setSelectedId(null);
     setViewColumnFilterInput({});
@@ -802,7 +707,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (!permissions.canEdit) return;
     const row = data.find((r) => String(r.id) === String(selectedId));
     if (!row) return;
-    if (row._canEdit === false && moduleKey !== "new_case_inward") return;
+    if (row._canEdit === false && !isNciModule) return;
 
     setBusy(true);
     try {
@@ -856,48 +761,32 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   }
 
   /** View mode: selected grid row. Entry mode: saved record being edited (`editingRow.id`). */
-  const printCaseDetailsTargetId =
-    moduleKey === "new_case_inward" && permissions.canView
-      ? effectiveViewMode
-        ? selectedId
-        : editingRow?.id ?? null
-      : null;
+  const printCaseDetailsTargetId = getNciPrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
 
-  async function downloadNewCaseInwardPdfById(id, caseNoHint = null) {
-    if (id == null) return;
+  /** Public Notice: print from view grid (selected row) or while editing a saved row. */
+  const printPublicNoticeTargetId = getPublicNoticePrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
 
+  async function handlePrintCaseDetails() {
+    if (busy) return;
+    if (!isNciModule || !permissions.canView) return;
+    const id = printCaseDetailsTargetId;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const caseNoHint = rowValueForField(rowForName || {}, "caseNo");
     setBusy(true);
     try {
-      const res = await fetch(`/api/new-case-inward/case-details-pdf/${id}`);
-      if (!res.ok) {
-        const text = await res.text();
-        let msg = "Failed to generate PDF";
-        try {
-          const j = JSON.parse(text);
-          if (j?.error) msg = j.error;
-        } catch {
-          /* ignore */
-        }
-        throw new Error(msg);
-      }
-      const blob = await res.blob();
-      const rowForName = effectiveViewMode ? selectedRow : editingRow;
-      const caseNo = caseNoHint ?? rowValueForField(rowForName || {}, "caseNo");
-      const safe = String(caseNo ?? id)
-        .trim()
-        .replace(/[/\\?%*:|"<>]/g, "_")
-        .replace(/\s+/g, "_")
-        .slice(0, 120) || "case";
-      const name = `CASE_DETAILS_${safe}.pdf`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadNciCaseDetailsPdf(id, caseNoHint);
     } catch (err) {
       showToast("error", err.message || "Failed to download PDF");
     } finally {
@@ -905,56 +794,17 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
-  async function handlePrintCaseDetails() {
-    if (busy) return;
-    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
-    const id = printCaseDetailsTargetId;
-    await downloadNewCaseInwardPdfById(id);
-  }
-
+  // Shared click handler used by both view-grid and edit-mode Branch Copy buttons.
   async function handlePrintBranchCopy() {
     if (busy) return;
-    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
+    if (!isNciModule || !permissions.canView) return;
     const id = effectiveViewMode ? selectedId : editingRow?.id ?? null;
     if (id == null) return;
     const rowForName = effectiveViewMode ? selectedRow : editingRow;
     const caseNoHint = String(rowValueForField(rowForName || {}, "caseNo") ?? "").trim();
-    await downloadNewCaseInwardBranchCopyPdfById(id, caseNoHint || null);
-  }
-
-  async function downloadNewCaseInwardBranchCopyPdfById(id, caseNoHint = null) {
-    if (id == null) return;
-
     setBusy(true);
     try {
-      const res = await fetch(`/api/new-case-inward/branch-copy-pdf/${id}`);
-      if (!res.ok) {
-        const text = await res.text();
-        let msg = "Failed to generate Branch Copy PDF";
-        try {
-          const j = JSON.parse(text);
-          if (j?.error) msg = j.error;
-        } catch {
-          /* ignore */
-        }
-        throw new Error(msg);
-      }
-      const blob = await res.blob();
-      const safe = String(caseNoHint ?? id)
-        .trim()
-        .replace(/[/\\?%*:|"<>]/g, "_")
-        .replace(/\s+/g, "_")
-        .slice(0, 120) || "CASE";
-      const name = `${safe}_BRANCH_COPY.pdf`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadNciBranchCopyPdf(id, caseNoHint || null);
     } catch (err) {
       showToast("error", err.message || "Failed to download Branch Copy PDF");
     } finally {
@@ -962,29 +812,80 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  async function handlePrintPublicNoticeFromToolbar() {
+    if (busy) return;
+    if (!isPublicNotice || !permissions.canView) return;
+    const id = printPublicNoticeTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = publicNoticeRefHintFromRow(rowForName);
+    setBusy(true);
+    try {
+      await downloadPublicNoticePdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download Public Notice PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handlePostCreateAckPrintPdf(recordId, valueText) {
     if (busy) return;
-    if (moduleKey !== "new_case_inward" || !permissions.canView) return;
-    if (postCreateAckOpen?.suppressValue) return;
+    if (!permissions.canView) return;
+
+    // Public Notice only: dedicated PDF route after save acknowledgement.
+    if (isPublicNotice) {
+      setPostCreateAckOpen(null);
+      setBusy(true);
+      try {
+        await downloadPublicNoticePdf(recordId, valueText);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download Public Notice PDF");
+      } finally {
+        setBusy(false);
+      }
+      setEditingRow(null);
+      setFormKey((k) => k + 1);
+      setSelectedId(null);
+      setViewColumnFilterInput({});
+      setViewColumnFilters({});
+      setViewMode(true);
+      return;
+    }
+
+    if (!isNciModule) return;
+    const printMode = String(postCreateAckOpen?.printMode || "branchCopy").trim();
     // UX: once user chooses print from acknowledgement, close the modal immediately.
     setPostCreateAckOpen(null);
 
-    let caseNoForFile = String(valueText ?? "").trim();
-    // Prefer saved case number for branch-copy filename if modal value is unavailable.
-    if (!caseNoForFile) {
+    if (printMode === "caseDetails") {
+      setBusy(true);
       try {
-        const res = await fetch(`/api/crud/${moduleKey}/${recordId}`);
-        const text = await res.text();
-        const payload = text ? JSON.parse(text) : null;
-        if (res.ok && payload?.data) {
-          caseNoForFile = String(rowValueForField(payload.data, "caseNo") ?? "").trim();
+        await downloadNciCaseDetailsPdf(recordId, valueText || null);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download PDF");
+      } finally {
+        setBusy(false);
+      }
+    } else {
+      let caseNoForFile = String(valueText ?? "").trim();
+      // Prefer saved case number for branch-copy filename if modal value is unavailable.
+      if (!caseNoForFile) {
+        try {
+          caseNoForFile = await fetchSavedNciCaseNo(recordId);
+        } catch {
+          // Non-blocking: download still proceeds with fallback naming inside downloader.
         }
-      } catch {
-        // Non-blocking: download still proceeds with fallback naming inside downloader.
+      }
+      setBusy(true);
+      try {
+        await downloadNciBranchCopyPdf(recordId, caseNoForFile || null);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download Branch Copy PDF");
+      } finally {
+        setBusy(false);
       }
     }
-
-    await downloadNewCaseInwardBranchCopyPdfById(recordId, caseNoForFile || null);
 
     // After print from acknowledgement, move user to clean view mode.
     setEditingRow(null);
@@ -1021,36 +922,16 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
 
     const form = Object.fromEntries(new FormData(e.target));
-    const body = { ...form };
+    let body = { ...form };
     if (config.childTables?.length) {
       body.childTableRows = stripChildRowsForApi(config.childTables, childRowsByKey);
+      body = applyReturnCaseSubmitBody(moduleKey, body);
     }
 
-    if (moduleKey === "new_case_inward") {
-      if (editingRow) {
-        const hasCaseStatus =
-          body.caseStatus != null &&
-          String(body.caseStatus).trim() !== "" &&
-          Number.isFinite(Number(body.caseStatus)) &&
-          Number(body.caseStatus) > 0;
-        const hasCaseStatusUpdatedDate = String(body.caseStatusUpdatedDate ?? "").trim() !== "";
-        const hasCaseStatusRemarks = String(body.caseStatusRemarks ?? "").trim() !== "";
-        if (!hasCaseStatus || !hasCaseStatusUpdatedDate || !hasCaseStatusRemarks) {
-          showToast(
-            "error",
-            "Case Status, Case Status Updated Date, and Case Status Remarks are required in edit mode."
-          );
-          return;
-        }
-      }
-      const cs = body.caseStatus;
-      const hasCaseStatus =
-        cs != null &&
-        String(cs).trim() !== "" &&
-        Number.isFinite(Number(cs)) &&
-        Number(cs) > 0;
-      if (hasCaseStatus && String(body.caseStatusRemarks ?? "").trim() === "") {
-        showToast("error", "Case Status Remarks is required when Case Status is selected.");
+    if (isNewCaseInwardModule(moduleKey)) {
+      const err = validateNciSubmitBody(body, editingRow);
+      if (err) {
+        showToast("error", err);
         return;
       }
     }
@@ -1073,56 +954,42 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
       const ackCfg = config.postCreateAck;
       const pAck = payload?.postCreateAck;
-      const wantsAck =
-        !editingRow &&
+      const pAckValid =
         ackCfg &&
         pAck?.value != null &&
         String(pAck.value).trim() !== "" &&
         (!pAck.field || !ackCfg.field || pAck.field === ackCfg.field);
+      // New Case Inward: acknowledgement only on create. Public Notice: create and update.
+      const wantsAck =
+        Boolean(pAckValid) &&
+        (!editingRow ||
+          shouldShowPublicNoticeAckOnEdit(moduleKey, editingRow) ||
+          shouldShowReturnCaseAckOnEdit(moduleKey, editingRow));
 
       if (wantsAck) {
         setPostCreateAckOpen({
-          id: Number(payload.id),
+          id: Number(payload.id ?? editingRow?.id),
           value: String(pAck.value).trim(),
           title: ackCfg.title,
           hint: ackCfg.hint,
           suppressValue: false,
-          showPrintPdf: ackCfg.showPrintPdf === true
+          showPrintPdf: ackCfg.showPrintPdf === true,
+          showCopyButton: ackCfg.showCopyButton !== false,
+          printButtonLabel: ackCfg.printButtonLabel,
+          printMode: isPublicNotice ? getPublicNoticeAckPrintMode() : undefined
         });
         return;
       }
 
-      // New Case Inward (module-specific): after editing and saving any final status,
-      // show a print-focused acknowledgement modal (no case number block).
-      if (editingRow && moduleKey === "new_case_inward") {
-        const savedIdRaw = payload?.id ?? editingRow?.id;
-        const savedId = Number(savedIdRaw);
-        if (Number.isFinite(savedId) && savedId > 0) {
-          try {
-            const statusRes = await fetch(`/api/crud/${moduleKey}/${savedId}`);
-            const statusTextRaw = await statusRes.text();
-            const statusPayload = statusTextRaw ? JSON.parse(statusTextRaw) : null;
-            if (statusRes.ok && statusPayload?.data) {
-              const statusLabel =
-                rowValueForField(statusPayload.data, getLookupRowLabelKey(nciCaseStatusField)) ??
-                rowValueForField(statusPayload.data, "caseStatus") ??
-                "";
-              if (FINAL_CASE_STATUS_SET.has(normalizeNciCaseStatusLabel(statusLabel))) {
-                setPostCreateAckOpen({
-                  id: savedId,
-                  value: "",
-                  title: "Final Status Saved",
-                  hint: "Final stage status is saved successfully. You can now print the Case Details PDF.",
-                  suppressValue: true,
-                  showPrintPdf: false
-                });
-                return;
-              }
-            }
-          } catch {
-            // If status re-check fails, do normal post-save flow (already saved on server).
-          }
-        }
+      const nciFinalAck = await fetchNciFinalStatusAckPayload({
+        moduleKey,
+        editingRow,
+        payload,
+        caseStatusField: nciCaseStatusField
+      });
+      if (nciFinalAck) {
+        setPostCreateAckOpen(nciFinalAck);
+        return;
       }
 
       setEditingRow(null);
@@ -1154,7 +1021,16 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         title={postCreateAckOpen?.title}
         hint={postCreateAckOpen?.hint}
         suppressValue={postCreateAckOpen?.suppressValue === true}
-        showPrintPdf={postCreateAckOpen?.showPrintPdf}
+        showCopyButton={postCreateAckOpen?.showCopyButton !== false}
+        // Print slot: wired per module in handlePostCreateAckPrintPdf (NCI vs Public Notice).
+        showPrintPdf={(isNciModule || isPublicNotice) ? postCreateAckOpen?.showPrintPdf : false}
+        printButtonLabel={
+          isNciModule
+            ? getNciAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+            : isPublicNotice
+              ? getPublicNoticeAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+              : "Print"
+        }
         recordId={postCreateAckOpen?.id}
         onContinue={handlePostCreateAckContinue}
         onPrintPdf={handlePostCreateAckPrintPdf}
@@ -1250,9 +1126,17 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         </div>
       ) : null}
 
+      <CaseSnapshotModal
+        open={caseSnapshot.enabled && caseSnapshot.modalOpen}
+        onClose={() => caseSnapshot.setModalOpen(false)}
+        selectedCaseId={caseSnapshot.selectedCaseId}
+        loading={caseSnapshot.loading}
+        preview={caseSnapshot.preview}
+      />
+
       {!effectiveViewMode ? (
-        <>
-          {/* Entry mode: show the dynamic form for create/update. */}
+        <div className="card table-section master-entry-shell">
+          {/* Entry mode: same shell as view list — footer actions share master-view-actions + top rule */}
           <DynamicForm
             key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
             moduleKey={moduleKey}
@@ -1261,26 +1145,108 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             initialValues={entryFormInitialValues}
             readOnlyFields={entryFormReadOnlyFields}
             fieldUiOverrides={entryFieldUiOverrides}
+            lookupOptionsByField={isNciModule ? nciClient.lookupOptionsByField : null}
+            disableLookupRemoteByField={isNciModule ? nciDisableLookupRemoteByField : null}
             onFieldValueChange={handleEntryFieldValueChange}
             submitLabel="Save"
             hideButtons
             formId={formId}
-            className="card master-entry-form"
+            className="master-entry-form"
             formGridClassName="form-grid form-grid-master"
+            formRootStyle={{ marginBottom: 0 }}
           />
-          {showEntryChildTables ? (
-            <>
-              <ModuleChildTablesPanel
-                childTables={config.childTables}
-                value={childRowsByKey}
-                onChange={setChildRowsByKey}
-                childFieldUiOverrides={childFieldUiOverrides}
-                disabled={busy}
-                onNotify={(kind, message) => showToast(kind, message)}
-              />
-            </>
+          {caseSnapshot.enabled ? (
+            <div style={{ marginTop: "12px", marginBottom: "4px" }}>
+              <button
+                type="button"
+                className="master-btn master-btn-outline"
+                disabled={!caseSnapshot.selectedCaseId}
+                title={
+                  caseSnapshot.selectedCaseId
+                    ? "View a read-only summary of the selected case"
+                    : "Select Case No first"
+                }
+                onClick={() => caseSnapshot.setModalOpen(true)}
+              >
+                View selected case snapshot
+              </button>
+            </div>
           ) : null}
-        </>
+          {showEntryChildTables ? (
+            <ModuleChildTablesPanel
+              childTables={config.childTables}
+              value={childRowsByKey}
+              onChange={setChildRowsByKey}
+              childFieldUiOverrides={childFieldUiOverrides}
+              disabled={busy}
+              onNotify={(kind, message) => showToast(kind, message)}
+            />
+          ) : null}
+          <div className="master-view-actions">
+            <div className="master-view-actions-left">
+              {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
+                <button
+                  type="button"
+                  onClick={handlePrintCaseDetails}
+                  title="Download PDF with parent and line-item details"
+                  className="master-btn master-btn-outline"
+                  disabled={busy}
+                >
+                  <PrintCaseDetailsIcon />
+                  {getNciCaseDetailsPrintButtonText()}
+                </button>
+              ) : null}
+              {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
+                <button
+                  type="button"
+                  onClick={handlePrintBranchCopy}
+                  title="Download Branch Copy PDF"
+                  className="master-btn master-btn-outline"
+                  disabled={busy}
+                >
+                  <PrintCaseDetailsIcon />
+                  {getNciBranchCopyPrintButtonText()}
+                </button>
+              ) : null}
+              {isPublicNotice && permissions.canView && printPublicNoticeTargetId != null ? (
+                <button
+                  type="button"
+                  onClick={handlePrintPublicNoticeFromToolbar}
+                  title="Download Public Notice PDF"
+                  className="master-btn master-btn-outline"
+                  disabled={busy}
+                >
+                  <PrintCaseDetailsIcon />
+                  {getPublicNoticePrintButtonText()}
+                </button>
+              ) : null}
+            </div>
+            <div className="master-view-actions-right">
+              {canSave ? (
+                <button form={formId} type="submit" className="master-btn master-btn-primary" disabled={busy}>
+                  <SaveIcon />
+                  Save
+                </button>
+              ) : null}
+              {!config.readOnly && permissions.canView ? (
+                <button
+                  type="button"
+                  onClick={handleViewOnly}
+                  disabled={busy}
+                  title="View saved data"
+                  className="master-btn master-btn-info"
+                >
+                  <EyeIcon />
+                  View
+                </button>
+              ) : null}
+              <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>
+                <ClearIcon />
+                Clear Screen
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         // View mode: show a table with per-column filters + checkbox selection.
         <div className="card table-section">
@@ -1393,14 +1359,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 {data.map((r) => {
                   const isChecked = selectedId != null && String(r.id) === String(selectedId);
                   // Dot color comes from current case status label (lookup label preferred).
-                  const nciDotTone =
-                    nciCaseStatusField != null
-                      ? getNewCaseInwardStatusDotTone(
-                          rowValueForField(r, getLookupRowLabelKey(nciCaseStatusField)) ??
-                            rowValueForField(r, "caseStatus") ??
-                            ""
-                        )
-                      : null;
+                  const nciDotTone = nciCaseStatusField != null ? getNciDotTone(r, nciCaseStatusField) : null;
                   const trClass = [isChecked && "master-row-selected"].filter(Boolean).join(" ");
                   return (
                     <tr key={r.id} className={trClass || undefined}>
@@ -1439,7 +1398,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       {viewFieldConfigs.map((f) => (
                         <td key={f.name}>
                           {/* rowValueForField: MySQL may return column names in different casing than config. */}
-                          {moduleKey === "audit_logs" && (f.name === "old_data" || f.name === "new_data") ? (
+                          {isAuditLogsJsonField(moduleKey, f.name) ? (
                             (() => {
                               const raw = rowValueForField(r, f.name);
                               const preview = auditJsonPreview(raw);
@@ -1449,7 +1408,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                                 "—"
                               );
                             })()
-                          ) : moduleKey === "audit_logs" && f.name === "created_at" ? (
+                          ) : isAuditLogsCreatedAtField(moduleKey, f.name) ? (
                             (() => {
                               const raw = rowValueForField(r, f.name);
                               const d = raw ? new Date(raw) : null;
@@ -1565,10 +1524,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     disabled={busy}
                   >
                     <PrintCaseDetailsIcon />
-                    Print Case Details
+                    {getNciCaseDetailsPrintButtonText()}
                   </button>
                 ) : null}
-                {moduleKey === "new_case_inward" &&
+                {isNciModule &&
                 effectiveViewMode &&
                 selectedId != null &&
                 permissions.canView ? (
@@ -1580,7 +1539,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     disabled={busy}
                   >
                     <PrintCaseDetailsIcon />
-                    Print Branch Copy
+                    {getNciBranchCopyPrintButtonText()}
+                  </button>
+                ) : null}
+                {isPublicNotice &&
+                effectiveViewMode &&
+                printPublicNoticeTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintPublicNoticeFromToolbar}
+                    title="Download Public Notice PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getPublicNoticePrintButtonText()}
                   </button>
                 ) : null}
               </div>
@@ -1588,12 +1562,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 <button
                   type="button"
                   onClick={handleNew}
-                  title="Clear screen"
+                  title="New record"
                   className="master-btn master-btn-warning"
                   disabled={busy}
                 >
                   <ClearIcon />
-                  Clear Screen
+                  New Record
                 </button>
               </div>
             </div>
@@ -1601,60 +1575,6 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         </div>
       )}
 
-      {!effectiveViewMode ? (
-        <div className="master-actions-bottom">
-          <div className="master-actions-left">
-            {moduleKey === "new_case_inward" && permissions.canView && printCaseDetailsTargetId != null ? (
-              <button
-                type="button"
-                onClick={handlePrintCaseDetails}
-                title="Download PDF with parent and line-item details"
-                className="master-btn master-btn-outline"
-                disabled={busy}
-              >
-                <PrintCaseDetailsIcon />
-                Print Case Details
-              </button>
-            ) : null}
-            {moduleKey === "new_case_inward" && permissions.canView && printCaseDetailsTargetId != null ? (
-              <button
-                type="button"
-                onClick={handlePrintBranchCopy}
-                title="Download Branch Copy PDF"
-                className="master-btn master-btn-outline"
-                disabled={busy}
-              >
-                <PrintCaseDetailsIcon />
-                Print Branch Copy
-              </button>
-            ) : null}
-          </div>
-          <div className="master-actions-right">
-            {canSave ? (
-              <button form={formId} type="submit" className="master-btn master-btn-primary" disabled={busy}>
-                <SaveIcon />
-                Save
-              </button>
-            ) : null}
-            {!config.readOnly && permissions.canView ? (
-              <button
-                type="button"
-                onClick={handleViewOnly}
-                disabled={busy}
-                title="View saved data"
-                className="master-btn master-btn-info"
-              >
-                <EyeIcon />
-                View
-              </button>
-            ) : null}
-            <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>
-              <ClearIcon />
-              Clear Screen
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

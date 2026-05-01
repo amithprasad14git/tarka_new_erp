@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Header strip on the right: theme toggle and user menu (passed from dashboard layout with session email).
  */

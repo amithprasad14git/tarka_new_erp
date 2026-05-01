@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Matrix editor: per module — Add first, then View/Edit/Delete with Own | Unit | All scopes.
  */

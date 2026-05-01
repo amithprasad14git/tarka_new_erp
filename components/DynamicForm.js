@@ -6,12 +6,19 @@
  *
  * Fields marked excludeFromForm + displayOnEdit (e.g. Case No) show as read-only text
  * when editing an existing record so users see values the server filled in.
+ *
+ * IMPORTANT ARCHITECTURE RULE (layman):
+ * - This form is generic and shared by many modules.
+ * - Keep module-specific business behavior OUT of this file.
+ * - If one module needs special layout/labels/rules, define that in its module file
+ *   under `lib/modules/` and pass it in via props/helpers.
  */
 import { labelWithRequiredMark } from "../lib/formFieldLabel";
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import { getYmdISTFromInstant } from "../lib/istDateTime";
 import { toYyyyMmDdForSqlDateField } from "../lib/sqlDateFieldValue";
+import { getNciDynamicFormLayoutSections, isNewCaseInwardModule } from "../lib/modules/newCaseInwardClient";
 import InrNumberInput from "./InrNumberInput";
 import LookupSelect from "./LookupSelect";
 
@@ -25,12 +32,18 @@ export default function DynamicForm({
   formId = null,
   hideButtons = false,
   className = "card",
+  /** Merged onto the root `<form>` (e.g. `{ marginBottom: 0 }` when footer sits inside a parent card). */
+  formRootStyle = null,
   formGridClassName = "form-grid",
   submitDisabled = false,
   /** Field name → non-editable (still submitted). Used for session-derived FKs. */
   readOnlyFields = null,
   /** Field name → UI overrides { placeholder?, maxLength?, helperText? }. */
   fieldUiOverrides = null,
+  /** Field name → preloaded lookup options array [{id/valueField, _label}] */
+  lookupOptionsByField = null,
+  /** Field name → true means lookup must not call remote LoV API */
+  disableLookupRemoteByField = null,
   onFieldValueChange = null
 }) {
   // Server-only fields to display when viewing/editing a saved row (not on blank “new” form).
@@ -40,20 +53,17 @@ export default function DynamicForm({
   const todayYmd = getYmdISTFromInstant(new Date());
   const isEditingExistingRecord =
     initialValues?.id != null && String(initialValues.id).trim() !== "";
-  const nciCaseStatusFieldNames = new Set(["caseStatus", "caseStatusUpdatedDate", "caseStatusRemarks"]);
   const allInputFields = (config.fields || []).filter((f) => !f.excludeFromForm);
-  const useNciCaseStatusSection = moduleKey === "new_case_inward" && isEditingExistingRecord;
-  const mainInputFields = useNciCaseStatusSection
-    ? allInputFields.filter((f) => !nciCaseStatusFieldNames.has(f.name))
-    : allInputFields;
-  const caseStatusUpdateFields = useNciCaseStatusSection
-    ? allInputFields.filter((f) => nciCaseStatusFieldNames.has(f.name))
-    : [];
-  const renderSeparateNciCaseStatusCard = useNciCaseStatusSection && caseStatusUpdateFields.length > 0;
+  const formLayout = isNewCaseInwardModule(moduleKey)
+    ? getNciDynamicFormLayoutSections(allInputFields, isEditingExistingRecord)
+    : { mainFields: allInputFields, secondarySection: null };
 
   function renderEditableField(f, forceRequired = false) {
+    // `forceRequired` supports layout adapters that enforce UI-required markers.
+    // to enforce required UI on fields that are conditionally mandatory.
     const fieldReadOnly = Boolean(readOnlyFields?.[f.name]);
     const ui = fieldUiOverrides?.[f.name] || {};
+    const lookupConfig = f.type === "lookup" && f.lookup ? { ...f.lookup, ...(ui.lookup || {}) } : f.lookup;
     const textareaRows = Number.parseInt(String(f.rows ?? ""), 10);
     const useTextarea =
       f.type === "textarea" ||
@@ -61,6 +71,7 @@ export default function DynamicForm({
     const hasUiMin = Object.prototype.hasOwnProperty.call(ui, "min");
     const hasUiMax = Object.prototype.hasOwnProperty.call(ui, "max");
     const required = Boolean(f.required || forceRequired);
+    // UI overrides (if provided) win over module defaults.
     const resolvedMin =
       hasUiMin && ui.min != null && String(ui.min).trim() !== "" ? String(ui.min).trim() : undefined;
     const resolvedMax = hasUiMax
@@ -73,17 +84,23 @@ export default function DynamicForm({
     // If a custom max is not provided, date fields with `maxToday: true` automatically
     // use today's date as max. This keeps "future date not allowed" simple in modules.js.
 
+    const fieldDomId = `field-${f.name}`;
+
     return (
-      <div key={f.name} className="form-field">
-        <label htmlFor={`field-${f.name}`}>
-          {labelWithRequiredMark(f.label, required)}
-        </label>
+      <div key={f.name} className="form-field form-field-outline">
+        <div className="form-field-outline-box">
+          <label className="form-field-outline-label" htmlFor={fieldDomId}>
+            {labelWithRequiredMark(f.label, required)}
+          </label>
+          <div className="form-field-outline-control">
         {f.type === "lookup" && f.lookup ? (
           <LookupSelect
-            id={`field-${f.name}`}
+            id={fieldDomId}
             name={f.name}
             fieldLabel={f.label}
-            lookup={f.lookup}
+            lookup={lookupConfig}
+            preloadedOptions={Array.isArray(lookupOptionsByField?.[f.name]) ? lookupOptionsByField[f.name] : null}
+            disableRemoteFetch={Boolean(disableLookupRemoteByField?.[f.name])}
             initialValue={initialValues?.[f.name]}
             initialLabel={initialValues?.[getLookupRowLabelKey(f)]}
             required={required}
@@ -109,7 +126,7 @@ export default function DynamicForm({
               />
             ) : null}
             <select
-              id={`field-${f.name}`}
+              id={fieldDomId}
               name={fieldReadOnly ? undefined : f.name}
               defaultValue={
                 initialValues?.[f.name] != null && initialValues?.[f.name] !== ""
@@ -130,7 +147,7 @@ export default function DynamicForm({
           </>
         ) : useTextarea ? (
           <textarea
-            id={`field-${f.name}`}
+            id={fieldDomId}
             name={f.name}
             rows={Number.isFinite(textareaRows) && textareaRows > 1 ? textareaRows : 3}
             defaultValue={initialValues?.[f.name] ?? ""}
@@ -144,7 +161,7 @@ export default function DynamicForm({
           />
         ) : f.type === "number" ? (
           <InrNumberInput
-            id={`field-${f.name}`}
+            id={fieldDomId}
             name={f.name}
             defaultValue={initialValues?.[f.name] ?? ""}
             required={required}
@@ -152,7 +169,7 @@ export default function DynamicForm({
           />
         ) : f.type === "date" ? (
           <input
-            id={`field-${f.name}`}
+            id={fieldDomId}
             name={f.name}
             type="date"
             defaultValue={
@@ -184,7 +201,7 @@ export default function DynamicForm({
           />
         ) : (
           <input
-            id={`field-${f.name}`}
+            id={fieldDomId}
             name={f.name}
             type={f.type}
             defaultValue={initialValues?.[f.name] ?? ""}
@@ -197,6 +214,8 @@ export default function DynamicForm({
             }}
           />
         )}
+          </div>
+        </div>
         {ui.helperText ? (
           <div
             className={`form-field-hint${ui.helperTone === "error" ? " form-field-hint-error" : ""}`}
@@ -212,7 +231,10 @@ export default function DynamicForm({
     <form
       id={formId || undefined}
       onSubmit={onSubmit}
-      style={{ marginBottom: "12px" }}
+      style={{
+        marginBottom: "12px",
+        ...(formRootStyle || {})
+      }}
     >
       <div className={className}>
         <div className={formGridClassName}>
@@ -224,28 +246,37 @@ export default function DynamicForm({
                 : rowValueForField(initialValues, f.name);
             const text =
               raw != null && String(raw).trim() !== "" ? String(raw) : "—";
+            const rid = `readonly-label-${f.name}`;
             return (
-              <div key={`readonly-${f.name}`} className="form-field">
-                <span className="form-field-readonly-label">{f.label}</span>
-                <div className="form-field-readonly-value" aria-readonly="true">
-                  {text}
+              <div key={`readonly-${f.name}`} className="form-field form-field-outline form-field-outline-readonly">
+                <div className="form-field-outline-box" role="group" aria-labelledby={rid}>
+                  <span className="form-field-outline-label" id={rid}>
+                    {labelWithRequiredMark(f.label, false)}
+                  </span>
+                  <div className="form-field-outline-control">
+                    <div className="form-field-outline-readonly-value" aria-readonly="true">
+                      {text}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
-          {mainInputFields.map((f) => renderEditableField(f))}
+          {formLayout.mainFields.map((f) => renderEditableField(f))}
         </div>
       </div>
-      {renderSeparateNciCaseStatusCard ? (
+      {formLayout.secondarySection ? (
         <div className="card master-entry-form-case-status" style={{ marginTop: "12px" }}>
-          <h2 className="module-child-section-title">Case Status Update</h2>
+          <h2 className="module-child-section-title">{formLayout.secondarySection.title}</h2>
           <div className="form-grid form-grid-master">
-            {caseStatusUpdateFields.map((f) => renderEditableField(f, true))}
+            {formLayout.secondarySection.fields.map((f) => renderEditableField(f))}
           </div>
         </div>
       ) : null}
       {!hideButtons ? (
         <div style={{ marginTop: "12px" }}>
+          {/* Normal reusable form mode: show default Save/Cancel buttons.
+              Master screens pass `hideButtons` and render custom action bars instead. */}
           <button type="submit" className="btn-primary" disabled={submitDisabled}>
             {submitLabel}
           </button>

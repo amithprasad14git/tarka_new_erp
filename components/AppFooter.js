@@ -1,3 +1,6 @@
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Site footer: copyright and tagline (dashboard shell).
  */

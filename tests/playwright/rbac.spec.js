@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 const { test, expect } = require("@playwright/test");
 
 const E2E_LIMITED_EMAIL = process.env.E2E_LIMITED_EMAIL || "amith@mail";

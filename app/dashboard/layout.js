@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Dashboard area: requires login; builds sidebar from modules the user may access (any of view/create/edit/delete); mounts tabbed
  * module panels (see DashboardTabs). `children` from the layout is not used for module body—tabs render clients.

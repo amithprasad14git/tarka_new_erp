@@ -22,7 +22,7 @@ It is designed so business teams can create, view, edit, and track records with 
 - **Frontend / Server framework:** Next.js 16
 - **UI runtime:** React 18
 - **Database:** MySQL (`mysql2`)
-- **Auth password hashing:** `bcryptjs`
+- **Auth password storage:** plain text in `users.password` (current project behavior)
 
 Scripts (`package.json`):
 - `npm run dev` - local development
@@ -41,9 +41,32 @@ Scripts (`package.json`):
 
 ---
 
+## 3A) Generic vs Module-Specific Rule (Very Important)
+
+Layman version:
+- Generic files are "shared machines" used by every module.
+- Module files are "department rules" used by one module only.
+- Do not mix them.
+
+Project rule:
+- `components/` and `lib/services/` must stay generic (no module business rules hardcoded).
+- Any module-specific function/validation/helper must live in:
+  - `lib/modules/<module>.js` (server/domain logic)
+  - `lib/modules/<module>Client.js` (client/UI behavior)
+  - optional module PDF/helper file where needed.
+- `lib/services/crud.service.js` should dispatch to module adapters, not contain per-module `if` branches.
+
+Simple test before adding code:
+- "Will this apply to all modules?" -> generic file.
+- "Is this only for one module?" -> that module file in `lib/modules/`.
+
+---
+
 ## 4) Authentication & Sessions
 
 - Login validates user credentials and creates a session entry.
+- Password check is plain text (`users.password` compared directly with entered password).
+- This project intentionally does not use bcrypt/hashing at the moment.
 - Browser stores session id in a secure cookie.
 - On each request, server resolves cookie -> user.
 - If session expires or user is inactive, APIs return `Unauthorized`.
@@ -156,7 +179,8 @@ Current implemented behavior includes:
   - `caseStatus`
   - `caseStatusUpdatedDate`
   - `caseStatusRemarks`
-  - all three are required in edit mode
+  - `caseStatus` is optional in edit mode
+  - if `caseStatus` is selected, then `caseStatusUpdatedDate` and `caseStatusRemarks` become mandatory
 - date max-today validation
 - bank-wise Loan Account No length validation
 - Loan Account No numeric-only validation
@@ -169,13 +193,21 @@ Current implemented behavior includes:
   - `Entrustment Date` lock/unlock via control table
   - `Amount Recovered` `recoveredDate` lock/unlock via control table
   - `Case Status Update` (`caseStatusUpdatedDate`) lock/unlock via control table
-  - when locked, allowed backdate days enforced server-side
+  - when locked, allowed backdate days enforced server-side for changed/new values
+  - matching uses exact `field_name` values from control table:
+    - `Entrustment Date`
+    - `Amount Recovered`
+    - `Case Status Update`
+  - only active controls (`is_active = 1`) are applied in UI helper/min-date fetch
 - role-based date behavior for New Case Inward:
   - non-admin edit mode: `entrustmentDate` is read-only
-  - admin (role 1): date-picker restrictions and related server date checks are skipped for:
-    - `entrustmentDate`
-    - `caseStatusUpdatedDate`
-    - `amount_recovered.recoveredDate`
+  - `maxToday` (future-date block) is enforced for all roles in server validation
+  - backdate transaction-control checks are enforced for non-admin users
+- financial-year freeze behavior:
+  - checks `caseStatusUpdatedDate` against `financial_year_master` (`startDate`/`endDate`)
+  - if matched year has `freezeTransactions = Yes`, save is blocked for non-admin
+- edit-mode legacy-data safeguard:
+  - existing child row IDs are preserved in payload so unchanged old recovered rows are not treated as new edits
 - child table INR formatting, right alignment, and footer totals
 - New Case Inward view-grid status dot:
   - Returned -> red dot
@@ -184,6 +216,10 @@ Current implemented behavior includes:
 - post-create acknowledgement modal for generated Case No (copy support; optional print slot)
 - Print Case Details button (visible in view mode for selected row, and in edit mode for saved rows)
 - case details PDF download with filename: `CASE_DETAILS_<caseNo>.pdf`
+- Print Branch Copy flow:
+  - acknowledgement button label: `Print Branch Copy`
+  - dedicated API and dedicated PDF builder (separate from Case Details PDF)
+  - available in NCI view selection and edit mode action area
 
 ---
 
@@ -209,6 +245,19 @@ Current implemented behavior includes:
   - amount recovered table with total
   - status mark (returned/final/in-progress) drawn as vector
   - printed date shown near report end
+- Transfer Case entry behavior:
+  - `date` is strictly today only (both UI and server enforce this)
+  - selecting `caseNo` auto-loads current owner into `fromUnit` (read-only)
+  - `toUnit` list excludes selected `fromUnit`
+  - `assignee` list loads only users mapped to selected `toUnit`
+  - assignee dropdown shows `No matching records` when filter returns no rows
+  - picker modal width auto-expands based on number of configured columns
+- Public Notice entry behavior:
+  - selecting `caseNo` loads a case snapshot from `new_case_inward`
+  - snapshot is shown inside an inline collapsible card (`Show` / `Hide`) below the form
+  - this snapshot behavior is module-specific to `public_notice` and does not affect generic module rendering
+  - after **create or update**, an acknowledgement modal shows `refNo` with **Continue** and **Print Public Notice** only (no Copy); print uses `GET /api/public-notice/pdf/:id`
+  - in **view** mode, with a row selected, **Print Public Notice** appears in the toolbar; the same button appears in entry mode when editing a saved row
 
 ---
 
@@ -222,10 +271,45 @@ Current implemented behavior includes:
 - `GET|POST /api/user-permissions-matrix` - permission matrix UI backend
 - `GET /api/new-case-inward/loan-account-rule?branchId=` - branch->bank loan rule resolver
 - `GET /api/new-case-inward/case-details-pdf/:id` - download New Case Inward case details PDF
+- `GET /api/new-case-inward/branch-copy-pdf/:id` - download New Case Inward branch copy PDF
+- `GET /api/new-case-inward/transaction-control` - active transaction-control rows for NCI date-picker hints/min dates
+- `POST /api/auth/change-password` - change password for logged-in user
+- `GET /api/public-notice/pdf/:id` - download Public Notice PDF (session + same view rules as CRUD get); layout uses **SamsungSharpSans** fonts like other PDFs; assets in `public/images/` only: **`sbi_logo_long`**, **`canara_bank_logo`**, **`bob_logo`**, **`boi_logo`** (bank header by `bank_master.bankCode`: SBI/CAN/BOB/BOI), plus **`public_notice`** and **`public_notice_picture_box`** (`.png` or `.jpg`); missing files are skipped. Download filename: **`PUBLIC_NOTICE_<caseNo>.pdf`** (case no slashes become `_`)
+
+Generic CRUD lookup (`GET /api/crud/:module?lov=1`) supports:
+- `exclude_id=<id>` - removes one row id from LoV results (used by Transfer Case `toUnit`)
+- numeric lookup filters like `f_unit=<id>` as exact FK matching (used by Transfer Case `assignee`)
 
 ---
 
-## 13) Environment / DB Notes
+## 13) Module-Specific Rules: Transfer Case
+
+`transfer_case` custom server logic is in:
+- `lib/modules/transferCase.js`
+
+Implemented behavior:
+- strict validation before write:
+  - `date` must be today
+  - `caseNo`, `fromUnit`, `toUnit`, `assignee` are required
+  - selected `caseNo` must exist in `new_case_inward`
+  - `fromUnit` must match current case owner unit
+  - `toUnit` must differ from `fromUnit`
+  - `assignee` must belong to selected `toUnit`
+- on save, linked `new_case_inward` row is updated:
+  - `unit = toUnit`
+  - `createdBy = assignee`
+  - `modifiedBy = assignee`
+- auto-generated Ref No format:
+  - `TRF/<yearCode>/<runningSerial>`
+  - `<yearCode>` resolved from `financial_year_master` using transfer date
+  - running serial maintained in `module_number_sequence` with transaction-safe locking
+- audit behavior:
+  - normal audit entry for `transfer_case` create/update
+  - additional audit entry for linked `new_case_inward` ownership update (with old/new snapshot)
+
+---
+
+## 14) Environment / DB Notes
 
 Set standard DB env vars for `lib/db.js`:
 - `DB_HOST`
@@ -241,7 +325,7 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 
 ---
 
-## 14) Recommended Future Improvements
+## 15) Recommended Future Improvements
 
 - Add automated tests for module-specific business rules (especially `new_case_inward`)
 - Move more hardcoded status policies to config for easier ops control
@@ -250,7 +334,7 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 
 ---
 
-## 15) Quick Start
+## 16) Quick Start
 
 1. Install dependencies:
    - `npm install`
@@ -261,7 +345,7 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 
 ---
 
-## 16) Babel/Jest Sanity Checklist
+## 17) Babel/Jest Sanity Checklist
 
 When changing test/build config, quickly verify both app runtime and tests still work:
 

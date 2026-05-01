@@ -1,5 +1,8 @@
 "use client";
 
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Login page: posts to `/api/auth/login`; successful login sets httpOnly `session` cookie and redirects to dashboard.
  * Brand logo: `public/images/` — set `LOGO_SRC` to your asset path.

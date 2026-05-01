@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Load and save per-user module rights: can_* flags + view_scope / edit_scope / delete_scope (own|unit|all).
  * POST { userId, rows } — replace rows for matrix module keys.
@@ -14,6 +17,7 @@ import { formatInstantAsMysqlDatetimeIST } from "../../../lib/istDateTime";
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
 
 async function getRequestUser() {
+  // Shared session resolver for this route (same pattern as other APIs).
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
@@ -58,6 +62,7 @@ export async function GET(req) {
     const matrixModules = getRbacMatrixModuleEntries();
     const keySet = getRbacMatrixModuleKeySet();
 
+    // Existing DB rows for this user (may include stale modules from old configs).
     const permRows = await loadPermRowsForUser(userId);
 
     const byModule = Object.fromEntries(
@@ -79,6 +84,7 @@ export async function GET(req) {
       })
     );
 
+    // Defaults keep UI deterministic when permission row does not exist for a module key yet.
     const defaults = { view_scope: "all", edit_scope: "all", delete_scope: "all" };
     const rows = matrixModules.map(({ key, label, group }) => {
       const existing = byModule[key];
@@ -131,6 +137,7 @@ export async function POST(req) {
     }
 
     const allowed = getRbacMatrixModuleKeySet();
+    // Normalize incoming rows and enforce "exactly one row per known module key".
     const byKey = new Map();
     for (const r of incoming) {
       const mod = String(r?.module ?? "").trim();
@@ -162,6 +169,7 @@ export async function POST(req) {
     try {
       await conn.beginTransaction();
 
+      // Replace only matrix-managed module rows, keep unrelated permission rows untouched.
       await conn.query(
         `DELETE FROM ${pt} WHERE user_id = ? AND module IN (${placeholders})`,
         [userId, ...modKeys]
@@ -171,8 +179,8 @@ export async function POST(req) {
       const actorId = user.id;
 
       for (const r of normalized) {
-        const any =
-          r.can_view || r.can_create || r.can_edit || r.can_delete;
+        // Skip fully disabled module rows (no need to store all-zero rows in DB).
+        const any = r.can_view || r.can_create || r.can_edit || r.can_delete;
         if (!any) continue;
 
         const vals = COLS.map((c) => (r[c] ? 1 : 0));

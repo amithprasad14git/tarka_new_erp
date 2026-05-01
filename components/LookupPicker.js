@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Modal lookup: search, paged table, double-click selects FK id + label.
  * Columns: `lookup.pickerColumns` or default from lib/lookupUi.js.
@@ -8,6 +11,18 @@ import { useEffect, useMemo, useState } from "react";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { getPickerColumns } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+
+function appendExtraLovParams(query, lookup) {
+  // Inject optional dependent filters (e.g., users by selected unit) into picker API calls.
+  const extras = lookup?.extraLovParams;
+  if (!extras || typeof extras !== "object") return;
+  for (const [key, raw] of Object.entries(extras)) {
+    const k = String(key || "").trim();
+    const v = raw == null ? "" : String(raw).trim();
+    if (!k || !v) continue;
+    query.set(k, v);
+  }
+}
 
 function MagnifyingGlassIcon() {
   return (
@@ -19,7 +34,7 @@ function MagnifyingGlassIcon() {
 }
 
 /**
- * Large-dataset lookup: readonly display + search icon opens modal with debounced search and double-click select.
+ * Large-dataset lookup: readonly display + search icon opens modal with Enter-based search and double-click select.
  * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string) => void }} props
  */
 export default function LookupPicker({
@@ -38,6 +53,20 @@ export default function LookupPicker({
   const labelField =
     resolveLookupLabelFieldName(lookup) || String(lookup?.valueField ?? "").trim() || "id";
   const sortField = lookup.pickerSortBy || labelField;
+  const extraLovEntries = Object.entries(lookup?.extraLovParams || {})
+    .map(([k, v]) => [String(k || "").trim(), v == null ? "" : String(v).trim()])
+    .filter(([k, v]) => Boolean(k) && Boolean(v))
+    .sort(([a], [b]) => a.localeCompare(b));
+  const extraLovParamsKey = JSON.stringify(extraLovEntries);
+  const lookupFetchConfig = useMemo(() => {
+    const extraLovParams = Object.fromEntries(extraLovEntries);
+    return {
+      module: String(lookup?.module || ""),
+      filterLookupTypeName: String(lookup?.filterLookupTypeName || ""),
+      filterLookupType: String(lookup?.filterLookupType || ""),
+      extraLovParams
+    };
+  }, [lookup?.module, lookup?.filterLookupTypeName, lookup?.filterLookupType, extraLovParamsKey]);
 
   const columns = useMemo(() => getPickerColumns(lookup), [lookup]);
 
@@ -48,12 +77,11 @@ export default function LookupPicker({
 
   const [open, setOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ totalPages: 1 });
   const [loading, setLoading] = useState(false);
-  const [resolving, setResolving] = useState(false);
 
   useEffect(() => {
     setSelectedId(initialValue != null && initialValue !== "" ? String(initialValue) : "");
@@ -66,19 +94,9 @@ export default function LookupPicker({
   }, [initialLabel]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
     if (!selectedId || selectedLabel) return;
     let cancelled = false;
     async function resolve() {
-      setResolving(true);
       try {
         const q = new URLSearchParams({
           page: "1",
@@ -88,8 +106,9 @@ export default function LookupPicker({
           sortDir: "asc",
           lov: "1"
         });
-        appendLookupValueMasterLovParams(q, lookup);
-        const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
+        appendLookupValueMasterLovParams(q, lookupFetchConfig);
+        appendExtraLovParams(q, lookupFetchConfig);
+        const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
         const json = await res.json();
         const list = Array.isArray(json?.data) ? json.data : [];
         const row = list.find((r) => String(r[valueField]) === String(selectedId));
@@ -98,15 +117,13 @@ export default function LookupPicker({
         }
       } catch {
         /* ignore */
-      } finally {
-        if (!cancelled) setResolving(false);
       }
     }
     resolve();
     return () => {
       cancelled = true;
     };
-  }, [selectedId, selectedLabel, lookup, valueField]);
+  }, [selectedId, selectedLabel, lookupFetchConfig, valueField, labelField]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,13 +134,14 @@ export default function LookupPicker({
         const q = new URLSearchParams({
           page: String(page),
           limit: String(pageSize),
-          search: debouncedSearch,
+          search: submittedSearch,
           sortBy: sortField,
           sortDir: "asc",
           lov: "1"
         });
-        appendLookupValueMasterLovParams(q, lookup);
-        const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
+        appendLookupValueMasterLovParams(q, lookupFetchConfig);
+        appendExtraLovParams(q, lookupFetchConfig);
+        const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
         const json = await res.json();
         if (cancelled) return;
         setRows(Array.isArray(json?.data) ? json.data : []);
@@ -141,7 +159,7 @@ export default function LookupPicker({
     return () => {
       cancelled = true;
     };
-  }, [open, page, debouncedSearch, lookup, sortField, pageSize]);
+  }, [open, page, submittedSearch, lookupFetchConfig, sortField, pageSize]);
 
   useEffect(() => {
     if (!open) return;
@@ -162,7 +180,14 @@ export default function LookupPicker({
   }
 
   const totalPages = Math.max(1, Number(meta.totalPages) || 1);
-  const displayText = resolving ? "Loading…" : selectedLabel || (selectedId ? `(id: ${selectedId})` : "");
+  const displayText = selectedLabel || (selectedId ? `(id: ${selectedId})` : "");
+  const sortColumnHeader =
+    columns.find((col) => String(col.field) === String(sortField))?.header ||
+    lookup?.pickerSortByLabel ||
+    sortField;
+  const searchHelp = `Enter ${sortColumnHeader}... Press Enter to search`;
+  // Auto-size modal width from configured columns so wide pickers remain readable.
+  const modalWidthPx = Math.min(1600, Math.max(760, columns.length * 180));
 
   return (
     <div className="lookup-picker">
@@ -185,7 +210,7 @@ export default function LookupPicker({
             if (disabled) return;
             setOpen(true);
             setSearchInput("");
-            setDebouncedSearch("");
+            setSubmittedSearch("");
             setPage(1);
           }}
           title={disabled ? undefined : "Open lookup search"}
@@ -200,6 +225,7 @@ export default function LookupPicker({
         <div className="lookup-picker-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
           <div
             className="lookup-picker-modal"
+            style={{ width: `${modalWidthPx}px`, maxWidth: "96vw" }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={`${id}-lookup-title`}
@@ -218,7 +244,13 @@ export default function LookupPicker({
                 type="search"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search…"
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  setPage(1);
+                  setSubmittedSearch(searchInput.trim());
+                }}
+                placeholder={searchHelp}
                 className="lookup-picker-search-input"
                 autoFocus
               />
@@ -285,7 +317,7 @@ export default function LookupPicker({
                 Next
               </button>
             </div>
-            <p className="lookup-picker-hint" aria-hidden>
+            <p className="lookup-picker-hint">
               Double-click a row to select.
             </p>
           </div>

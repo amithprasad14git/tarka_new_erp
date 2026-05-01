@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Client helper: returns booleans canView / canCreate / canEdit / canDelete for one module key
  * so the UI can show or hide actions without embedding permission rules in the browser.

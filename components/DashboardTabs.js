@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * URL-driven tabs under `/dashboard/:module`: keeps inactive modules mounted (state preserved) while
  * syncing the address bar for refresh and back/forward. Most tabs use `MasterModuleClient`;

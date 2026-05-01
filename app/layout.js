@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Next.js root layout: global CSS, document lang, and `suppressHydrationWarning` on body for theme/extension quirks.
  */

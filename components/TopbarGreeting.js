@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Time-of-day greeting + display name from DashboardUserProvider (derived from session email on the server layout).
  */

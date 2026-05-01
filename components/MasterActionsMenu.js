@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Collapsible “Actions” menu in the master header: mirrors bottom-bar save/view/clear with RBAC-aware disables.
  */
@@ -43,7 +46,7 @@ function ChevronIcon() {
 }
 
 /**
- * Sticky header actions: same Save / View / Clear Screen as the bottom bar (RBAC + readOnly).
+ * Sticky header actions: Save / View / Clear Screen (entry) or New Record (list view) + RBAC disables.
  */
 export default function MasterActionsMenu({
   formId,
@@ -124,13 +127,14 @@ export default function MasterActionsMenu({
           className="master-actions-item"
           disabled={clearDisabled}
           role="menuitem"
+          title={entryMode ? "Clear screen" : "New record"}
           onClick={() => {
             closeMenu();
             onClear();
           }}
         >
           <ClearIcon />
-          Clear Screen
+          {entryMode ? "Clear Screen" : "New Record"}
         </button>
       </div>
     </details>

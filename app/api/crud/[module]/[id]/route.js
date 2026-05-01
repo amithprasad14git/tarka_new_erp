@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * =============================================================================
  * CRUD BY RECORD ID — `/api/crud/<module>/<id>`

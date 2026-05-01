@@ -1,0 +1,44 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
+import { cookies } from "next/headers";
+import pool from "../../../../lib/db";
+import { modules } from "../../../../config/modules";
+import { getSessionUser } from "../../../../lib/session";
+import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
+
+/**
+ * Returns New Case Inward transaction-control rows for UI date-picker limits.
+ * Auth-only endpoint: no module-level RBAC gate, so non-admin users can still
+ * receive min-date hints needed to enforce picker boundaries.
+ */
+export async function GET() {
+  try {
+    // Auth check only: this endpoint feeds date-picker limits to logged-in users.
+    const cookieStore = await cookies();
+    const sid = cookieStore.get("session")?.value;
+    const user = await getSessionUser(sid);
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+    const cfg = modules.new_case_inward_transaction_control;
+    // If module config is missing, return empty data instead of failing hard.
+    if (!cfg?.table) return Response.json({ data: [] });
+    const t = escapeSqlTableIdForModuleConfig(cfg);
+
+    // Keep payload minimal and deterministic for date-picker logic.
+    const [rows] = await pool.query(
+      `
+      SELECT id, field_name, allow_flag, days
+      FROM ${t}
+      -- Only active controls should affect UI restrictions.
+      WHERE is_active = 1
+      ORDER BY id DESC
+      `
+    );
+
+    return Response.json({ data: Array.isArray(rows) ? rows : [] });
+  } catch (error) {
+    console.error("NCI transaction control API error:", error);
+    return Response.json({ error: "Failed to load transaction control settings" }, { status: 500 });
+  }
+}

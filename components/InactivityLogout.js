@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Browser-only idle timeout (separate from server session idle in lib/session.js). After 10 minutes
  * without input, calls logout and sends the user to `/login?reason=inactive`.

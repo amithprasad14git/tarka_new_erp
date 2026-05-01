@@ -1,3 +1,6 @@
+// Configuration file for project/runtime behavior.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * =============================================================================
  * WHAT IS THIS FILE? (Read this first if you do not code)
@@ -94,7 +97,9 @@
  * - `field` — database column name (camelCase) on the parent row; must match what your after-create logic sets.
  * - `title` — modal heading (e.g. “Case number assigned”).
  * - `hint` — short line under the title (optional; sensible default in the UI).
- * - `showPrintPdf` — if `true`, show a “Print PDF” slot (wire handler later); if `false`, hide it.
+ * - `showPrintPdf` — if `true`, show a print button (handler is module-specific in MasterModuleClient); if `false`, hide it.
+ * - `showCopyButton` — if `false`, hide Copy for the assigned reference (e.g. Public Notice: only Continue + print).
+ * - `printButtonLabel` — optional label for the print button.
  */
 
 // -----------------------------------------------------------------------------
@@ -721,9 +726,9 @@ export const modules = {
   // - Allow Flag = Yes (unrestricted) / No (restrict by Days)
   // - Days = allowed backdated range when Allow Flag = No
   new_case_inward_transaction_control: {
-    label: "New Case Inward Transaction Control",
+    label: "NCI Transaction Control",
     icon: "⏱️",
-    group: "Cases",
+    group: "Administration",
     table: "new_case_inward_transaction_control",
     lookupDisplayField: "field_name",
     fields: [
@@ -760,6 +765,30 @@ export const modules = {
       },
       { name: "is_active", type: "number", label: "Active (1/0)", showInView: false },
       { name: "remarks", type: "text", label: "Remarks", showInView: false },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  case_return_reasons: {
+    label: "Case Return Reasons",
+    icon: "⏱️",
+    group: "Cases",
+    table: "case_return_reasons",
+    lookupDisplayField: "returnReason",
+    fields: [
+      { name: "returnReason", type: "text", rows:4, label: "Return Reason", required: true, showInView: true },
+      { name: "sequence", type: "number", label: "Sequence", showInView: true },
+      {
+        name: "active",
+        type: "select",
+        label: "Active",
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
       ...STANDARD_ROW_AUDIT_FIELDS
     ]
   },
@@ -946,7 +975,7 @@ export const modules = {
             placeholder: "Date",
             required: true,
             maxToday: true,
-            columnWidth: "11rem"
+            columnWidth: "15rem"
           },
           {
             name: "recoveredAmount",
@@ -954,11 +983,296 @@ export const modules = {
             label: "Recovered Amount",
             placeholder: "Amount",
             required: true,
-            columnWidth: "9rem"
+            columnWidth: "15rem"
           }
           // add more line fields, lookups, etc.
         ]
       }
     ]
-  }
+  },
+
+  transfer_case: {
+    label: "Transfer Case",
+    icon: "🔄",
+    group: "Cases",
+    table: "transfer_case",
+    lookupDisplayField: "refNo",
+    fields: [
+      {
+        name: "refNo",
+        type: "text",
+        label: "Ref No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "date",
+        type: "date",
+        label: "Date",
+        required: true,
+        showInView: true,
+        maxToday: true
+      },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          extraLovParams: { transfer_case_case_picker: "1" },
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" },
+            { field: "loanTypeLabel", header: "Loan Type" },
+            { field: "caseStatusLabel", header: "Case Status" },
+          ]
+        }
+      },
+      {
+        name: "fromUnit",
+        type: "lookup",
+        label: "From Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id" }
+      },
+      {
+        name: "toUnit",
+        type: "lookup",
+        label: "To Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id" }
+      },
+      {
+        name: "assignee",
+        type: "lookup",
+        label: "Assignee",
+        required: true,
+        showInView: true,
+        lookup: { module: "users", valueField: "id", labelField: "fullName" }
+      },
+      { name: "remarks", type: "text", rows:2, label: "Remarks", required: false, showInView: false },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  public_notice: {
+    label: "Public Notice",
+    icon: "📢",
+    group: "Cases",
+    table: "public_notice",
+    lookupDisplayField: "refNo",
+    postCreateAck: {
+      field: "refNo",
+      title: "Public Notice saved",
+      hint: "Your reference number is shown below. Continue to go back to the list, or print the notice.",
+      showPrintPdf: true,
+      showCopyButton: false,
+      printButtonLabel: "Print Public Notice"
+    },
+    fields: [
+      {
+        name: "refNo",
+        type: "text",
+        label: "Ref No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Server fills this after save: PN/<yearCode>/<running serial>.
+      },
+      {
+        name: "date",
+        type: "date",
+        label: "Date",
+        required: true,
+        showInView: true,
+        maxToday: true
+      },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          extraLovParams: { public_notice_case_picker: "1" },
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" }
+          ]
+        }
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "public_notice_details",
+        table: "public_notice_details",
+        parentFkField: "publicNoticeId",
+        label: "Details",
+        indexColumnWidth: "2.25rem",
+        maxRows: 3,
+        fields: [
+          {
+            name: "displayName",
+            type: "text",
+            label: "Display Name",
+            required: true,
+            columnWidth: "18rem"
+          },
+          {
+            name: "type",
+            type: "lookup",
+            label: "Type",
+            required: true,
+            lookup: {
+              module: "lookup_value_master",
+              valueField: "id",
+              labelField: "lookupValue",
+              filterLookupTypeName: "PN Person Type"
+            },
+            columnWidth: "14rem"
+          },
+          {
+            name: "address",
+            type: "text",
+            rows: 4,
+            label: "Address",
+            required: false,
+            columnWidth: "24rem"
+          }
+        ]
+      }
+    ]
+  },
+
+  return_case: {
+    label: "Return Case",
+    icon: "↩️",
+    group: "Cases",
+    table: "return_case",
+    lookupDisplayField: "refNo",
+    postCreateAck: {
+      field: "refNo",
+      title: "Return Case saved",
+      hint: "Your reference number is shown below. Continue to go back to the list.",
+      showPrintPdf: false,
+      showCopyButton: true
+    },
+    fields: [
+      {
+        name: "refNo",
+        type: "text",
+        label: "Ref No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true
+      },
+      {
+        name: "date",
+        type: "date",
+        label: "Date",
+        required: true,
+        showInView: true,
+        maxToday: true
+      },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          extraLovParams: { return_case_case_picker: "1" },
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" }
+          ]
+        }
+      },
+      {
+        name: "investigatingOfficer",
+        type: "lookup",
+        label: "Investigating Officer",
+        required: true,
+        showInView: false,
+        lookup: { module: "employee_master", valueField: "id", ui: "lov" }
+      },
+      {
+        name: "borrowerLatestDetails",
+        type: "text",
+        rows: 4,
+        label: "Borrower Latest Details",
+        required: false,
+        showInView: false
+      },
+      {
+        name: "ccTo",
+        type: "text",
+        rows: 4,
+        label: "CC To",
+        required: false,
+        showInView: false
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "return_case_details",
+        table: "return_case_details",
+        parentFkField: "returnCaseId",
+        label: "Return Case Details",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "select",
+            type: "checkbox",
+            label: "Select",
+            required: false,
+            columnWidth: "5rem"
+          },
+          {
+            name: "returnReason",
+            type: "text",
+            label: "Return Reason",
+            required: false,
+            requiredWhenChecked: { checkboxField: "select" },
+            rows: 4,
+            columnWidth: "60rem"
+          }
+        ]
+      }
+    ]
+  },
 };

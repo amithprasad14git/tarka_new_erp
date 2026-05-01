@@ -1,8 +1,17 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Shown after create when `config/modules.js` sets `postCreateAck` and the API returns `postCreateAck.value`.
- * Copy + Continue; optional Print Branch Copy slot (per-module via `showPrintPdf`).
+ * Copy + Continue; optional print slot (per-module via `showPrintPdf`).
+ * `showCopyButton` — set false when only Continue + print should show (e.g. Public Notice).
+ *
+ * IMPORTANT ARCHITECTURE RULE (layman):
+ * - This modal is generic UI only.
+ * - It should not know module names or module rules.
+ * - Parent/module adapters must pass labels/actions through props.
  */
 import { useEffect, useId, useState } from "react";
 
@@ -14,6 +23,8 @@ export default function PostCreateAckModal({
   recordId,
   suppressValue = false,
   showPrintPdf = false,
+  showCopyButton = true,
+  printButtonLabel = "Print",
   onContinue,
   onPrintPdf
 }) {
@@ -41,7 +52,7 @@ export default function PostCreateAckModal({
     }
   }
 
-  function handlePrintBranchCopyClick() {
+  function handlePrintPdfClick() {
     if (typeof onPrintPdf === "function") {
       onPrintPdf(recordId, value);
     }
@@ -70,7 +81,7 @@ export default function PostCreateAckModal({
           ) : null}
         </div>
         <div className="post-create-ack-modal-footer">
-          {hasValue ? (
+          {hasValue && showCopyButton ? (
             <button type="button" className="master-btn master-btn-outline" onClick={handleCopy}>
               {copied ? "Copied" : "Copy"}
             </button>
@@ -79,11 +90,11 @@ export default function PostCreateAckModal({
             <button
               type="button"
               className="master-btn master-btn-outline"
-              onClick={handlePrintBranchCopyClick}
+              onClick={handlePrintPdfClick}
               disabled={recordId == null}
-              title={recordId == null ? "Save record first to enable Branch Copy print" : "Branch Copy print will be available soon"}
+              title={recordId == null ? "Save record first to enable print" : "Download PDF"}
             >
-              Print Branch Copy
+              {printButtonLabel}
             </button>
           ) : null}
           <button type="button" className="master-btn master-btn-primary" onClick={onContinue}>

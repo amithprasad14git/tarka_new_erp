@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 import { useEffect, useMemo, useState } from "react";
 
 function groupIndianDigits(digits) {

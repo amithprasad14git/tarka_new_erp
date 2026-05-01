@@ -1,14 +1,32 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 import { cookies } from "next/headers";
 import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableId } from "../../../../lib/sqlModuleTable";
 
+/**
+ * Helper used for "same text" comparison in validations.
+ * Example: " pass " and "pass" should be treated as same for confirm-password check.
+ */
 function normalizeText(value) {
   return String(value ?? "").trim();
 }
 
+/**
+ * POST /api/auth/change-password
+ *
+ * Layman flow:
+ * 1) Check user is logged in via session cookie.
+ * 2) Validate current/new/confirm fields.
+ * 3) Read current password from users table.
+ * 4) Compare current password as plain text (project policy).
+ * 5) Save new password as plain text.
+ */
 export async function POST(req) {
   try {
+    // Session cookie -> logged-in user object.
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const sessionUser = await getSessionUser(sid);
@@ -46,6 +64,7 @@ export async function POST(req) {
       return Response.json({ error: "User not found." }, { status: 404 });
     }
 
+    // Project rule: passwords are stored and checked as plain text.
     const storedPassword = String(user.password ?? "");
     const ok = storedPassword === currentPassword;
     if (!ok) {

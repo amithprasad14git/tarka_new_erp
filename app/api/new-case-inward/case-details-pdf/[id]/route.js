@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * GET `/api/new-case-inward/case-details-pdf/:id` — PDF download (parent + child tables).
  * Same access rules as GET `/api/crud/new_case_inward/:id`.
@@ -17,7 +20,7 @@ import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import {
   buildNewCaseInwardCaseDetailsPdf,
   safeCaseDetailsPdfFilename
-} from "../../../../../lib/newCaseInwardCaseDetailsPdf";
+} from "../../../../../lib/modules/newCaseInwardCaseDetailsPdf";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
 
 async function getRequestUser() {

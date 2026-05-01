@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Blocks interaction and shows a spinner while mutations or fetches run (used by master and CRUD clients).
  */

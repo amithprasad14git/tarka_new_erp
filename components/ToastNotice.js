@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Fixed banner for success/error feedback after save/delete (master module); uses global `.toast*` CSS classes.
  * @param {{ toast: { kind: "success"|"error", message: string } | null, onClose: () => void }} props

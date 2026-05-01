@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * =============================================================================
  * GENERIC CRUD API — `/api/crud/<module name>`
@@ -18,7 +21,7 @@
  * =============================================================================
  */
 import { modules } from "../../../../config/modules";
-import pool from "../../../../lib/db";
+import pool, { queryWithRetry } from "../../../../lib/db";
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../lib/session";
 import { getScopeForAction, hasModulePermission } from "../../../../lib/rbac";
@@ -32,6 +35,7 @@ import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable"
 import { createCrudRecord } from "../../../../lib/services/crud.service";
 import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAccess";
 import { applyRole2FinalStageEditLock } from "../../../../lib/modules/newCaseInward";
+import { FINAL_CASE_STATUSES } from "../../../../lib/modules/newCaseInwardCaseStatus";
 
 /**
  * Reads the httpOnly session cookie and returns the logged-in user (or null).
@@ -147,6 +151,7 @@ export async function GET(req, { params }) {
       });
     }
 
+    const mt = escapeSqlTableIdForModuleConfig(m);
     const whereParts = [];
     const whereValues = [];
 
@@ -181,7 +186,15 @@ export async function GET(req, { params }) {
         whereParts.push(`${mysql.escapeId(fieldName)} LIKE ?`);
         whereValues.push(`%${value}%`);
       } else if (field.type === "lookup") {
-        appendLookupFkFilter(fieldName, field, value, whereParts, whereValues);
+        const n = Number(String(value).trim());
+        // API callers can pass numeric FK id (e.g. f_unit=5) for exact lookup filtering.
+        // Keep old text-search behavior as fallback for manual grid filters.
+        if (Number.isFinite(n)) {
+          whereParts.push(`${mysql.escapeId(fieldName)} = ?`);
+          whereValues.push(n);
+        } else {
+          appendLookupFkFilter(fieldName, field, value, whereParts, whereValues);
+        }
       } else if (field.type === "number") {
         const n = Number(String(value).trim());
         if (!Number.isFinite(n)) continue;
@@ -223,6 +236,122 @@ export async function GET(req, { params }) {
         }
       }
     }
+    if (forLookup) {
+      const excludeIdRaw = (listUrl.searchParams.get("exclude_id") || "").trim();
+      if (excludeIdRaw) {
+        const excludeId = Number(excludeIdRaw);
+        if (Number.isFinite(excludeId)) {
+          // Generic helper for dependent LoV screens (example: Transfer Case To Unit excludes From Unit).
+          whereParts.push(`${mysql.escapeId("id")} <> ?`);
+          whereValues.push(excludeId);
+        }
+      }
+      // Module-specific LoV filter for NCI case pickers:
+      // when requested, show only open cases (exclude final-stage statuses).
+      if (module === "new_case_inward" && listUrl.searchParams.get("open_case_only") === "1") {
+        const finalStatusLabels = (FINAL_CASE_STATUSES || []).map((s) => String(s || "").trim()).filter(Boolean);
+        if (finalStatusLabels.length) {
+          const placeholders = finalStatusLabels.map(() => "?").join(", ");
+          whereParts.push(
+            `(
+              ${mysql.escapeId("caseStatus")} IS NULL
+              OR ${mysql.escapeId("caseStatus")} NOT IN (
+                SELECT id
+                FROM ${escapeSqlTableIdForModuleConfig(modules.lookup_value_master)}
+                WHERE LOWER(TRIM(${mysql.escapeId("lookupValue")})) IN (${placeholders})
+              )
+            )`
+          );
+          whereValues.push(...finalStatusLabels.map((v) => v.toLowerCase()));
+        }
+      }
+      // Return Case: Case No picker — only "Returned" NCI rows, excluding cases already on another Return Case parent.
+      if (module === "new_case_inward" && listUrl.searchParams.get("return_case_case_picker") === "1") {
+        const lvm = escapeSqlTableIdForModuleConfig(modules.lookup_value_master);
+        whereParts.push(
+          `${mysql.escapeId("caseStatus")} IN (
+            SELECT ${mysql.escapeId("id")} FROM ${lvm}
+            WHERE LOWER(TRIM(${mysql.escapeId("lookupValue")})) = LOWER(TRIM(?))
+          )`
+        );
+        whereValues.push("Returned");
+        const rcTable = escapeSqlTableIdForModuleConfig(modules.return_case);
+        const parentRaw = (listUrl.searchParams.get("return_case_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        const nciRef = `${mt}.${mysql.escapeId("id")}`;
+        if (Number.isFinite(parentId) && parentId > 0) {
+          whereParts.push(
+            `NOT EXISTS (
+              SELECT 1 FROM ${rcTable} rc
+              WHERE rc.${mysql.escapeId("caseNo")} = ${nciRef}
+                AND rc.${mysql.escapeId("id")} <> ?
+            )`
+          );
+          whereValues.push(parentId);
+        } else {
+          whereParts.push(
+            `NOT EXISTS (SELECT 1 FROM ${rcTable} rc WHERE rc.${mysql.escapeId("caseNo")} = ${nciRef})`
+          );
+        }
+      }
+      // Transfer Case: Case No picker — allow all case statuses, but exclude cases already used in transfer_case.caseNo.
+      if (module === "new_case_inward" && listUrl.searchParams.get("transfer_case_case_picker") === "1") {
+        const tcTable = escapeSqlTableIdForModuleConfig(modules.transfer_case);
+        const parentRaw = (listUrl.searchParams.get("transfer_case_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        const nciRef = `${mt}.${mysql.escapeId("id")}`;
+        if (Number.isFinite(parentId) && parentId > 0) {
+          whereParts.push(
+            `NOT EXISTS (
+              SELECT 1 FROM ${tcTable} tc
+              WHERE tc.${mysql.escapeId("caseNo")} = ${nciRef}
+                AND tc.${mysql.escapeId("id")} <> ?
+            )`
+          );
+          whereValues.push(parentId);
+        } else {
+          whereParts.push(
+            `NOT EXISTS (SELECT 1 FROM ${tcTable} tc WHERE tc.${mysql.escapeId("caseNo")} = ${nciRef})`
+          );
+        }
+      }
+      // Public Notice: Case No picker — only open NCI rows and exclude cases already used in another Public Notice parent.
+      if (module === "new_case_inward" && listUrl.searchParams.get("public_notice_case_picker") === "1") {
+        const finalStatusLabels = (FINAL_CASE_STATUSES || []).map((s) => String(s || "").trim()).filter(Boolean);
+        if (finalStatusLabels.length) {
+          const placeholders = finalStatusLabels.map(() => "?").join(", ");
+          whereParts.push(
+            `(
+              ${mysql.escapeId("caseStatus")} IS NULL
+              OR ${mysql.escapeId("caseStatus")} NOT IN (
+                SELECT id
+                FROM ${escapeSqlTableIdForModuleConfig(modules.lookup_value_master)}
+                WHERE LOWER(TRIM(${mysql.escapeId("lookupValue")})) IN (${placeholders})
+              )
+            )`
+          );
+          whereValues.push(...finalStatusLabels.map((v) => v.toLowerCase()));
+        }
+        const pnTable = escapeSqlTableIdForModuleConfig(modules.public_notice);
+        const parentRaw = (listUrl.searchParams.get("public_notice_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        const nciRef = `${mt}.${mysql.escapeId("id")}`;
+        if (Number.isFinite(parentId) && parentId > 0) {
+          whereParts.push(
+            `NOT EXISTS (
+              SELECT 1 FROM ${pnTable} pn
+              WHERE pn.${mysql.escapeId("caseNo")} = ${nciRef}
+                AND pn.${mysql.escapeId("id")} <> ?
+            )`
+          );
+          whereValues.push(parentId);
+        } else {
+          whereParts.push(
+            `NOT EXISTS (SELECT 1 FROM ${pnTable} pn WHERE pn.${mysql.escapeId("caseNo")} = ${nciRef})`
+          );
+        }
+      }
+    }
 
     if (!forLookup) {
       const listScopeAction = canView ? "view" : canEdit ? "edit" : "delete";
@@ -231,15 +360,14 @@ export async function GET(req, { params }) {
     }
 
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
-    const mt = escapeSqlTableIdForModuleConfig(m);
     const countSql = `SELECT COUNT(*) AS total FROM ${mt} ${whereSql}`;
     const selectList = buildListSelectClause(m);
     const orderByExpr = buildListOrderByExpr(m, sortBy);
     const dataSql = `SELECT ${selectList} FROM ${mt} ${whereSql} ORDER BY ${orderByExpr} ${sortDir} LIMIT ? OFFSET ?`;
 
-    const [countRows] = await pool.query(countSql, whereValues);
+    const [countRows] = await queryWithRetry(countSql, whereValues);
     const total = countRows[0]?.total || 0;
-    const [rows] = await pool.query(dataSql, [...whereValues, limit, offset]);
+    const [rows] = await queryWithRetry(dataSql, [...whereValues, limit, offset]);
 
     await enrichLookupDisplayRows(m, rows);
 

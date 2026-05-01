@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * POST /api/auth/login — JSON `{ email, password }` → `authenticateLogin` (active must be Yes) → `createSession` → cookie.
  * Session id lives in the cookie; user mapping and expiry are in DB (`sessions` table). Cookie is httpOnly to reduce XSS risk.

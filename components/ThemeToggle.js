@@ -1,5 +1,8 @@
 "use client";
 
+// Generic/shared file used across modules.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Light/dark theme: writes `data-theme` on `<html>` and persists choice in `localStorage` (`erp-theme`).
  */

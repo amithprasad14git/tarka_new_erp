@@ -1,3 +1,6 @@
+// Application route/page/API handler for this feature area.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 import { cookies } from "next/headers";
 import { deleteSession } from "../../../../lib/session";
 

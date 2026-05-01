@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Focused session-auth tests for lib/session.js
  *
@@ -5,12 +8,14 @@
  * These tests cover the equivalent auth gate behavior through `getSessionUser`.
  */
 
-jest.mock("../../lib/db", () => ({
-  __esModule: true,
-  default: {
-    query: jest.fn()
-  }
-}));
+jest.mock("../../lib/db", () => {
+  const query = jest.fn();
+  return {
+    __esModule: true,
+    default: { query },
+    queryWithRetry: (sql, values) => query(sql, values)
+  };
+});
 
 jest.mock("../../lib/sqlModuleTable", () => ({
   escapeSqlTableId: jest.fn((name) => `\`${String(name)}\``)

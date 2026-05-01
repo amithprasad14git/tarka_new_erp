@@ -1,3 +1,6 @@
+// Configuration file for project/runtime behavior.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: "node",
@@ -8,41 +11,20 @@ module.exports = {
   },
   clearMocks: true,
   restoreMocks: true,
+  // Collect coverage from the full project source tree, not only files imported by tests.
+  // This makes uncovered files show up as 0% so coverage reflects the entire codebase.
   collectCoverageFrom: [
-    "lib/modules/newCaseInward.js",
-    "lib/db.js",
-    "lib/rbac.js",
-    "lib/rbacMatrixModules.js",
-    "lib/permissionScope.js",
-    "lib/rowScope.js",
-    "lib/sqlModuleTable.js",
-    "lib/sqlDateFieldValue.js",
-    "lib/auth.js",
-    "lib/audit.js",
-    "lib/session.js",
-    "lib/istDateTime.js",
-    "lib/crudNormalize.js",
-    "lib/crudLookupEnrich.js",
-    "lib/childTablesSync.js",
-    "lib/childTablesLoad.js",
-    "lib/crudListSearch.js",
-    "lib/crudListSelect.js",
-    "lib/sqlLikeEscape.js",
-    "lib/lookupLovAccess.js",
-    "lib/lookupLovQueryParams.js",
-    "lib/lookupLabelField.js",
-    "lib/lookupLabelFieldSql.js",
-    "lib/lookupUi.js",
-    "lib/formFieldLabel.js",
-    "lib/formatViewCellValue.js",
-    "lib/gridRowValue.js",
-    "lib/moduleAfterCreate.js",
-    "lib/crudRecordAudit.js",
-    "lib/newCaseInwardCaseStatus.js",
-    "lib/newCaseInwardViewRowTone.js",
-    "lib/newCaseInwardCaseDetailsPdf.js",
-    "lib/services/crudPayloadValidation.js",
-    "lib/services/crud.service.js"
+    "**/*.{js,jsx}",
+    "!**/node_modules/**",
+    "!**/.next/**",
+    "!**/coverage/**",
+    "!**/tests/**",
+    "!**/playwrighttests/**",
+    "!**/*.test.{js,jsx}",
+    "!jest.config.js",
+    "!babel.config.js",
+    "!playwright.config.js",
+    "!next.config.js"
   ]
 };
 

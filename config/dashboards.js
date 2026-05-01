@@ -1,3 +1,6 @@
+// Configuration file for project/runtime behavior.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Dashboard registry (landing page cards).
  *

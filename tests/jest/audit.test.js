@@ -1,13 +1,18 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Comprehensive tests for lib/audit.js
  */
 
-jest.mock("../../lib/db", () => ({
-  __esModule: true,
-  default: {
-    query: jest.fn()
-  }
-}));
+jest.mock("../../lib/db", () => {
+  const query = jest.fn();
+  return {
+    __esModule: true,
+    default: { query },
+    queryWithRetry: (sql, values) => query(sql, values)
+  };
+});
 
 jest.mock("../../lib/istDateTime", () => ({
   formatInstantAsMysqlDatetimeIST: jest.fn(() => "2026-04-26 14:00:00")

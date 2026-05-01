@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Comprehensive unit + integration tests for New Case Inward domain rules.
  *
@@ -17,7 +20,7 @@ jest.mock("../../config/modules", () => ({
   }
 }));
 
-jest.mock("../../lib/newCaseInwardCaseStatus", () => {
+jest.mock("../../lib/modules/newCaseInwardCaseStatus", () => {
   const norm = (v) => String(v ?? "").trim().toLowerCase();
   return {
     normalizeNciCaseStatusLabel: norm,
@@ -345,7 +348,7 @@ describe("newCaseInward module", () => {
           parentData: validParent,
           childTableRows: {}
         })
-      ).rejects.toThrow("Transactions have been locked for this Financial Year. Contact the Administrator.");
+      ).rejects.toThrow("Transactions are locked for the selected financial year. Please contact the administrator.");
     });
 
     test("allows when no financial year matches case status updated date", async () => {
@@ -378,7 +381,7 @@ describe("newCaseInward module", () => {
           childTableRows: {},
           parentId: 101
         })
-      ).rejects.toThrow("Transactions have been locked for this Financial Year. Contact the Administrator.");
+      ).rejects.toThrow("Transactions are locked for the selected financial year. Please contact the administrator.");
     });
 
     test("enforces transaction-control backdate on entrustment date", async () => {
@@ -430,14 +433,43 @@ describe("newCaseInward module", () => {
       ).rejects.toThrow("Case Status Updated Date cannot be older than 1 days as per Transaction Control.");
     });
 
-    test("requires case-status remarks when case status is selected", async () => {
+    test("edit mode requires case-status updated date when case status is selected", async () => {
+      const conn = createConn(baseRoutes({ caseStatusLookupValue: "In Progress" }));
+      await expect(
+        validateNewCaseInwardBeforeWrite(conn, {
+          parentData: { ...validParent, caseStatus: 10, caseStatusUpdatedDate: "   " },
+          childTableRows: {},
+          parentId: 101
+        })
+      ).rejects.toThrow("Case Status Updated Date is required when Case Status is selected.");
+    });
+
+    test("edit mode requires case-status remarks when case status is selected", async () => {
       const conn = createConn(baseRoutes({ caseStatusLookupValue: "In Progress" }));
       await expect(
         validateNewCaseInwardBeforeWrite(conn, {
           parentData: { ...validParent, caseStatus: 10, caseStatusRemarks: "   " },
-          childTableRows: {}
+          childTableRows: {},
+          parentId: 101
         })
       ).rejects.toThrow("Case Status Remarks is required when Case Status is selected.");
+    });
+
+    test("edit mode allows save when case status is blank and unrelated field is edited", async () => {
+      const conn = createConn(baseRoutes({ caseStatusLookupValue: "In Progress", loanAccountNoLength: 12 }));
+      await expect(
+        validateNewCaseInwardBeforeWrite(conn, {
+          parentData: {
+            ...validParent,
+            loanAccountNo: "123456789012",
+            caseStatus: "",
+            caseStatusUpdatedDate: "",
+            caseStatusRemarks: ""
+          },
+          childTableRows: {},
+          parentId: 101
+        })
+      ).resolves.toBeUndefined();
     });
 
     test("requires recovered amount for configured status (child rows payload)", async () => {

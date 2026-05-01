@@ -1,3 +1,6 @@
+// Test file for validating app behavior and regression safety.
+// Keep module-specific business logic in lib/modules/<module> files.
+
 /**
  * Comprehensive tests for lib/childTablesSync.js
  */
@@ -193,6 +196,60 @@ describe("childTablesSync.syncChildTablesInTransaction", () => {
 
     const insertCall = conn.query.mock.calls.find(([sql]) => sql.startsWith("INSERT INTO"));
     expect(insertCall[1]).toEqual([10, null, null, null]);
+  });
+
+  test("checkbox fields coerce to 0/1 before insert", async () => {
+    const conn = makeConn();
+    await expect(
+      syncChildTablesInTransaction(
+        conn,
+        {
+          childTables: [
+            {
+              key: "return_case_details",
+              table: "return_case_details",
+              parentFkField: "returnCaseId",
+              fields: [
+                { name: "select", type: "checkbox", required: false },
+                { name: "returnReason", type: "lookup", required: true }
+              ]
+            }
+          ]
+        },
+        10,
+        { return_case_details: [{ select: true, returnReason: 3 }] }
+      )
+    ).resolves.toBeUndefined();
+
+    const insertCall = conn.query.mock.calls.find(([sql]) => sql.startsWith("INSERT INTO"));
+    expect(insertCall[1]).toEqual([10, 1, 3]);
+  });
+
+  test("checkbox undefined coerces to 0 (not null)", async () => {
+    const conn = makeConn();
+    await expect(
+      syncChildTablesInTransaction(
+        conn,
+        {
+          childTables: [
+            {
+              key: "return_case_details",
+              table: "return_case_details",
+              parentFkField: "returnCaseId",
+              fields: [
+                { name: "select", type: "checkbox", required: false },
+                { name: "returnReason", type: "lookup", required: true }
+              ]
+            }
+          ]
+        },
+        11,
+        { return_case_details: [{ returnReason: 9 }] }
+      )
+    ).resolves.toBeUndefined();
+
+    const insertCall = conn.query.mock.calls.find(([sql]) => sql.startsWith("INSERT INTO"));
+    expect(insertCall[1]).toEqual([11, 0, 9]);
   });
 });
 

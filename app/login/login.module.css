@@ -134,7 +134,7 @@
 }
 
 .dotActive {
-  background: #4f46e5;
+  background: var(--brand-dark);
   transform: scaleY(1.25);
 }
 
@@ -219,9 +219,9 @@
 
 .input:focus {
   outline: none;
-  border-color: #818cf8;
+  border-color: var(--brand-dark);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: none;
 }
 
 .passwordRow {
@@ -261,7 +261,7 @@
   width: 100%;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
   color: #fff;
   padding: 13px 16px;
   font-size: 1rem;
@@ -272,7 +272,7 @@
 }
 
 .submit:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--brand-dark) 42%, transparent);
 }
 
 .submit:active:not(:disabled) {
