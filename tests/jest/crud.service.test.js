@@ -72,7 +72,32 @@ jest.mock("../../lib/childTablesLoad", () => ({
 }));
 
 jest.mock("../../lib/audit", () => ({
-  writeAuditLog: jest.fn()
+  writeAuditLog: jest.fn(),
+  pickAuditUpdateSnapshots: jest.fn((oldRow, newRow) => {
+    if (oldRow == null || newRow == null) {
+      return { oldData: oldRow ?? null, newData: newRow ?? null };
+    }
+    if (typeof oldRow !== "object" || typeof newRow !== "object") {
+      return { oldData: oldRow, newData: newRow };
+    }
+    const keys = new Set([...Object.keys(oldRow), ...Object.keys(newRow)]);
+    const oldData = {};
+    const newData = {};
+    for (const k of keys) {
+      const ov = Object.prototype.hasOwnProperty.call(oldRow, k) ? oldRow[k] : undefined;
+      const nv = Object.prototype.hasOwnProperty.call(newRow, k) ? newRow[k] : undefined;
+      try {
+        if (JSON.stringify(ov) !== JSON.stringify(nv)) {
+          oldData[k] = ov;
+          newData[k] = nv;
+        }
+      } catch {
+        oldData[k] = ov;
+        newData[k] = nv;
+      }
+    }
+    return { oldData, newData };
+  })
 }));
 
 jest.mock("../../lib/crudNormalize", () => ({

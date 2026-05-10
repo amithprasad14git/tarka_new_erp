@@ -28,6 +28,11 @@ jest.mock("../../lib/istDateTime", () => ({
 
 const { validatePublicNoticeBeforeWrite, assignPublicNoticeRefNo } = require("../../lib/modules/publicNotice");
 
+const fyFreezeNotLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "No" }]]
+};
+
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -42,6 +47,7 @@ function createConn(routes) {
 describe("publicNotice module", () => {
   test("validatePublicNoticeBeforeWrite passes for valid payload", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => sql.includes("FROM new_case_inward"),
         reply: [[{ id: 15 }]]
@@ -57,7 +63,7 @@ describe("publicNotice module", () => {
   });
 
   test("validatePublicNoticeBeforeWrite requires one display name", async () => {
-    const conn = createConn([]);
+    const conn = createConn([fyFreezeNotLockedRoute]);
     await expect(
       validatePublicNoticeBeforeWrite(conn, {
         parentData: { date: "2026-04-30", caseNo: 15 },
@@ -68,6 +74,7 @@ describe("publicNotice module", () => {
 
   test("validatePublicNoticeBeforeWrite blocks more than 3 rows", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => sql.includes("FROM new_case_inward"),
         reply: [[{ id: 15 }]]

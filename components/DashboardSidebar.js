@@ -20,9 +20,9 @@ const groupIcons = {
   Administration: "🛡️",
   HR: "👥",
   Accounts: "💵",
-  Lookups: "📝",
+  Lookups: "🛠️",
   Banks: "🏛️",
-  Other: "📁"
+  Cases: "📚"
 };
 
 /**

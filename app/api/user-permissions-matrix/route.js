@@ -13,6 +13,7 @@ import { getSessionUser } from "../../../lib/session";
 import { hasModulePermission } from "../../../lib/rbac";
 import { escapeSqlTableId } from "../../../lib/sqlModuleTable";
 import { formatInstantAsMysqlDatetimeIST } from "../../../lib/istDateTime";
+import { assertUserPermissionsTargetUserIsActive } from "../../../lib/modules/userPermissions";
 
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
 
@@ -134,6 +135,15 @@ export async function POST(req) {
 
     if (!Number.isFinite(userId) || userId <= 0 || !incoming) {
       return Response.json({ error: "Invalid body (need userId, rows[])" }, { status: 400 });
+    }
+
+    try {
+      await assertUserPermissionsTargetUserIsActive(pool, userId);
+    } catch (e) {
+      if (e?.code === "USER_PERMISSIONS_VALIDATION_FAILED") {
+        return Response.json({ error: e.message }, { status: 400 });
+      }
+      throw e;
     }
 
     const allowed = getRbacMatrixModuleKeySet();

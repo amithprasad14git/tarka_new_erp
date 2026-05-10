@@ -7,7 +7,7 @@
  * IMPORTANT ARCHITECTURE RULE (layman):
  * - This file is a generic container only.
  * - Do NOT add module-specific business checks, validation rules, or hardcoded module labels here.
- * - If behavior belongs to one module (like new_case_inward/public_notice/return_case/transfer_case),
+ * - If behavior belongs to one module (like …/accounts_assets_investments/accounts_cash_deposit_withdraw),
  *   place that logic in `lib/modules/<module>*.js`, then call it from here.
  * - Think of this file as a "common frame" used by all modules.
  */
@@ -19,7 +19,6 @@ import { formatViewCellValue } from "../lib/formatViewCellValue";
 import { rowValueForField } from "../lib/gridRowValue";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import {
-  canOpenNciFinalReadonlyRow,
   downloadNciBranchCopyPdf,
   downloadNciCaseDetailsPdf,
   fetchNciFinalStatusAckPayload,
@@ -36,7 +35,10 @@ import {
   shouldShowNciChildTables,
   useNewCaseInwardClientModel,
   isNewCaseInwardAdmin,
-  validateNciSubmitBody
+  validateNciSubmitBody,
+  useNciViewRecordModal,
+  NciViewRecordPeekButton,
+  NCI_VIEW_GRID_PEEK_COLUMN_HEADER
 } from "../lib/modules/newCaseInwardClient";
 import {
   downloadPublicNoticePdf,
@@ -51,6 +53,24 @@ import {
 } from "../lib/modules/publicNoticeClient";
 import { useCaseSnapshotModel } from "../lib/modules/caseSnapshotClient";
 import { isTransferCaseModule, useTransferCaseClientModel } from "../lib/modules/transferCaseClient";
+import {
+  isAccountsAssetsInvestmentsModule,
+  useAccountsAssetsInvestmentsClientModel
+} from "../lib/modules/accountsAssetsInvestmentsClient";
+import {
+  isAccountsExpenseVoucherModule,
+  useAccountsExpenseVoucherClientModel
+} from "../lib/modules/accountsExpenseVoucherClient";
+// Loan Account UI: auto unit / NPA for restricted roles, cash vs non-cash NPA clearing — lib/modules/accountsLoanAcClient.js
+import { isAccountsLoanAcModule, useAccountsLoanAcClientModel } from "../lib/modules/accountsLoanAcClient";
+import {
+  isAccountsCashDepositWithdrawModule,
+  useAccountsCashDepositWithdrawClientModel
+} from "../lib/modules/accountsCashDepositWithdrawClient";
+import {
+  isAccountsCurrentAcTransferModule,
+  useAccountsCurrentAcTransferClientModel
+} from "../lib/modules/accountsCurrentAcTransferClient";
 import {
   applyReturnCaseSubmitBody,
   shouldShowReturnCaseAckOnEdit,
@@ -305,7 +325,7 @@ function buildAuditCompareRows(oldRaw, newRaw) {
     .map((k) => {
       const oldVal = valueTextForCompare(k, oldObj?.[k] ?? "");
       const newVal = valueTextForCompare(k, newObj?.[k] ?? "");
-      return { key: k, oldVal, newVal, changed: oldVal !== newVal };
+      return { key: k, oldVal, newVal };
     });
 }
 
@@ -422,9 +442,90 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const isNciModule = isNewCaseInwardModule(moduleKey);
   const isPublicNotice = isPublicNoticeModule(moduleKey);
   const isTransferCase = isTransferCaseModule(moduleKey);
+  const isAccountsAssetsInvestments = isAccountsAssetsInvestmentsModule(moduleKey);
+  const isAccountsExpenseVoucher = isAccountsExpenseVoucherModule(moduleKey);
+  const isAccountsLoanAc = isAccountsLoanAcModule(moduleKey);
+  const isAccountsCashDepositWithdraw = isAccountsCashDepositWithdrawModule(moduleKey);
+  const isAccountsCurrentAcTransfer = isAccountsCurrentAcTransferModule(moduleKey);
   const isAuditLogs = isAuditLogsModule(moduleKey);
   const isNciAdmin = isNewCaseInwardAdmin(moduleKey, permissions.role);
-  const transferClient = useTransferCaseClientModel({ moduleKey, editingRow, formKey });
+  const transferClient = useTransferCaseClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    sessionRole: permissions.role,
+    sessionUnit: permissions.unit
+  });
+
+  const accountsAssetsClient = useAccountsAssetsInvestmentsClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    sessionRole: permissions.role,
+    sessionUnit: permissions.unit
+  });
+
+  const accountsExpenseVoucherClient = useAccountsExpenseVoucherClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    sessionRole: permissions.role,
+    sessionUnit: permissions.unit
+  });
+
+  const accountsLoanAcClient = useAccountsLoanAcClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    sessionRole: permissions.role,
+    sessionUnit: permissions.unit
+  });
+
+  const accountsCashDwClient = useAccountsCashDepositWithdrawClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    sessionRole: permissions.role,
+    sessionUnit: permissions.unit
+  });
+
+  const accountsCurrentAcTransferClient = useAccountsCurrentAcTransferClientModel({
+    moduleKey,
+    editingRow,
+    formKey
+  });
+
+  /** Role 2 new entry: key on unit only (not NPA). NPA changes on Cash/non-Cash must not remount — uncontrolled fields would reset; NPA syncs via initialValues + LookupSelect. */
+  const accountsAssetsDynamicFormKeySuffix = useMemo(() => {
+    if (!isAccountsAssetsInvestments || editingRow) return "";
+    if (Number(permissions.role) !== 2) return "";
+    const u = accountsAssetsClient.autoValues?.unit;
+    return u != null && String(u).trim() !== "" ? String(u) : "";
+  }, [isAccountsAssetsInvestments, editingRow, permissions.role, accountsAssetsClient.autoValues?.unit]);
+
+  const accountsExpenseVoucherDynamicFormKeySuffix = useMemo(() => {
+    if (!isAccountsExpenseVoucher || editingRow) return "";
+    if (Number(permissions.role) !== 2) return "";
+    const u = accountsExpenseVoucherClient.autoValues?.unit;
+    return u != null && String(u).trim() !== "" ? String(u) : "";
+  }, [isAccountsExpenseVoucher, editingRow, permissions.role, accountsExpenseVoucherClient.autoValues?.unit]);
+
+  /** Role 2 new entry: key on unit only. Including npa in the key remounts the form when Cash clears NPA and wipes other fields (uncontrolled inputs). NPA still updates via merged initialValues + LookupSelect initialValue effect. */
+  const accountsLoanAcDynamicFormKeySuffix = useMemo(() => {
+    if (!isAccountsLoanAc || editingRow) return "";
+    if (Number(permissions.role) !== 2) return "";
+    const u = accountsLoanAcClient.autoValues?.unit;
+    return u != null && String(u).trim() !== "" ? String(u) : "";
+  }, [isAccountsLoanAc, editingRow, permissions.role, accountsLoanAcClient.autoValues?.unit]);
+
+  const accountsCashDwDynamicFormKeySuffix = useMemo(() => {
+    if (!isAccountsCashDepositWithdraw || editingRow) return "";
+    if (Number(permissions.role) !== 2) return "";
+    const av = accountsCashDwClient.autoValues || {};
+    const u = av.unit != null ? String(av.unit) : "";
+    const n = av.npaCurrentAc != null ? String(av.npaCurrentAc) : "";
+    return `${u}__${n}`;
+  }, [isAccountsCashDepositWithdraw, editingRow, permissions.role, accountsCashDwClient.autoValues]);
 
   /** New Case Inward: role 2 (non-admin) uses session unit on new entry only; role 1 picks any unit. */
   const newCaseInwardSessionUnit = useMemo(
@@ -438,13 +539,65 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (isTransferCase) {
       return { ...v, ...transferClient.autoValues };
     }
+    if (isAccountsCurrentAcTransfer) {
+      return { ...v, ...accountsCurrentAcTransferClient.autoValues };
+    }
+    if (isAccountsCashDepositWithdraw) {
+      return { ...v, ...accountsCashDwClient.autoValues };
+    }
+    if (isAccountsAssetsInvestments) {
+      return { ...v, ...accountsAssetsClient.autoValues };
+    }
+    if (isAccountsExpenseVoucher) {
+      return { ...v, ...accountsExpenseVoucherClient.autoValues };
+    }
+    if (isAccountsLoanAc) {
+      return { ...v, ...accountsLoanAcClient.autoValues };
+    }
     return v;
-  }, [editingRow, newCaseInwardSessionUnit, isTransferCase, transferClient.autoValues]);
+  }, [
+    editingRow,
+    newCaseInwardSessionUnit,
+    isTransferCase,
+    transferClient.autoValues,
+    isAccountsCurrentAcTransfer,
+    accountsCurrentAcTransferClient.autoValues,
+    isAccountsCashDepositWithdraw,
+    accountsCashDwClient.autoValues,
+    isAccountsAssetsInvestments,
+    accountsAssetsClient.autoValues,
+    isAccountsExpenseVoucher,
+    accountsExpenseVoucherClient.autoValues,
+    isAccountsLoanAc,
+    accountsLoanAcClient.autoValues
+  ]);
 
-  const entryFormReadOnlyFields = useMemo(
-    () => (isTransferCase ? transferClient.entryReadOnlyFields : getNciEntryReadOnlyFields(moduleKey, editingRow, permissions.role, permissions.unit)),
-    [moduleKey, editingRow, permissions.role, permissions.unit, transferClient.entryReadOnlyFields]
-  );
+  const entryFormReadOnlyFields = useMemo(() => {
+    if (isTransferCase) return transferClient.entryReadOnlyFields;
+    if (isAccountsCurrentAcTransfer) return accountsCurrentAcTransferClient.entryReadOnlyFields;
+    if (isAccountsCashDepositWithdraw) return accountsCashDwClient.entryReadOnlyFields;
+    if (isAccountsAssetsInvestments) return accountsAssetsClient.entryReadOnlyFields;
+    if (isAccountsExpenseVoucher) return accountsExpenseVoucherClient.entryReadOnlyFields;
+    if (isAccountsLoanAc) return accountsLoanAcClient.entryReadOnlyFields;
+    return getNciEntryReadOnlyFields(moduleKey, editingRow, permissions.role, permissions.unit);
+  }, [
+    moduleKey,
+    editingRow,
+    permissions.role,
+    permissions.unit,
+    transferClient.entryReadOnlyFields,
+    isTransferCase,
+    isAccountsCurrentAcTransfer,
+    accountsCurrentAcTransferClient.entryReadOnlyFields,
+    isAccountsCashDepositWithdraw,
+    accountsCashDwClient.entryReadOnlyFields,
+    isAccountsAssetsInvestments,
+    accountsAssetsClient.entryReadOnlyFields,
+    isAccountsExpenseVoucher,
+    accountsExpenseVoucherClient.entryReadOnlyFields,
+    isAccountsLoanAc,
+    accountsLoanAcClient.entryReadOnlyFields
+  ]);
 
   const caseSnapshot = useCaseSnapshotModel({ moduleKey, editingRow });
   const publicNoticeClient = usePublicNoticeClientModel({ moduleKey, editingRow });
@@ -467,16 +620,31 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     isAdmin: isNciAdmin
   });
 
+  /** NCI: grid “View record” for `_canEdit === false` loads this modal instead of entry mode (`newCaseInwardClient.js`). */
+  const nciViewRecordModal = useNciViewRecordModal({ moduleKey, moduleConfig: config });
+
   const entryFieldUiOverrides = useMemo(() => {
     if (publicNoticeClient.entryFieldUiOverrides) return publicNoticeClient.entryFieldUiOverrides;
     if (returnCaseClient.entryFieldUiOverrides) return returnCaseClient.entryFieldUiOverrides;
+    if (accountsCurrentAcTransferClient.entryFieldUiOverrides)
+      return accountsCurrentAcTransferClient.entryFieldUiOverrides;
+    if (accountsCashDwClient.entryFieldUiOverrides) return accountsCashDwClient.entryFieldUiOverrides;
+    if (accountsAssetsClient.entryFieldUiOverrides) return accountsAssetsClient.entryFieldUiOverrides;
+    if (accountsExpenseVoucherClient.entryFieldUiOverrides)
+      return accountsExpenseVoucherClient.entryFieldUiOverrides;
+    if (accountsLoanAcClient.entryFieldUiOverrides) return accountsLoanAcClient.entryFieldUiOverrides;
     if (transferClient.entryFieldUiOverrides) return transferClient.entryFieldUiOverrides;
     return nciClient.entryFieldUiOverrides;
   }, [
     publicNoticeClient.entryFieldUiOverrides,
     returnCaseClient.entryFieldUiOverrides,
+    accountsCurrentAcTransferClient.entryFieldUiOverrides,
+    accountsCashDwClient.entryFieldUiOverrides,
+    accountsAssetsClient.entryFieldUiOverrides,
+    accountsExpenseVoucherClient.entryFieldUiOverrides,
+    accountsLoanAcClient.entryFieldUiOverrides,
     transferClient.entryFieldUiOverrides,
-    nciClient.entryFieldUiOverrides,
+    nciClient.entryFieldUiOverrides
   ]);
 
   const nciDisableLookupRemoteByField = nciClient.disableLookupRemoteByField;
@@ -506,11 +674,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   }, [data, selectedId]);
 
   const canOpenSelectedRecord = useMemo(() => {
-    if (!selectedId || !permissions.canEdit || !selectedRow) return false;
-    if (selectedRow._canEdit !== false) return true;
-    // New Case Inward final-stage rows are view-only for role 2; still allow opening full form data.
-    return canOpenNciFinalReadonlyRow(moduleKey, selectedRow);
-  }, [selectedId, permissions.canEdit, selectedRow, moduleKey]);
+    if (!selectedId || !selectedRow) return false;
+    if (isNewCaseInwardModule(moduleKey) && permissions.canView && selectedRow._canEdit === false) return true;
+    if (!permissions.canEdit) return false;
+    return selectedRow._canEdit !== false;
+  }, [selectedId, selectedRow, permissions.canEdit, permissions.canView, moduleKey]);
 
   // View table columns: per-field `showInView` in config/modules.js (default true if omitted).
   const viewFieldConfigs = useMemo(() => {
@@ -525,6 +693,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const auditLogsSimpleView = isAuditLogs;
   // New Case Inward uses a dot marker instead of row background tint for case status.
   const nciStatusDotEnabled = isNewCaseInwardModule(moduleKey);
+  const nciViewPeekEnabled = isNewCaseInwardModule(moduleKey) && permissions.canView;
 
   const nciCaseStatusField = useMemo(() => getNciCaseStatusField(config, moduleKey), [moduleKey, config]);
 
@@ -560,6 +729,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (nciClient.onFieldValueChange(fieldName, value)) {
       return;
     }
+    if (accountsCurrentAcTransferClient.handleFieldValueChange(fieldName, value)) return;
+    if (accountsCashDwClient.handleFieldValueChange(fieldName, value)) return;
+    if (accountsAssetsClient.handleFieldValueChange(fieldName, value)) return;
+    if (accountsExpenseVoucherClient.handleFieldValueChange(fieldName, value)) return;
+    // accounts_loan_ac: cash clears NPA lookup; non-cash refetches first current a/c for unit (see accountsLoanAcClient.js).
+    if (accountsLoanAcClient.handleFieldValueChange(fieldName, value)) return;
     if (transferClient.handleFieldValueChange(fieldName, value)) return;
   }
 
@@ -598,6 +773,28 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       setBusy(false);
     }
   };
+
+  /** After a successful save: remain in entry mode with a fresh form; optionally refresh the grid data for View. */
+  async function resetEntryAfterSave(options = {}) {
+    const { reloadList = true, toastMessage, clearViewFilters = false, showSuccessToast = true } = options;
+    setViewMode(false);
+    setEditingRow(null);
+    setFormKey((k) => k + 1);
+    setSelectedId(null);
+    if (clearViewFilters) {
+      setViewColumnFilterInput({});
+      setViewColumnFilters({});
+    }
+    if (showSuccessToast) {
+      showToast(
+        "success",
+        toastMessage ?? `${config.label || moduleKey}: saved successfully.`
+      );
+    }
+    if (reloadList) {
+      await loadRecords();
+    }
+  }
 
   useEffect(() => {
     if (!isActive) return;
@@ -672,6 +869,8 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     loadPermissions();
     return () => {
       cancelled = true;
+      // React Strict Mode (dev): remount must be allowed to fetch again; ref was set before fetch completed.
+      permissionsFetchKeyRef.current = "";
     };
   }, [isActive, moduleKey]);
 
@@ -704,9 +903,15 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   async function handleEditSelected() {
     if (busy) return;
     if (!selectedId) return;
-    if (!permissions.canEdit) return;
     const row = data.find((r) => String(r.id) === String(selectedId));
     if (!row) return;
+
+    if (isNciModule && permissions.canView && row._canEdit === false && nciViewRecordModal.enabled) {
+      await nciViewRecordModal.openViewRecord(Number(selectedId));
+      return;
+    }
+
+    if (!permissions.canEdit) return;
     if (row._canEdit === false && !isNciModule) return;
 
     setBusy(true);
@@ -844,12 +1049,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       } finally {
         setBusy(false);
       }
-      setEditingRow(null);
-      setFormKey((k) => k + 1);
-      setSelectedId(null);
-      setViewColumnFilterInput({});
-      setViewColumnFilters({});
-      setViewMode(true);
+      await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
       return;
     }
 
@@ -887,25 +1087,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       }
     }
 
-    // After print from acknowledgement, move user to clean view mode.
-    setEditingRow(null);
-    setFormKey((k) => k + 1);
-    setSelectedId(null);
-    setViewColumnFilterInput({});
-    setViewColumnFilters({});
-    setViewMode(true);
+    await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
   }
 
   function handlePostCreateAckContinue() {
     const ack = postCreateAckOpen;
     setPostCreateAckOpen(null);
     if (!ack) return;
-    setEditingRow(null);
-    setFormKey((k) => k + 1);
-    // After acknowledgement, open clean view list without auto-selecting any row.
-    setSelectedId(null);
-    setViewMode(true);
-    showToast("success", `${config.label || moduleKey}: saved successfully.`);
+    void resetEntryAfterSave({ clearViewFilters: true });
   }
 
   async function handleSubmit(e) {
@@ -992,11 +1181,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         return;
       }
 
-      setEditingRow(null);
-      setFormKey((k) => k + 1);
-      setSelectedId(null);
-      setViewMode(true);
-      showToast("success", `${config.label || moduleKey}: saved successfully.`);
+      await resetEntryAfterSave({ clearViewFilters: false });
     } catch (err) {
       showToast("error", err.message || "Failed to save record");
     } finally {
@@ -1081,10 +1266,6 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 ×
               </button>
             </div>
-            <div className="audit-compare-legend" role="note" aria-label="Compare legend">
-              <span className="audit-compare-legend-dot" aria-hidden />
-              Highlighted rows indicate changed values.
-            </div>
             {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).length ? (
               <div className="audit-compare-table-wrap">
                 <table className="audit-compare-table">
@@ -1097,7 +1278,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   </thead>
                   <tbody>
                     {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).map((row) => (
-                      <tr key={row.key} className={row.changed ? "audit-compare-row-changed" : undefined}>
+                      <tr key={row.key}>
                         <td>{row.key}</td>
                         <td>{row.oldVal || "—"}</td>
                         <td>{row.newVal || "—"}</td>
@@ -1134,11 +1315,18 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         preview={caseSnapshot.preview}
       />
 
+      {nciViewRecordModal.viewRecordModal}
+
       {!effectiveViewMode ? (
         <div className="card table-section master-entry-shell">
           {/* Entry mode: same shell as view list — footer actions share master-view-actions + top rule */}
+          {/* Key suffixes: remount DynamicForm when session-derived unit changes (role 2 new entry). Tags: -aai- assets, -cdw- cash DW, -aev- expense voucher, -ala- loan AC. */}
           <DynamicForm
-            key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}`}
+            key={`${formKey}-${editingRow ? `edit-${editingRow.id}` : "new"}${
+              accountsAssetsDynamicFormKeySuffix ? `-aai-${accountsAssetsDynamicFormKeySuffix}` : ""
+            }${accountsCashDwDynamicFormKeySuffix ? `-cdw-${accountsCashDwDynamicFormKeySuffix}` : ""}${
+              accountsExpenseVoucherDynamicFormKeySuffix ? `-aev-${accountsExpenseVoucherDynamicFormKeySuffix}` : ""
+            }${accountsLoanAcDynamicFormKeySuffix ? `-ala-${accountsLoanAcDynamicFormKeySuffix}` : ""}`}
             moduleKey={moduleKey}
             config={entryModeConfig}
             onSubmit={handleSubmit}
@@ -1269,7 +1457,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               </span>
             </div>
           ) : null}
-          <div className="table-wrap master-orders-table-wrap">
+          <div className="table-wrap table-wrap-scroll-y master-orders-table-wrap">
             <table className="data-table data-table-compact master-orders-table">
               <thead>
                 <tr>
@@ -1282,6 +1470,25 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   {viewFieldConfigs.map((f) => (
                     <th key={f.name}>{f.label || f.name}</th>
                   ))}
+                  {nciViewPeekEnabled ? (
+                    <th
+                      className="master-nci-peek-grid-head"
+                      scope="col"
+                      title={NCI_VIEW_GRID_PEEK_COLUMN_HEADER}
+                      style={{
+                        width: "1.75rem",
+                        maxWidth: "2.75rem",
+                        padding: "2px 1px",
+                        textAlign: "center",
+                        fontSize: "9px",
+                        lineHeight: 1.1,
+                        verticalAlign: "middle",
+                        fontWeight: 600
+                      }}
+                    >
+                      {NCI_VIEW_GRID_PEEK_COLUMN_HEADER}
+                    </th>
+                  ) : null}
                   {auditLogsCompareEnabled ? <th className="audit-compare-col">Compare</th> : null}
                 </tr>
                 <tr>
@@ -1352,6 +1559,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       </th>
                     );
                   })}
+                  {nciViewPeekEnabled ? (
+                    <th className="master-filter-th master-nci-peek-filter" aria-hidden style={{ width: "1.75rem", maxWidth: "2.75rem", padding: 0 }} />
+                  ) : null}
                   {auditLogsCompareEnabled ? <th className="master-filter-th" aria-hidden /> : null}
                 </tr>
               </thead>
@@ -1429,6 +1639,25 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                           )}
                         </td>
                       ))}
+                      {nciViewPeekEnabled ? (
+                        <td
+                          className="master-nci-peek-grid-cell"
+                          style={{
+                            width: "1.75rem",
+                            maxWidth: "2.75rem",
+                            padding: "2px 1px",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            margin: 0
+                          }}
+                        >
+                          <NciViewRecordPeekButton
+                            recordId={r.id}
+                            disabled={busy}
+                            onPeek={() => nciViewRecordModal.openViewRecord(Number(r.id))}
+                          />
+                        </td>
+                      ) : null}
                       {auditLogsCompareEnabled ? (
                         <td className="audit-compare-col">
                           <button

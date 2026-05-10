@@ -5,6 +5,7 @@ jest.mock("../../config/modules", () => ({
   modules: {
     transfer_case: { table: "transfer_case" },
     new_case_inward: { table: "new_case_inward" },
+    unit_master: { table: "unit_master" },
     financial_year_master: { table: "financial_year_master" }
   }
 }));
@@ -32,6 +33,11 @@ const {
   assignTransferCaseRefNo
 } = require("../../lib/modules/transferCase");
 
+const fyFreezeNotLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "No" }]]
+};
+
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -46,9 +52,14 @@ function createConn(routes) {
 describe("transferCase module", () => {
   test("validateTransferCaseBeforeWrite accepts valid payload", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => sql.includes("FROM new_case_inward"),
         reply: [[{ id: 901, unit: 10 }]]
+      },
+      {
+        when: (sql) => sql.includes("unit_master"),
+        reply: [[{ id: 20 }]]
       },
       {
         when: (sql) => sql.includes("FROM users"),
@@ -65,6 +76,7 @@ describe("transferCase module", () => {
 
   test("validateTransferCaseBeforeWrite blocks same from/to unit", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => sql.includes("FROM new_case_inward"),
         reply: [[{ id: 901, unit: 10 }]]

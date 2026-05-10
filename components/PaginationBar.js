@@ -5,6 +5,7 @@
 
 /**
  * List footer: range summary, page-size dropdown, ellipsis page numbers, and optional `leftExtra` slot (e.g. filters).
+ * For large page sizes, pair the table with `className="table-wrap table-wrap-scroll-y ..."` (global styles) so rows scroll inside a fixed-height frame.
  */
 export default function PaginationBar({
   page,

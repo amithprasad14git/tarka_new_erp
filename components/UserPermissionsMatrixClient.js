@@ -4,9 +4,9 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * Matrix editor: per module — Add first, then View/Edit/Delete with Own | Unit | All scopes.
+ * Matrix editor: one row per module; Add plus View/Edit/Delete × Own | Unit | All scopes.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import LoadingOverlay from "./LoadingOverlay";
 import ToastNotice from "./ToastNotice";
 
@@ -57,7 +57,36 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
   const [strayDbRows, setStrayDbRows] = useState(0);
   const [dirty, setDirty] = useState(false);
 
+  const matrixTableRef = useRef(null);
+  const matrixHeadRow1Ref = useRef(null);
+
   const title = "User Permissions";
+
+  /** Second header row uses position:sticky; top must match first row height in px (rem guesses caused gaps / sliced text). */
+  useLayoutEffect(() => {
+    if (!userId || matrixRows.length === 0) return undefined;
+    const tr = matrixHeadRow1Ref.current;
+    const table = matrixTableRef.current;
+    if (!tr || !table) return undefined;
+
+    function syncHeadBandOffset() {
+      const h = tr.getBoundingClientRect().height;
+      if (h > 0) {
+        table.style.setProperty("--perm-matrix-head1", `${Math.round(h * 100) / 100}px`);
+      }
+    }
+
+    syncHeadBandOffset();
+    const ro = new ResizeObserver(() => {
+      syncHeadBandOffset();
+    });
+    ro.observe(tr);
+    window.addEventListener("resize", syncHeadBandOffset);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", syncHeadBandOffset);
+    };
+  }, [userId, matrixRows.length]);
 
   useEffect(() => {
     if (!toast) return;
@@ -102,7 +131,9 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
         page: "1",
         limit: "500",
         sortBy: "fullName",
-        sortDir: "asc"
+        sortDir: "asc",
+        // Match user_permissions.user_id LoV: only Active = Yes (see config/modules.js + crud f_* filters).
+        f_active: "Yes"
       });
       const res = await fetch(`/api/crud/users?${q}`);
       const text = await res.text();
@@ -318,11 +349,11 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
         <div>
           <h1 className="module-page-title">{title}</h1>
           <p className="muted master-module-sub perm-matrix-lead">
-            Columns: <strong>Add</strong> first, then <strong>View</strong> / <strong>Edit</strong> / <strong>Delete</strong>{" "}
-            with scope <strong>Own</strong> | <strong>Unit</strong> | <strong>All</strong>. Use{" "}
-            <strong>Check all</strong> / <strong>Uncheck all</strong> above the table only if you intend to set every
-            module at once. Requires <code>user_permissions.view_scope</code>, <code>edit_scope</code>,{" "}
-            <code>delete_scope</code> and <code>users.unit</code> where relevant.
+            Choose a person, then set each module: <strong>Add</strong> lets them create new records;{" "}
+            <strong>View</strong>, <strong>Edit</strong>, and <strong>Delete</strong> use <strong>Own</strong>,{" "}
+            <strong>Unit</strong>, or <strong>All</strong> to say whether that action applies to their own work, their
+            unit, or more broadly. <strong>Check all</strong> / <strong>Uncheck all</strong> updates every module at
+            once—use with care. Click <strong>Save permissions</strong> when you are done.
           </p>
         </div>
       </div>
@@ -388,7 +419,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
 
           {userId && matrixRows.length > 0 ? (
             <div className="perm-matrix-scroll">
-              <table className="perm-matrix-table">
+              <table ref={matrixTableRef} className="perm-matrix-table">
                 <colgroup>
                   <col className="perm-matrix-col-module" />
                   <col className="perm-matrix-col-add" />
@@ -403,7 +434,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
                   <col className="perm-matrix-col-scope" />
                 </colgroup>
                 <thead>
-                  <tr>
+                  <tr ref={matrixHeadRow1Ref}>
                     <th className="perm-matrix-th-module" rowSpan={2} scope="col">
                       Module
                     </th>

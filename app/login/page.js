@@ -5,13 +5,14 @@
 
 /**
  * Login page: posts to `/api/auth/login`; successful login sets httpOnly `session` cookie and redirects to dashboard.
- * Brand logo: `public/images/` — set `LOGO_SRC` to your asset path.
+ * UI-only assets: company + developer logos under `public/images/`.
  */
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 
-const LOGO_SRC = "/images/tarkalogo.png";
+const COMPANY_LOGO_SRC = "/images/npa_full_transparent_bg.png";
+const DEVELOPER_LOGO_SRC = "/images/tarkalogo.png";
 
 const CAROUSEL_SLIDES = [
   {
@@ -86,7 +87,15 @@ export default function Login() {
     <div className={styles.shell}>
       <div className={styles.carouselWrap} aria-roledescription="carousel" aria-label="Highlights">
         <div className={styles.carouselTop}>
-          <img className={styles.brandLogo} src={LOGO_SRC} alt="Tarka — Solutions that work" width={220} height={48} />
+          <img
+            className={styles.brandLogoDev}
+            src={DEVELOPER_LOGO_SRC}
+            alt="Tarka — Solutions that work"
+            width={280}
+            height={88}
+            decoding="async"
+            sizes="(max-width: 680px) 72vw, 320px"
+          />
         </div>
 
         <div className={styles.slides} aria-live="polite">
@@ -126,60 +135,74 @@ export default function Login() {
         </div>
       </div>
 
-      <div className={styles.formCol}>
+      <div className={styles.formOverlay}>
         <div className={styles.formCard}>
-          <form className={styles.formInner} onSubmit={handleLogin}>
-            <h1 className={styles.title}>Welcome back...</h1>
-            <p className={styles.subtitle}>Log in to continue</p>
-
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="login-email">
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                autoComplete="email"
-                className={styles.input}
+          <form className={`master-entry-form ${styles.formInner}`} onSubmit={handleLogin}>
+            <div className={styles.loginHead}>
+              <img
+                className={styles.companyLogo}
+                src={COMPANY_LOGO_SRC}
+                alt="NPA Squad"
+                decoding="async"
               />
+              <h1 className={styles.title}>Workspace Sign-in</h1>
+              <p className={styles.subtitle}>Use your organizational account to continue.</p>
             </div>
 
-            <div className={`${styles.field} ${styles.fieldPassword}`}>
-              <label className={styles.label} htmlFor="login-password">
-                Password
-              </label>
-              <div className={styles.passwordRow}>
-                <input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  autoComplete="current-password"
-                  className={styles.input}
-                />
-                <button
-                  type="button"
-                  className={styles.eyeBtn}
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
+            <div className="form-field form-field-outline">
+              <div className="form-field-outline-box">
+                <label className="form-field-outline-label" htmlFor="login-email">
+                  Email ID
+                </label>
+                <div className="form-field-outline-control">
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className={styles.submit}>
-              {loading ? "Logging in…" : "Login"}
+            <div className="form-field form-field-outline">
+              <div className="form-field-outline-box">
+                <label className="form-field-outline-label" htmlFor="login-password">
+                  Password
+                </label>
+                <div className={`form-field-outline-control ${styles.outlinePwControl}`}>
+                  <div className={styles.outlinePwRow}>
+                    <input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
+                      required
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className={styles.outlinePwReveal}
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className={`master-btn master-btn-primary ${styles.loginSubmit}`}>
+              {loading ? "Signing in…" : "Sign in"}
             </button>
 
             {error ? (
-              <p className={styles.error} role="alert">
+              <p className={`form-field-hint form-field-hint-error ${styles.loginError}`} role="alert">
                 {error}
               </p>
             ) : null}

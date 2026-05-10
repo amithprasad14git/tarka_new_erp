@@ -137,7 +137,12 @@ export default function DynamicForm({
               }
               required={!fieldReadOnly && required}
               disabled={fieldReadOnly}
+              onChange={(e) => {
+                if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+              }}
             >
+              {/* Empty value must exist when there is no default: otherwise defaultValue="" matches no option and submit/validation break. */}
+              <option value="">{required ? "Select…" : "—"}</option>
               {f.options.map((opt) => (
                 <option key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}

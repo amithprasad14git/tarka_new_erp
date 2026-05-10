@@ -223,6 +223,16 @@ Current implemented behavior includes:
 
 ---
 
+## 10A) Accounts modules: Loan Account & Suspense Entry (plain English)
+
+These screens add **auto-generated voucher numbers** and a **save confirmation** modal for the stamped reference. A non-technical overview (what users see, what `LN/CR` vs `LN/DR` means, `SUSP/...` numbering, and where developers change code) lives here:
+
+- **[docs/README-accounts-modules.md](docs/README-accounts-modules.md)**
+
+Automated tests for voucher stamping live in `tests/jest/accountsLoanAc.test.js` and `tests/jest/accountsSuspenseEntry.test.js`.
+
+---
+
 ## 11) Current UX Behavior Highlights
 
 - Large validation/error toast appears at top-center for readability.

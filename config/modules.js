@@ -165,7 +165,7 @@ export const modules = {
         label: "Unit",
         required: true,
         showInView: true,
-        lookup: { module: "unit_master", valueField: "id" }
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         // Yes/No: whether this account may log in.
@@ -192,9 +192,10 @@ export const modules = {
   // names here (e.g. employee_master). Row scopes (own/unit/all) live in the DB too.
   // RBAC join table: columns match lib/rbac.js (user_id, module, can_*) + standard row audit columns.
   // Dashboard uses the matrix UI (all modules as rows); `module` must match these config keys.
+  // user_id LoV and saves: only users with active = "Yes" (lib/modules/userPermissions.js + matrix route).
   user_permissions: {
     label: "User Permissions",
-    icon: "🔐",
+    icon: "🗝️",
     group: "Administration",
     table: "user_permissions",
     fields: [
@@ -205,7 +206,13 @@ export const modules = {
         label: "User",
         required: true,
         showInView: true,
-        lookup: { module: "users", valueField: "id", labelField: "fullName" }
+        // LoV lists only Active = Yes (GET …/users?lov=1&f_active=Yes — see crud list filters).
+        lookup: {
+          module: "users",
+          valueField: "id",
+          labelField: "fullName",
+          extraLovParams: { f_active: "Yes" }
+        }
       },
       // Which module these rights apply to (text key matching `modules` keys).
       { name: "module", type: "text", label: "Module", showInView: true },
@@ -337,7 +344,7 @@ export const modules = {
     icon: "👥",
     group: "HR",
     table: "unit_master",
-    lookupDisplayField: "unitName",
+    lookupDisplayField: "unitCode",
     fields: [
       { name: "unitCode", type: "text", label: "Unit code", required: true, showInView: true },
       { name: "unitName", type: "text", label: "Unit name", required: true, showInView: true },
@@ -554,7 +561,7 @@ export const modules = {
         label: "Bank",
         required: true,
         showInView: true,
-        lookup: { module: "bank_master", valueField: "id" }
+        lookup: { module: "bank_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       { name: "shortCode", type: "text", label: "Short Code", required: true, showInView: true },
       { name: "fullName", type: "text", label: "Full Name", required: true, showInView: true },
@@ -590,7 +597,7 @@ export const modules = {
         label: "HO/ZO",
         required: true,
         showInView: true,
-        lookup: { module: "ho_zo_master", valueField: "id" }
+        lookup: { module: "ho_zo_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       { name: "shortCode", type: "text", label: "Short Code", required: true, showInView: true },
       { name: "fullName", type: "text", label: "Full Name", required: true, showInView: true },
@@ -627,7 +634,7 @@ export const modules = {
         label: "RBO/RO",
         required: true,
         showInView: true,
-        lookup: { module: "rbo_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "fullName",
+        lookup: { module: "rbo_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "shortCode", extraLovParams: { f_active: "Yes" },
           pickerColumns: [
             { field: "ho_zoLabel", header: "HO / ZO" },
             { field: "shortCode", header: "Short Code" },
@@ -727,7 +734,7 @@ export const modules = {
   // - Days = allowed backdated range when Allow Flag = No
   new_case_inward_transaction_control: {
     label: "NCI Transaction Control",
-    icon: "⏱️",
+    icon: "🔓",
     group: "Administration",
     table: "new_case_inward_transaction_control",
     lookupDisplayField: "field_name",
@@ -771,7 +778,7 @@ export const modules = {
 
   case_return_reasons: {
     label: "Case Return Reasons",
-    icon: "⏱️",
+    icon: "📜",
     group: "Cases",
     table: "case_return_reasons",
     lookupDisplayField: "returnReason",
@@ -848,7 +855,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "Case Received From"
+          filterLookupTypeName: "Case Received From",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       {
@@ -861,7 +869,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "File Maintenance"
+          filterLookupTypeName: "File Maintenance",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       {
@@ -875,7 +884,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "branchCode",
+          pickerSortBy: "branchName",
+          extraLovParams: { f_active: "Yes" },
           pickerColumns: [
             { field: "rbo_roLabel", header: "RBO / RO" },
             { field: "branchCode", header: "Branch Code" },
@@ -896,7 +906,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "Loan Category"
+          filterLookupTypeName: "Loan Category",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       {
@@ -909,7 +920,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "Loan Type"
+          filterLookupTypeName: "Loan Type",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       { name: "npaDate", type: "date", label: "NPA Date", required: false, showInView: false, maxToday: true },
@@ -923,7 +935,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "NPA Status"
+          filterLookupTypeName: "NPA Status",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       { name: "closureBalance", type: "number", label: "Closure Balance", required: true, showInView: false,
@@ -947,7 +960,8 @@ export const modules = {
           module: "lookup_value_master",
           valueField: "id",
           labelField: "lookupValue",
-          filterLookupTypeName: "Case Status"
+          filterLookupTypeName: "Case Status",
+          extraLovParams: { f_active: "Yes" }
         }
       },
       { name: "caseStatusRemarks", type: "text", rows:4, label: "Case Status Remarks", required: false, showInView: false },
@@ -991,6 +1005,10 @@ export const modules = {
     ]
   },
 
+  // -----------------------------------------------------------------------------
+  // Transfer Case: intra-company case transfer; refNo stamped after INSERT (lib/modules/transferCase.js).
+  // Ownership/move side-effects also run via crud adapter — see transferCaseClient for UI behaviour.
+  // -----------------------------------------------------------------------------
   transfer_case: {
     label: "Transfer Case",
     icon: "🔄",
@@ -1069,6 +1087,9 @@ export const modules = {
     ]
   },
 
+  // -----------------------------------------------------------------------------
+  // Public Notice: notice workflow tied to a case; refNo + PDF behaviour — lib/modules/publicNotice.js.
+  // -----------------------------------------------------------------------------
   public_notice: {
     label: "Public Notice",
     icon: "📢",
@@ -1168,6 +1189,9 @@ export const modules = {
     ]
   },
 
+  // -----------------------------------------------------------------------------
+  // Return Case: returned-case workflow; refNo stamped after save — lib/modules/returnCase.js.
+  // -----------------------------------------------------------------------------
   return_case: {
     label: "Return Case",
     icon: "↩️",
@@ -1275,4 +1299,411 @@ export const modules = {
       }
     ]
   },
+
+  // =============================================================================
+  // ACCOUNTS — voucher-style screens (voucherNo / reference filled on server after first save)
+  // Each block below points to `lib/modules/<module>.js` for stamp + rules and, where present,
+  // `lib/modules/<module>Client.js` for browser-only behaviour. Generic wiring: moduleAfterCreate.js,
+  // crudModuleAdapters.js (when beforeWrite exists), MasterModuleClient.js, crud.service.js.
+  // =============================================================================
+  // Assets & Investments (`accounts_assets_investments`)
+  // - Voucher: ASS/<financial year code>/#### (assignAccountsAssetsInvestmentsVoucherNo).
+  // - Same family of rules as expense voucher: payment mode, NPA current AC, cheques, role 2 — assetsInvestments.js + assetsInvestmentsClient.js.
+  // =============================================================================
+  accounts_assets_investments: 
+  {
+    label: "Assets & Investments",
+    icon: "🚗",
+    group: "Accounts",
+    table: "accounts_assets_investments",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Assets & Investments saved",
+      hint: "Your voucher number is shown below. Continue to return to the list.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "unit", type: "lookup", label: "Unit", required: true, showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "paidTo",
+        type: "lookup",
+        label: "Party",
+        required: true,
+        showInView: true,
+        lookup: { module: "party_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "partyName", extraLovParams: { f_active: "Yes" },
+          pickerColumns: [
+            { field: "partyName", header: "Party Name" },
+            { field: "address", header: "Address" },
+          ]
+        }
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      {
+        name: "paymentMode",
+        type: "select",
+        label: "Payment Mode",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Card", value: "Card" },
+          { label: "Cheque", value: "Cheque" },
+          { label: "Cash", value: "Cash" },
+          { label: "UPI", value: "UPI" }
+        ]
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: false,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
+      { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
+      { name: "inFavourOf", type: "text", label: "In Favour Of", required: true, showInView: false },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // Cash Deposit & Withdraw (`accounts_cash_deposit_withdraw`)
+  // - Voucher: Deposit → C/DP/<FY>/#### ; Withdraw → C/WD/<FY>/#### (per transaction type + FY).
+  // - Server rules + stamp: accountsCashDepositWithdraw.js + client accountsCashDepositWithdrawClient.js (same UX patterns as other cash/NPA screens).
+  // =============================================================================
+  accounts_cash_deposit_withdraw: 
+  {
+    label: "Cash Deposit & Withdraw",
+    icon: "💰",
+    group: "Accounts",
+    table: "accounts_cash_deposit_withdraw",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Cash Deposit & Withdraw saved",
+      hint: "Your voucher number is shown below. Continue to enter another record.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "unit", type: "lookup", label: "Unit", required: true, showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "transactionType",
+        type: "select",
+        label: "Transaction Type",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Withdraw", value: "Withdraw" },
+          { label: "Deposit", value: "Deposit" }
+        ]
+      },
+      {
+        name: "paymentMode",
+        type: "select",
+        label: "Payment Mode",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Card", value: "Card" },
+          { label: "Cheque", value: "Cheque" },
+          { label: "Cash", value: "Cash" },
+          { label: "UPI", value: "UPI" }
+        ]
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: true,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
+      { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
+      { name: "inFavourOf", type: "text", label: "In Favour Of", required: true, showInView: false },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // Current AC Transfer (`accounts_current_ac_transfer`)
+  // - Voucher: ACC/TRF/<FY>/#### — lib/modules/accountsCurrentAcTransfer.js (no separate *Client.js).
+  // - beforeWrite checks from/to accounts (see adapter); stamp runs in moduleAfterCreate.
+  // =============================================================================
+  accounts_current_ac_transfer: 
+  {
+    label: "Current AC Transfer",
+    icon: "➡️",
+    group: "Accounts",
+    table: "accounts_current_ac_transfer",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Current AC Transfer saved",
+      hint: "Your voucher number is shown below. Continue to enter another record.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "fromCurrentAc",
+        type: "lookup",
+        label: "From Current AC",
+        required: true,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "toCurrentAc",
+        type: "lookup",
+        label: "To Current AC",
+        required: true,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // Expense Voucher (`accounts_expense_voucher`)
+  // - Voucher: EXP/<FY>/#### — lib/modules/accountsExpenseVoucher.js; client helper accountsExpenseVoucherClient.js (unit/NPA/payment mode UX).
+  // - Template for several other account screens (validation style, postCreateAck, MasterModuleClient dynamic form key).
+  // =============================================================================
+  accounts_expense_voucher: 
+  {
+    label: "Expense Voucher",
+    icon: "💸",
+    group: "Accounts",
+    table: "accounts_expense_voucher",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Expense Voucher saved",
+      hint: "Your voucher number is shown below. Continue to enter another record.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "unit", type: "lookup", label: "Unit", required: true, showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "paidTo",
+        type: "lookup",
+        label: "Party",
+        required: true,
+        showInView: true,
+        lookup: { module: "party_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "partyName", extraLovParams: { f_active: "Yes" },
+          pickerColumns: [
+            { field: "partyName", header: "Party Name" },
+            { field: "address", header: "Address" },
+          ]
+        }
+      },
+      {
+        name: "expenseCategory", type: "lookup", label: "Expense Category", required: true, showInView: true,
+        lookup: { module: "lookup_value_master", valueField: "id", filterLookupTypeName: "Payment Category", extraLovParams: { f_active: "Yes" } }
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      {
+        name: "paymentMode",
+        type: "select",
+        label: "Payment Mode",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Card", value: "Card" },
+          { label: "Cheque", value: "Cheque" },
+          { label: "Cash", value: "Cash" },
+          { label: "UPI", value: "UPI" }
+        ]
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: false,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
+      { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
+      { name: "inFavourOf", type: "text", label: "In Favour Of", required: true, showInView: false },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // =============================================================================
+  // Loan Account (`accounts_loan_ac`)
+  // - Records loan-related receipts and payments (see transactionType: Receipt | Payment).
+  // - Voucher number is NOT typed on first save: after INSERT the server stamps voucherNo in the
+  //   same transaction — Receipt uses LN/CR/<financial year code>/####, Payment uses LN/DR/…/####
+  //   (lib/modules/accountsLoanAc.js). postCreateAck below drives the save confirmation modal.
+  // - Extra save rules (payment mode, NPA current account, cheques, role-2 unit scope) live in
+  //   accountsLoanAc.js and are wired via lib/modules/crudModuleAdapters.js — not in this file.
+  // - Browser helpers (e.g. operator unit / NPA behaviour) are in accountsLoanAcClient.js.
+  // Layman doc: docs/README-accounts-modules.md
+  // =============================================================================
+  accounts_loan_ac: 
+  {
+    label: "Loan Account",
+    icon: "📉",
+    group: "Accounts",
+    table: "accounts_loan_ac",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Loan entry saved",
+      hint: "Your voucher number is shown below. Continue to enter another record.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "unit", type: "lookup", label: "Unit", required: true, showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "transactionType",
+        type: "select",
+        label: "Transaction Type",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Receipt", value: "Receipt" },
+          { label: "Payment", value: "Payment" }
+        ]
+      },
+      {
+        name: "party",
+        type: "lookup",
+        label: "Party",
+        required: true,
+        showInView: true,
+        lookup: { module: "party_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "partyName", extraLovParams: { f_active: "Yes" },
+          pickerColumns: [
+            { field: "partyName", header: "Party Name" },
+            { field: "address", header: "Address" },
+          ]
+        }
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      {
+        name: "paymentMode",
+        type: "select",
+        label: "Payment Mode",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Card", value: "Card" },
+          { label: "Cheque", value: "Cheque" },
+          { label: "Cash", value: "Cash" },
+          { label: "UPI", value: "UPI" }
+        ]
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: false,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
+      { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
+      { name: "inFavourOf", type: "text", label: "In Favour Of", required: true, showInView: false },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+  // =============================================================================
+  // Suspense Entry (`accounts_suspense_entry`)
+  // - Simple suspense postings (Debit/Credit, amount, linked NPA current account as configured).
+  // - Voucher number is filled only after first save: SUSP/<financial year code>/#### via
+  //   lib/modules/accountsSuspenseEntry.js in the same DB transaction as INSERT (moduleAfterCreate).
+  // - No extra CRUD-phase module adapter: only generic required-field validation from this blueprint;
+  //   postCreateAck shows the new voucher in the acknowledgement modal (same mechanism as other
+  //   voucher screens — MasterModuleClient + API postCreateAck in crud.service.js).
+  // Layman doc: docs/README-accounts-modules.md
+  // =============================================================================
+  accounts_suspense_entry: 
+  {
+    label: "Suspense Entry",
+    icon: "❓",
+    group: "Accounts",
+    table: "accounts_suspense_entry",
+    lookupDisplayField: "voucherNo",
+    postCreateAck: {
+      field: "voucherNo",
+      title: "Suspense entry saved",
+      hint: "Your voucher number is shown below. Continue to enter another record.",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
+    fields: [
+      { name: "voucherNo", type: "text", label: "Voucher No", required: false, showInView: true, excludeFromForm: true, displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "transactionType",
+        type: "select",
+        label: "Transaction Type",
+        showInView: true,
+        required: true,
+        options: [
+          { label: "Debit", value: "Debit" },
+          { label: "Credit", value: "Credit" }
+        ]
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: true,
+        showInView: true,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
 };

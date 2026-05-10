@@ -4,19 +4,22 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * Header strip on the right: theme toggle and user menu (passed from dashboard layout with session email).
+ * Header strip: ambient micro-icon lane (React-timed bursts), IST clock, theme, user menu.
  */
 import ThemeToggle from "./ThemeToggle";
+import TopbarIstClock from "./TopbarIstClock";
+import TopbarMicroFloatLane from "./TopbarMicroFloatLane";
 import UserMenu from "./UserMenu";
 
 /**
- * Right-aligned header actions: theme toggle + user menu (all modules).
+ * Expands in the topbar; micro lane fills remaining width (flex: 1).
  * @param {{ userEmail: string }} props
  */
 export default function DashboardTopbar({ userEmail }) {
   return (
-    // This layout is shared across all dashboard screens.
     <div className="dashboard-topbar-actions">
+      <TopbarMicroFloatLane />
+      <TopbarIstClock />
       <ThemeToggle />
       <UserMenu email={userEmail} />
     </div>

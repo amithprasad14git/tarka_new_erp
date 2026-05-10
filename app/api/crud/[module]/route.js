@@ -36,6 +36,7 @@ import { createCrudRecord } from "../../../../lib/services/crud.service";
 import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAccess";
 import { applyRole2FinalStageEditLock } from "../../../../lib/modules/newCaseInward";
 import { FINAL_CASE_STATUSES } from "../../../../lib/modules/newCaseInwardCaseStatus";
+import { appendTransferCaseCasePickerUnitLookupFilter } from "../../../../lib/modules/transferCase";
 
 /**
  * Reads the httpOnly session cookie and returns the logged-in user (or null).
@@ -314,6 +315,7 @@ export async function GET(req, { params }) {
             `NOT EXISTS (SELECT 1 FROM ${tcTable} tc WHERE tc.${mysql.escapeId("caseNo")} = ${nciRef})`
           );
         }
+        appendTransferCaseCasePickerUnitLookupFilter({ user, mysql, mainTableRef: mt, whereParts, whereValues });
       }
       // Public Notice: Case No picker — only open NCI rows and exclude cases already used in another Public Notice parent.
       if (module === "new_case_inward" && listUrl.searchParams.get("public_notice_case_picker") === "1") {

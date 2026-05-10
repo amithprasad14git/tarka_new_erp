@@ -14,6 +14,7 @@ import { hasAnyModuleAccess } from "../../lib/rbac";
 import DashboardSidebar from "../../components/DashboardSidebar";
 import DashboardTopbar from "../../components/DashboardTopbar";
 import TopbarGreeting from "../../components/TopbarGreeting";
+import TopbarWeather from "../../components/TopbarWeather";
 import { DashboardUserProvider } from "../../components/DashboardUserProvider";
 import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
@@ -69,7 +70,10 @@ export default async function DashboardLayout({ children }) {
         <main className="flux-main flux-main--with-footer">
           <InactivityLogout />
           <header className="flux-topbar">
-            <TopbarGreeting />
+            <div className="topbar-leading">
+              <TopbarGreeting />
+              <TopbarWeather />
+            </div>
             <DashboardTopbar userEmail={user.email} />
           </header>
           <div className="flux-main-scroll-region">

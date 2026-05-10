@@ -105,6 +105,18 @@ function baseRoutes(overrides = {}) {
 
   return [
     {
+      when: (sql) =>
+        /SELECT\s+id\s+FROM\s+lookup_value_master/i.test(sql) &&
+        sql.includes("active") &&
+        sql.includes("Yes"),
+      reply: [[{ id: 1 }]]
+    },
+    {
+      when: (sql) =>
+        /SELECT\s+id\s+FROM\s+branch_master/i.test(sql) && sql.includes("active") && sql.includes("Yes"),
+      reply: [[{ id: 1 }]]
+    },
+    {
       when: (sql) => sql.includes("FROM new_case_inward nci") && sql.includes("LEFT JOIN lookup_value_master"),
       reply: [duplicateRows]
     },
@@ -203,6 +215,11 @@ describe("newCaseInward module", () => {
   describe("validateNewCaseInwardBeforeWrite", () => {
     const validParent = {
       branch: 1,
+      receivedFrom: 1,
+      fileMaintenance: 1,
+      loanCategory: 1,
+      loanType: 1,
+      npaStatus: 1,
       loanAccountNo: "123456789012",
       entrustmentDate: "2026-04-10",
       npaDate: "2026-04-10",
@@ -225,6 +242,42 @@ describe("newCaseInward module", () => {
           childTableRows: { amount_recovered: [{ recoveredDate: "2026-04-10", recoveredAmount: 0 }] }
         })
       ).resolves.toBeUndefined();
+    });
+
+    test("rejects inactive lookup_value_master selection (receivedFrom)", async () => {
+      const conn = createConn([
+        {
+          when: (sql) =>
+            /SELECT\s+id\s+FROM\s+lookup_value_master/i.test(sql) &&
+            sql.includes("active") &&
+            sql.includes("Yes"),
+          reply: [[]]
+        },
+        ...baseRoutes({ caseStatusLookupValue: "In Progress", loanAccountNoLength: 12 })
+      ]);
+      await expect(
+        validateNewCaseInwardBeforeWrite(conn, {
+          parentData: validParent,
+          childTableRows: {}
+        })
+      ).rejects.toThrow("Received From: selected lookup value must be active");
+    });
+
+    test("rejects inactive branch_master selection", async () => {
+      const conn = createConn([
+        {
+          when: (sql) =>
+            /SELECT\s+id\s+FROM\s+branch_master/i.test(sql) && sql.includes("active") && sql.includes("Yes"),
+          reply: [[]]
+        },
+        ...baseRoutes({ caseStatusLookupValue: "In Progress", loanAccountNoLength: 12 })
+      ]);
+      await expect(
+        validateNewCaseInwardBeforeWrite(conn, {
+          parentData: validParent,
+          childTableRows: {}
+        })
+      ).rejects.toThrow("Branch: selected branch must be active");
     });
 
     test("rejects non-numeric loan account number", async () => {

@@ -10,8 +10,15 @@ jest.mock("../../config/modules", () => ({
   }
 }));
 
+/** FY freeze check: must appear before other mocked queries in validation order. */
+const fyFreezeNotLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "No" }]]
+};
+
 /** DB routes when validation reaches case status + duplicate checks successfully. */
 const validateCaseStatusAndDupOk = [
+  fyFreezeNotLockedRoute,
   {
     when: (sql) => /\bnew_case_inward\b/i.test(sql) && /\blookup_value_master\b/i.test(sql),
     reply: [[{ caseStatusLabel: "Returned" }]]
@@ -80,6 +87,7 @@ describe("returnCase module", () => {
 
   test("validateReturnCaseBeforeWrite rejects missing case", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => /\bnew_case_inward\b/i.test(sql) && /\blookup_value_master\b/i.test(sql),
         reply: [[]]
@@ -95,7 +103,7 @@ describe("returnCase module", () => {
   });
 
   test("validateReturnCaseBeforeWrite requires at least one selected row", async () => {
-    const conn = createConn([]);
+    const conn = createConn([fyFreezeNotLockedRoute]);
     await expect(
       validateReturnCaseBeforeWrite(conn, {
         parentData: { date: "2026-04-30", caseNo: 15 },
@@ -105,7 +113,7 @@ describe("returnCase module", () => {
   });
 
   test("validateReturnCaseBeforeWrite rejects empty return reason when row is selected", async () => {
-    const conn = createConn([]);
+    const conn = createConn([fyFreezeNotLockedRoute]);
     await expect(
       validateReturnCaseBeforeWrite(conn, {
         parentData: { date: "2026-04-30", caseNo: 15 },
@@ -116,6 +124,7 @@ describe("returnCase module", () => {
 
   test("validateReturnCaseBeforeWrite rejects non-Returned case status", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => /\bnew_case_inward\b/i.test(sql) && /\blookup_value_master\b/i.test(sql),
         reply: [[{ caseStatusLabel: "Open" }]]
@@ -131,6 +140,7 @@ describe("returnCase module", () => {
 
   test("validateReturnCaseBeforeWrite rejects duplicate caseNo on another Return Case", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => /\bnew_case_inward\b/i.test(sql) && /\blookup_value_master\b/i.test(sql),
         reply: [[{ caseStatusLabel: "Returned" }]]
@@ -150,6 +160,7 @@ describe("returnCase module", () => {
 
   test("validateReturnCaseBeforeWrite allows same caseNo when updating that Return Case row", async () => {
     const conn = createConn([
+      fyFreezeNotLockedRoute,
       {
         when: (sql) => /\bnew_case_inward\b/i.test(sql) && /\blookup_value_master\b/i.test(sql),
         reply: [[{ caseStatusLabel: "Returned" }]]

@@ -10,7 +10,7 @@ export const metadata = {
   title: "NPA Squad",
   description: "Tarka 2.0",
   icons: {
-    icon: "/images/favicon.ico"
+    icon: "/images/favicon.png"
   }
 };
 

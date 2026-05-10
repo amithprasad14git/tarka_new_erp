@@ -24,7 +24,29 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 
 const pool = require("../../lib/db").default;
 const { formatInstantAsMysqlDatetimeIST } = require("../../lib/istDateTime");
-const { writeAuditLog } = require("../../lib/audit");
+const { pickAuditUpdateSnapshots, writeAuditLog } = require("../../lib/audit");
+
+describe("pickAuditUpdateSnapshots", () => {
+  test("returns only keys that differ", () => {
+    const oldRow = { id: 1, a: 1, b: "x", c: 3 };
+    const newRow = { id: 1, a: 2, b: "x", c: 3 };
+    expect(pickAuditUpdateSnapshots(oldRow, newRow)).toEqual({
+      oldData: { a: 1 },
+      newData: { a: 2 }
+    });
+  });
+
+  test("returns empty objects when rows are identical", () => {
+    const r = { id: 1, n: 1 };
+    expect(pickAuditUpdateSnapshots(r, r)).toEqual({ oldData: {}, newData: {} });
+  });
+
+  test("includes key when it appears only on one side", () => {
+    expect(
+      pickAuditUpdateSnapshots({ id: 1 }, { id: 1, added: 9 })
+    ).toEqual({ oldData: { added: undefined }, newData: { added: 9 } });
+  });
+});
 
 describe("audit.writeAuditLog", () => {
   beforeEach(() => {

@@ -82,6 +82,21 @@ export async function GET() {
           }
         }
       }
+      // Honor `lookup.extraLovParams` from config/modules (e.g. f_active=Yes). NCI dropdowns preload here
+      // instead of /api/crud?lov=1, so this must mirror CRUD LoV filters for those keys.
+      const wantActiveYes =
+        String(lookup.extraLovParams?.f_active ?? "")
+          .trim()
+          .toLowerCase() === "yes";
+      if (wantActiveYes) {
+        const activeCol = mysql.escapeId("active");
+        if (/\bWHERE\b/i.test(sql)) {
+          sql += ` AND TRIM(COALESCE(${activeCol}, '')) = ?`;
+        } else {
+          sql += ` WHERE TRIM(COALESCE(${activeCol}, '')) = ?`;
+        }
+        values.push("Yes");
+      }
       sql += " ORDER BY lf ASC LIMIT 500";
       const [rows] = await pool.query(sql, values);
       payload[field.name] = sanitizeLookupRows(rows, valueField);
