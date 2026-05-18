@@ -37,6 +37,18 @@ import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAcces
 import { applyRole2FinalStageEditLock } from "../../../../lib/modules/newCaseInward";
 import { FINAL_CASE_STATUSES } from "../../../../lib/modules/newCaseInwardCaseStatus";
 import { appendTransferCaseCasePickerUnitLookupFilter } from "../../../../lib/modules/transferCase";
+import { appendInvoiceCasePickerExcludeFinalYesFilter } from "../../../../lib/modules/invoiceFinalInvoice";
+import { appendSarfaesiInvoiceCasePickerLoanCategoryFilter } from "../../../../lib/modules/sarfaesiInvoice";
+import { appendSarfaesiCaseStatusUpdateCasePickerFilter } from "../../../../lib/modules/sarfaesiCaseStatusUpdate";
+import {
+  appendInvoicesReceivedRecoveryInvoicePickerFilter,
+  appendInvoicesReceivedSarfaesiInvoicePickerFilter,
+  appendInvoicesReceivedVehicleInvoicePickerFilter
+} from "../../../../lib/modules/invoicesReceived";
+import { appendVehicleInvoiceCasePickerLoanCategoryFilter } from "../../../../lib/modules/vehicleInvoice";
+import { enrichAuditLogRecordLabels } from "../../../../lib/modules/auditLogsEnrich";
+import { parseNumericCellValue } from "../../../../lib/formatInrNumber";
+import { appendNumberColumnFilter } from "../../../../lib/crudNumberFilter";
 
 /**
  * Reads the httpOnly session cookie and returns the logged-in user (or null).
@@ -162,8 +174,8 @@ export async function GET(req, { params }) {
         const fieldName = key.replace("f_", "").replace("_min", "");
         const ft = fieldsByName[fieldName]?.type;
         if (ft === "number" || ft === "lookup") {
-          const n = Number(value);
-          if (!Number.isFinite(n)) continue;
+          const n = parseNumericCellValue(value);
+          if (n == null) continue;
           whereParts.push(`${mysql.escapeId(fieldName)} >= ?`);
           whereValues.push(n);
         }
@@ -173,8 +185,8 @@ export async function GET(req, { params }) {
         const fieldName = key.replace("f_", "").replace("_max", "");
         const ft = fieldsByName[fieldName]?.type;
         if (ft === "number" || ft === "lookup") {
-          const n = Number(value);
-          if (!Number.isFinite(n)) continue;
+          const n = parseNumericCellValue(value);
+          if (n == null) continue;
           whereParts.push(`${mysql.escapeId(fieldName)} <= ?`);
           whereValues.push(n);
         }
@@ -187,20 +199,16 @@ export async function GET(req, { params }) {
         whereParts.push(`${mysql.escapeId(fieldName)} LIKE ?`);
         whereValues.push(`%${value}%`);
       } else if (field.type === "lookup") {
-        const n = Number(String(value).trim());
-        // API callers can pass numeric FK id (e.g. f_unit=5) for exact lookup filtering.
-        // Keep old text-search behavior as fallback for manual grid filters.
-        if (Number.isFinite(n)) {
+        const n = parseNumericCellValue(value);
+        // LoV API only: f_unit=5 means FK id. View-grid filters always search labels (e.g. caseNo 10011 → B/VL/10011).
+        if (forLookup && n != null) {
           whereParts.push(`${mysql.escapeId(fieldName)} = ?`);
           whereValues.push(n);
         } else {
           appendLookupFkFilter(fieldName, field, value, whereParts, whereValues);
         }
       } else if (field.type === "number") {
-        const n = Number(String(value).trim());
-        if (!Number.isFinite(n)) continue;
-        whereParts.push(`${mysql.escapeId(fieldName)} = ?`);
-        whereValues.push(n);
+        appendNumberColumnFilter(fieldName, field, value, whereParts, whereValues);
       } else if (field.type === "date") {
         // DATE_FORMAT → string (dd-mm-yyyy); LIKE runs on that text, not on raw DATE equality.
         const needle = escapeSqlLikePattern(String(value).trim());
@@ -266,6 +274,18 @@ export async function GET(req, { params }) {
           whereValues.push(...finalStatusLabels.map((v) => v.toLowerCase()));
         }
       }
+      // SARFAESI Case Status Update: Case No picker — SARFAESI loan category; exclude cases already used on another parent.
+      if (module === "new_case_inward" && listUrl.searchParams.get("sarfaesi_case_status_update_case_picker") === "1") {
+        const parentRaw = (listUrl.searchParams.get("sarfaesi_case_status_update_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        appendSarfaesiCaseStatusUpdateCasePickerFilter({
+          mysql,
+          mainTableRef: mt,
+          whereParts,
+          whereValues,
+          parentRecordId: Number.isFinite(parentId) && parentId > 0 ? parentId : null
+        });
+      }
       // Return Case: Case No picker — only "Returned" NCI rows, excluding cases already on another Return Case parent.
       if (module === "new_case_inward" && listUrl.searchParams.get("return_case_case_picker") === "1") {
         const lvm = escapeSqlTableIdForModuleConfig(modules.lookup_value_master);
@@ -294,6 +314,68 @@ export async function GET(req, { params }) {
             `NOT EXISTS (SELECT 1 FROM ${rcTable} rc WHERE rc.${mysql.escapeId("caseNo")} = ${nciRef})`
           );
         }
+      }
+      // Recovery / SARFAESI / Vehicle Invoice: Case No picker — exclude cases whose status is "Returned".
+      if (
+        module === "new_case_inward" &&
+        (listUrl.searchParams.get("recovery_invoice_case_picker") === "1" ||
+          listUrl.searchParams.get("sarfaesi_invoice_case_picker") === "1" ||
+          listUrl.searchParams.get("vehicle_invoice_case_picker") === "1")
+      ) {
+        const lvm = escapeSqlTableIdForModuleConfig(modules.lookup_value_master);
+        whereParts.push(
+          `(
+            ${mysql.escapeId("caseStatus")} IS NULL
+            OR ${mysql.escapeId("caseStatus")} NOT IN (
+              SELECT ${mysql.escapeId("id")} FROM ${lvm}
+              WHERE LOWER(TRIM(${mysql.escapeId("lookupValue")})) = LOWER(TRIM(?))
+            )
+          )`
+        );
+        whereValues.push("Returned");
+        appendInvoiceCasePickerExcludeFinalYesFilter({ mysql, mainTableRef: mt, whereParts, whereValues });
+      }
+      // SARFAESI Invoice: Case No picker — Loan Category must be SARFAESI (lookup_type / lookup_value master).
+      if (module === "new_case_inward" && listUrl.searchParams.get("sarfaesi_invoice_case_picker") === "1") {
+        appendSarfaesiInvoiceCasePickerLoanCategoryFilter({ mysql, mainTableRef: mt, whereParts, whereValues });
+      }
+      // Vehicle Invoice: Case No picker — Loan Category must be Vehicle Loan (lookup_type / lookup_value master).
+      if (module === "new_case_inward" && listUrl.searchParams.get("vehicle_invoice_case_picker") === "1") {
+        appendVehicleInvoiceCasePickerLoanCategoryFilter({ mysql, mainTableRef: mt, whereParts, whereValues });
+      }
+      // Invoices Received: invoice pickers — exclude invoices already on another received record.
+      if (module === "recovery_invoice" && listUrl.searchParams.get("invoices_received_recovery_picker") === "1") {
+        const parentRaw = (listUrl.searchParams.get("invoices_received_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        appendInvoicesReceivedRecoveryInvoicePickerFilter({
+          mysql,
+          mainTableRef: mt,
+          whereParts,
+          whereValues,
+          parentRecordId: Number.isFinite(parentId) && parentId > 0 ? parentId : null
+        });
+      }
+      if (module === "sarfaesi_invoice" && listUrl.searchParams.get("invoices_received_sarfaesi_picker") === "1") {
+        const parentRaw = (listUrl.searchParams.get("invoices_received_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        appendInvoicesReceivedSarfaesiInvoicePickerFilter({
+          mysql,
+          mainTableRef: mt,
+          whereParts,
+          whereValues,
+          parentRecordId: Number.isFinite(parentId) && parentId > 0 ? parentId : null
+        });
+      }
+      if (module === "vehicle_invoice" && listUrl.searchParams.get("invoices_received_vehicle_picker") === "1") {
+        const parentRaw = (listUrl.searchParams.get("invoices_received_parent_id") || "").trim();
+        const parentId = Number(parentRaw);
+        appendInvoicesReceivedVehicleInvoicePickerFilter({
+          mysql,
+          mainTableRef: mt,
+          whereParts,
+          whereValues,
+          parentRecordId: Number.isFinite(parentId) && parentId > 0 ? parentId : null
+        });
       }
       // Transfer Case: Case No picker — allow all case statuses, but exclude cases already used in transfer_case.caseNo.
       if (module === "new_case_inward" && listUrl.searchParams.get("transfer_case_case_picker") === "1") {
@@ -372,6 +454,10 @@ export async function GET(req, { params }) {
     const [rows] = await queryWithRetry(dataSql, [...whereValues, limit, offset]);
 
     await enrichLookupDisplayRows(m, rows);
+
+    if (module === "audit_logs" && rows.length) {
+      await enrichAuditLogRecordLabels(rows);
+    }
 
     if (!forLookup && rows.length) {
       await annotateRowsModifyAccess(module, m, user, rows, { canEdit, canDelete });

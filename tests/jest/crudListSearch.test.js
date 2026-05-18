@@ -13,7 +13,8 @@ jest.mock("../../config/modules", () => ({
   modules: {
     users: { table: "users" },
     unit_master: { table: "unit_master" },
-    lookup_value_master: { table: "lookup_value_master" }
+    lookup_value_master: { table: "lookup_value_master" },
+    new_case_inward: { table: "new_case_inward" }
   }
 }));
 
@@ -131,6 +132,22 @@ describe("crudListSearch.appendLookupFkFilter", () => {
     expect(whereValues).toEqual(["%hub%", "%hub%"]);
   });
 
+  test("strips user-supplied % wildcards before wrapping", () => {
+    const whereParts = [];
+    const whereValues = [];
+    getRefLookupSearchColumns.mockReturnValueOnce(["caseNo"]);
+
+    appendLookupFkFilter(
+      "caseNo",
+      { lookup: { module: "new_case_inward", valueField: "id" } },
+      "%10011",
+      whereParts,
+      whereValues
+    );
+
+    expect(whereValues).toEqual(["%10011%"]);
+  });
+
   test("empty search handling for lookup filter", () => {
     const whereParts = [];
     const whereValues = [];
@@ -182,7 +199,8 @@ describe("crudListSearch.appendLookupFkFilter", () => {
     );
 
     expect(whereParts[0]).toBe("`lookupType` IN (SELECT `id` FROM `lookup_value_master` WHERE `lookupValue` LIKE ?)");
-    expect(whereValues[0]).toBe(`%${payload.trim()}%`);
+    // appendLookupFkFilter strips leading/trailing % from user input, then wraps with % for LIKE.
+    expect(whereValues[0]).toBe("%' OR 1=1 --%");
     expect(whereParts[0]).not.toContain(payload);
   });
 });

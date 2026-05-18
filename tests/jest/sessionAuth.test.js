@@ -39,7 +39,7 @@ describe("session auth behavior (getSessionUser focused)", () => {
     expect(pool.query).toHaveBeenNthCalledWith(
       2,
       "UPDATE `sessions` SET expires_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id=? AND expires_at > NOW()",
-      [10, "sid-valid"]
+      [20, "sid-valid"]
     );
   });
 

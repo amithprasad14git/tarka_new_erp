@@ -27,11 +27,47 @@ const sqlDateFieldValue = require("../../lib/sqlDateFieldValue");
 
 const {
   assignAccountsSuspenseEntryVoucherNo,
+  validateAccountsSuspenseEntryBeforeWrite,
+  applyAccountsSuspenseEntryBeforeWrite,
   ACCOUNTS_SUSPENSE_ENTRY_MODULE_KEY,
   ACCOUNTS_SUSPENSE_ENTRY_POST_CREATE_ACK_CONFIG
 } = require("../../lib/modules/accountsSuspenseEntry");
 
+const { FREEZE_TRANSACTIONS_LOCKED_MESSAGE } = require("../../lib/modules/freezeTransactionsLock");
+
 describe("accountsSuspenseEntry module", () => {
+  test("validateAccountsSuspenseEntryBeforeWrite blocks role 2 when FY is frozen", async () => {
+    const conn = {
+      query: jest.fn(async (sql) => {
+        if (sql.includes("freezeTransactions")) {
+          return [[{ freezeTransactions: "Yes" }]];
+        }
+        throw new Error(sql);
+      })
+    };
+    await expect(
+      validateAccountsSuspenseEntryBeforeWrite(conn, {
+        parentData: { date: "2026-04-10" },
+        user: { role: 2 }
+      })
+    ).rejects.toMatchObject({
+      code: "ACCOUNTS_SUSPENSE_ENTRY_VALIDATION_FAILED",
+      message: FREEZE_TRANSACTIONS_LOCKED_MESSAGE
+    });
+  });
+
+  test("applyAccountsSuspenseEntryBeforeWrite allows admin when FY is frozen", async () => {
+    const conn = { query: jest.fn() };
+    await expect(
+      applyAccountsSuspenseEntryBeforeWrite(conn, {
+        oldRow: null,
+        merged: { date: "2026-04-10" },
+        user: { role: 1 }
+      })
+    ).resolves.toBeUndefined();
+    expect(conn.query).not.toHaveBeenCalled();
+  });
+
   test("assignAccountsSuspenseEntryVoucherNo stamps SUSP/<year>/<serial>", async () => {
     const conn = { query: jest.fn() };
 

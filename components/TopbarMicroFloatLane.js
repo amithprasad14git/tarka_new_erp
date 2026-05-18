@@ -1,98 +1,85 @@
 "use client";
 
-// Generic/shared file used across modules.
-// Occasional ambient micro-icons: one play per burst, randomized idle gap (React timers).
+/**
+ * TOPBAR SPARKLE LANE — READ THIS FIRST
+ * =====================================
+ * After you log in, the thin strip between your greeting and the clock can show small
+ * sparkles that drift slowly across. They are NOT random anymore: every burst uses the
+ * same paths, colors order, and timing so it feels steady and calm.
+ *
+ * HOW THE CYCLE WORKS (two timers)
+ * --------------------------------
+ * 1) BURST — sparkles appear and play their drift animation for BURST_DURATION_MS.
+ * 2) IDLE — the strip is empty for IDLE_GAP_MS, then step 1 runs again.
+ *
+ * WHERE TO CHANGE THE WAIT TIMES (milliseconds = 1/1000 of a second)
+ * --------------------------------------------------------------------
+ * - Want each burst to last longer on screen?     → raise BURST_DURATION_MS
+ * - Want longer quiet between bursts?             → raise IDLE_GAP_MS
+ * - Want bursts back sooner?                      → lower IDLE_GAP_MS
+ *
+ * Each sparkle’s drift speed is ICON_DRIFT_SECONDS (seconds). Higher = slower, calmer.
+ * The curved paths themselves live in `app/globals.css` (search for `topbarMicroMotion`).
+ */
 
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, useState } from "react";
 
-const GLYPHS = ["\u2726", "\u2726", "\u2726", "\u2726", "\u2726", "\u2726", "\u2726", "\u2726"];
+/* -------------------------------------------------------------------------- */
+/*  TIMER KNOBS — edit these numbers to speed up or slow down the experience  */
+/* -------------------------------------------------------------------------- */
 
-/** Light-theme mixes (readable on pale header). */
+/** How long ONE BURST stays on screen before we clear it (empty lane). Was ~10–15s; now a bit longer for a calmer feel. */
+const BURST_DURATION_MS = 16000;
+
+/** How long NOTHING shows until the next burst. 90_000 = 90 seconds = 1½ minutes. */
+const IDLE_GAP_MS = 90000;
+
+/** How many seconds each sparkle takes to drift across (same every time). Was roughly ~6–14s varying; now one slow value. */
+const ICON_DRIFT_SECONDS = 14;
+
+/* -------------------------------------------------------------------------- */
+
+/** Sparkle character (same for every icon in a burst). */
+const GLYPH = "\u2726";
+
+/** Light-theme colors (used in fixed order, cycling). */
 const PALETTE_LIGHT = ["#ffbb33", "#ff3333", "#09aff6", "#53c653", "#7d54f8", "#cc33ff"];
 
-/** Slightly brighter for dark header. */
+/** Dark-theme colors (used in fixed order, cycling). */
 const PALETTE_DARK = ["#ffcc66", "#ff8080", "#38bdf8", "#8cd98c", "#a78bfa", "#d966ff"];
 
-const MOTIONS = ["fg", "md", "bk", "x"];
+/**
+ * Fixed motion “tracks” (must match CSS class names in globals.css):
+ * fg = front path, md = middle, bk = back, x = alternate curve — same order every burst.
+ */
+const MOTION_SEQUENCE = ["fg", "md", "bk", "x", "fg", "md", "bk"];
 
-const ACTIVE_MS_MIN = 10000;
-const ACTIVE_MS_MAX = 15000;
-const IDLE_MS_MIN = 60000;
-const IDLE_MS_MAX = 120000;
+/** Fixed vertical positions (% inside the lane) so sparkles don’t jump to random heights. */
+const TOP_PERCENT_SEQUENCE = [40, 43, 46, 41, 44, 47, 42];
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+/**
+ * When each sparkle starts (seconds). Negative = already partway through its path when
+ * the burst begins, so they overlap gently instead of popping in one-by-one.
+ */
+const DELAY_STAGGER_SEC = [-3.5, -3, -2.5, -2, -1.5, -1, -0.5];
 
 function buildCycle(theme) {
   const dark = theme === "dark";
   const palette = dark ? PALETTE_DARK : PALETTE_LIGHT;
+  const runId = `burst_${Date.now()}`;
 
-  const count = 5 + Math.floor(Math.random() * 4);
-  const chosen = shuffle(GLYPHS).slice(0, count);
+  const items = MOTION_SEQUENCE.map((motion, i) => ({
+    id: `${runId}_${i}`,
+    char: GLYPH,
+    motion,
+    topPct: TOP_PERCENT_SEQUENCE[i % TOP_PERCENT_SEQUENCE.length],
+    fontSizePx: 13,
+    durSec: ICON_DRIFT_SECONDS,
+    delaySec: DELAY_STAGGER_SEC[i % DELAY_STAGGER_SEC.length],
+    color: palette[i % palette.length],
+  }));
 
-  const cols = shuffle(palette);
-
-  const activeMs =
-    ACTIVE_MS_MIN + Math.floor(Math.random() * (ACTIVE_MS_MAX - ACTIVE_MS_MIN + 1));
-
-  const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-
-  const items = chosen.map((char, i) => {
-    const motion = MOTIONS[Math.floor(Math.random() * MOTIONS.length)];
-    const topPct = 34 + Math.random() * 30;
-    const fontSizePx = 12 + Math.round(Math.random() * 6);
-    const durSec =
-      Math.round(((activeMs / 1000) * (0.58 + Math.random() * 0.38)) * 1000) / 1000;
-    const delaySec = -Math.random() * Math.min(4.2, durSec * 0.45);
-    const color = cols[i % cols.length];
-
-    return {
-      id: `${runId}_${i}_${char}`,
-      char,
-      motion,
-      topPct,
-      fontSizePx,
-      durSec,
-      delaySec,
-      color,
-    };
-  });
-
-  return { runId, activeMs, items };
-}
-
-function buildIdleDecor(theme) {
-  const dark = theme === "dark";
-  const palette = dark ? PALETTE_DARK : PALETTE_LIGHT;
-  const pair = shuffle([...GLYPHS]);
-  const g0 = pair[0];
-  const g1 = pair[Math.min(1, pair.length - 1)];
-  const rid = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-  return [
-    {
-      id: `wisp_${rid}_a`,
-      char: g0,
-      leftPct: 14 + Math.random() * 18,
-      topPct: 42 + Math.random() * 16,
-      color: palette[Math.floor(Math.random() * palette.length)],
-      fontSizePx: 10 + Math.round(Math.random() * 2),
-    },
-    {
-      id: `wisp_${rid}_b`,
-      char: g1,
-      leftPct: 62 + Math.random() * 20,
-      topPct: 36 + Math.random() * 20,
-      color: palette[Math.floor(Math.random() * palette.length)],
-      fontSizePx: 10 + Math.round(Math.random() * 2),
-    },
-  ];
+  return { runId, activeMs: BURST_DURATION_MS, items };
 }
 
 function subscribeReduced(onChange) {
@@ -110,30 +97,20 @@ function useReducedMotion() {
   return useSyncExternalStore(subscribeReduced, snapshotReduced, () => false);
 }
 
-function subscribeTheme(onChange) {
-  const mo = new MutationObserver(onChange);
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  return () => mo.disconnect();
-}
-
 function snapshotTheme() {
+  if (typeof document === "undefined") return "light";
   return document.documentElement.getAttribute("data-theme") || "light";
 }
 
-function useHtmlTheme() {
-  return useSyncExternalStore(subscribeTheme, snapshotTheme, () => "light");
-}
-
 /**
- * Ambient micro-icons: single play per burst, then long idle; never `animation: infinite`.
+ * Sparkle lane: one calm burst, then empty, then repeat.
+ * If the user asked the OS to “reduce motion”, we show an empty lane (no animation).
  */
 export default function TopbarMicroFloatLane() {
-  const reducedTheme = useHtmlTheme();
   const reduced = useReducedMotion();
 
   const [phase, setPhase] = useState("active");
   const [cycle, setCycle] = useState(null);
-  const [idleDecor, setIdleDecor] = useState([]);
 
   const activeTimerRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -156,8 +133,8 @@ export default function TopbarMicroFloatLane() {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
     if (phase === "active") {
+      // When this timer fires, the burst is over → hide icons until the idle timer finishes.
       activeTimerRef.current = setTimeout(() => {
-        setIdleDecor(buildIdleDecor(snapshotTheme()));
         setPhase("idle");
       }, cycle.activeMs);
       return () => {
@@ -166,11 +143,11 @@ export default function TopbarMicroFloatLane() {
     }
 
     if (phase === "idle") {
-      const idleMs = IDLE_MS_MIN + Math.floor(Math.random() * (IDLE_MS_MAX - IDLE_MS_MIN + 1));
+      // Quiet gap: length is IDLE_GAP_MS at the top of this file.
       idleTimerRef.current = setTimeout(() => {
         setCycle(buildCycle(snapshotTheme()));
         setPhase("active");
-      }, idleMs);
+      }, IDLE_GAP_MS);
       return () => {
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       };
@@ -180,25 +157,7 @@ export default function TopbarMicroFloatLane() {
   }, [phase, cycle, reduced]);
 
   if (reduced) {
-    const decor = buildIdleDecor(reducedTheme);
-    return (
-      <div className="topbar-micro-float-lane topbar-micro-float-lane--reduced" aria-hidden="true">
-        {decor.map((w) => (
-          <span
-            key={w.id}
-            className="topbar-micro-idle-wisp"
-            style={{
-              left: `${w.leftPct}%`,
-              top: `${w.topPct}%`,
-              color: w.color,
-              fontSize: `${w.fontSizePx}px`,
-            }}
-          >
-            {w.char}
-          </span>
-        ))}
-      </div>
-    );
+    return <div className="topbar-micro-float-lane topbar-micro-float-lane--reduced" aria-hidden="true" />;
   }
 
   return (
@@ -206,22 +165,6 @@ export default function TopbarMicroFloatLane() {
       className={`topbar-micro-float-lane topbar-micro-float-lane--${phase}`}
       aria-hidden="true"
     >
-      {phase === "idle" &&
-        idleDecor.map((w) => (
-          <span
-            key={w.id}
-            className="topbar-micro-idle-wisp"
-            style={{
-              left: `${w.leftPct}%`,
-              top: `${w.topPct}%`,
-              color: w.color,
-              fontSize: `${w.fontSizePx}px`,
-            }}
-          >
-            {w.char}
-          </span>
-        ))}
-
       {phase === "active" &&
         cycle &&
         cycle.items.map((it) => (

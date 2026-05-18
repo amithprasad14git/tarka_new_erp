@@ -100,6 +100,45 @@
  * - `showPrintPdf` — if `true`, show a print button (handler is module-specific in MasterModuleClient); if `false`, hide it.
  * - `showCopyButton` — if `false`, hide Copy for the assigned reference (e.g. Public Notice: only Continue + print).
  * - `printButtonLabel` — optional label for the print button.
+ *
+ * =============================================================================
+ * MODULE-BY-MODULE VALIDATIONS (plain English summary)
+ * =============================================================================
+ * Every module gets **two layers** of checks:
+ * 1. **Config rules** — `required`, `maxToday`, `readOnly`, child `maxRows`, etc. in this file.
+ *    The generic CRUD engine applies these on every save (see lib/services/crud.service.js).
+ * 2. **Custom server rules** — only for modules listed below, in `lib/modules/<name>.js`,
+ *    wired through `lib/modules/crudModuleAdapters.js`. Users cannot bypass these from the browser.
+ *
+ * **Financial year “freeze”** (many modules): if the transaction date falls in a year where
+ * Financial Year Master has `freezeTransactions = Yes`, **role 2** (unit operator) cannot save.
+ * **Role 1** (admin) is not blocked. See `lib/modules/freezeTransactionsLock.js`.
+ * New Case Inward uses a similar idea on `caseStatusUpdatedDate` but blocks all non-admin users.
+ *
+ * | Module key | Custom logic file | Main extra rules (beyond config `required`) |
+ * |------------|-------------------|---------------------------------------------|
+ * | users | — | Login: active=Yes only (lib/auth.js). Row scope on `users` table is special. |
+ * | user_permissions | userPermissions.js | User must exist and be active. |
+ * | audit_logs | — | Read-only; no manual create/edit via CRUD. |
+ * | company_master, employee_master, unit_master, financial_year_master, party_master, bank_master, current_account_*, ho_zo_master, branch_master, lookup_* , case_return_reasons, sarfaesi_case_particulars, new_case_inward_transaction_control | — | Config `required` / types only. |
+ * | new_case_inward | newCaseInward.js | Case No auto-gen; loan account rules; duplicate loan ac; final-stage edit lock; case status + recovered amount rules; transaction-control backdates; FY freeze on case status date (non-admin). Child: recovered lines. |
+ * | transfer_case | transferCase.js | Date = today; case/from/to/assignee rules; updates case owner; ref TRF/…; FY freeze (role 2). |
+ * | public_notice | publicNotice.js | Date not future; FY freeze (role 2); case required; child max 3 rows; ref PN/… |
+ * | sarfaesi_case_status_update | sarfaesiCaseStatusUpdate.js | Date not future; FY freeze (role 2); SARFAESI case only; one update per case; child particulars (readonly UI) + optional remarks; ref SRFUP/… |
+ * | return_case | returnCase.js | Date not future; FY freeze (role 2); case must be “Returned”; dup case; checked child rows + return reason; ref format. |
+ * | accounts_assets_investments | accountsAssetsInvestments.js | FY freeze (role 2); payment mode / cheque / unit scope; voucher no. |
+ * | accounts_cash_deposit_withdraw | accountsCashDepositWithdraw.js | FY freeze (role 2); deposit/withdraw + NPA account + cheque rules; unit scope; voucher no. |
+ * | accounts_current_ac_transfer | accountsCurrentAcTransfer.js | FY freeze (role 2); from ≠ to account; voucher no. |
+ * | accounts_expense_voucher | accountsExpenseVoucher.js | FY freeze (role 2); payment mode / cheque / unit; voucher no. |
+ * | accounts_loan_ac | accountsLoanAc.js | FY freeze (role 2); receipt/payment + cheque + unit; voucher LN/CR or LN/DR. |
+ * | accounts_suspense_entry | accountsSuspenseEntry.js | FY freeze (role 2); suspense voucher SUSP/… |
+ * | recovery_invoice | recoveryInvoice.js | FY freeze (role 2); invoice no.; final-invoice flag on case; client submit checks. |
+ * | sarfaesi_invoice | sarfaesiInvoice.js | FY freeze (role 2); SARFAESI case picker; invoice no.; cancellation rules. |
+ * | vehicle_invoice | vehicleInvoice.js | FY freeze (role 2); vehicle case rules; invoice no.; cancellation rules. |
+ * | rbo_master | rboMaster.js | When RBO active flag changes, can sync linked branches. |
+ *
+ * Full narrative for operators and developers: README.md § “Module-by-module validations”.
+ * =============================================================================
  */
 
 // -----------------------------------------------------------------------------
@@ -247,6 +286,7 @@ export const modules = {
       },
       { name: "module", type: "text", label: "Module", showInView: true },
       { name: "action", type: "text", label: "Action", showInView: true },
+      { name: "record_label", type: "text", label: "Record", showInView: true },
       { name: "record_id", type: "number", label: "Record ID", showInView: true },
       // DB timestamp when audit entry was inserted.
       { name: "created_at", type: "text", label: "Created At", showInView: true },
@@ -800,6 +840,32 @@ export const modules = {
     ]
   },
 
+  // Master list of checklist lines used by SARFAESI Case Status Update (sequence + active flag).
+  // Validations: config only (particulars text required). No custom lib/modules file.
+  sarfaesi_case_particulars: {
+    label: "SARFAESI Case Particulars",
+    icon: "📑",
+    group: "Cases",
+    table: "sarfaesi_case_particulars",
+    lookupDisplayField: "particulars",
+    fields: [
+      { name: "particulars", type: "text", rows:2 , label: "Particulars", required: true, showInView: true },
+      { name: "sequence", type: "number", label: "Sequence", showInView: true },
+      {
+        name: "active",
+        type: "select",
+        label: "Active",
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
   // ---------------------------------------------------------------------------
   // NEW CASE INWARD — Parent transaction; line items in `new_case_inward_amount_recovered`
   // Case No is filled by the server after save: {bank caseNoPrefix}/{loan category code}/{nnnnn}.
@@ -965,6 +1031,19 @@ export const modules = {
         }
       },
       { name: "caseStatusRemarks", type: "text", rows:4, label: "Case Status Remarks", required: false, showInView: false },
+      {
+        name: "finalInvoice",
+        type: "select",
+        label: "Final Invoice",
+        required: false,
+        showInView: false,
+        excludeFromForm: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "No"
+      },
       ...STANDARD_ROW_AUDIT_FIELDS
     ],
     /**
@@ -1006,8 +1085,10 @@ export const modules = {
   },
 
   // -----------------------------------------------------------------------------
-  // Transfer Case: intra-company case transfer; refNo stamped after INSERT (lib/modules/transferCase.js).
-  // Ownership/move side-effects also run via crud adapter — see transferCaseClient for UI behaviour.
+  // Transfer Case: move a case to another unit/user. Server: lib/modules/transferCase.js.
+  // Validations: date must be today; case/from/to/assignee; from = current owner; to ≠ from;
+  //   assignee in to-unit; FY freeze (role 2); ref TRF/<FY>/<serial>. Saves update new_case_inward owner.
+  // UI: transferCaseClient.js (fromUnit read-only, toUnit/assignee filters).
   // -----------------------------------------------------------------------------
   transfer_case: {
     label: "Transfer Case",
@@ -1088,7 +1169,9 @@ export const modules = {
   },
 
   // -----------------------------------------------------------------------------
-  // Public Notice: notice workflow tied to a case; refNo + PDF behaviour — lib/modules/publicNotice.js.
+  // Public Notice: notice for a case. Server: lib/modules/publicNotice.js.
+  // Validations: date not future; FY freeze (role 2); case required; child max 3 rows with type + display name.
+  // Ref PN/<FY>/<serial>; PDF via publicNoticePdf.js. UI: publicNoticeClient.js (case snapshot).
   // -----------------------------------------------------------------------------
   public_notice: {
     label: "Public Notice",
@@ -1190,7 +1273,109 @@ export const modules = {
   },
 
   // -----------------------------------------------------------------------------
-  // Return Case: returned-case workflow; refNo stamped after save — lib/modules/returnCase.js.
+  // SARFAESI Case Status Update — one SARFAESI case, checklist of particulars + remarks.
+  // Server: lib/modules/sarfaesiCaseStatusUpdate.js (ref SRFUP/<FY>/<####>, dup case, FY freeze).
+  // Client: lib/modules/sarfaesiCaseStatusUpdateClient.js (case picker, preload particulars, snapshot).
+  // Validations (server): date required, not future; role-2 FY freeze; case = SARFAESI loan category;
+  //   each case only once on this module; ≥1 child row; particulars required per row; remarks optional;
+  //   particulars must be active rows in sarfaesi_case_particulars. UI: particulars read-only on child grid.
+  // -----------------------------------------------------------------------------
+  sarfaesi_case_status_update: {
+    label: "SARFAESI Case Update",
+    icon: "📄",
+    group: "Cases",
+    table: "sarfaesi_case_status_update",
+    lookupDisplayField: "refNo",
+    postCreateAck: {
+      field: "refNo",
+      title: "SARFAESI Case Status Saved",
+      hint: "Your reference number is shown below.",
+      showPrintPdf: false,
+      showCopyButton: false,
+    },
+    fields: [
+      {
+        name: "refNo",
+        type: "text",
+        label: "Ref No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Server fills after save: SRFUP/<yearCode>/<4-digit serial> (sarfaesiCaseStatusUpdate.js).
+      },
+      {
+        name: "date",
+        type: "date",
+        label: "Date",
+        required: true,
+        showInView: true,
+        // maxToday in UI; server also blocks future dates and frozen FY (role 2).
+        maxToday: true
+      },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          // Client overrides picker to sarfaesi_case_status_update_case_picker (SARFAESI + unused cases).
+          extraLovParams: { public_notice_case_picker: "1" },
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" }
+          ]
+        }
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "sarfaesi_case_status_update_details",
+        table: "sarfaesi_case_status_update_details",
+        parentFkField: "sarfaesiUpdateId",
+        label: "Details",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "particulars",
+            type: "lookup",
+            label: "Particulars",
+            required: true,
+            readOnly: true, // Pre-filled on new entry; user cannot change the particular line.
+            lookup: {
+              module: "sarfaesi_case_particulars",
+              valueField: "id",
+              labelField: "particulars"
+            },
+            columnWidth: "30rem"
+          },
+          {
+            name: "remarks",
+            type: "text",
+            rows: 1,
+            label: "Remarks",
+            required: false, // Optional in UI and on server.
+            columnWidth: "24rem"
+          }
+        ]
+      }
+    ]
+  },
+
+  // -----------------------------------------------------------------------------
+  // Return Case: formal return workflow for cases already in "Returned" status.
+  // Server: lib/modules/returnCase.js — date, FY freeze (role 2), case status check, dup case,
+  //   checked child rows + return reason. Client: returnCaseClient.js (preload reasons, submit filter).
   // -----------------------------------------------------------------------------
   return_case: {
     label: "Return Case",
@@ -1293,7 +1478,7 @@ export const modules = {
             required: false,
             requiredWhenChecked: { checkboxField: "select" },
             rows: 4,
-            columnWidth: "60rem"
+            columnWidth: "40rem"
           }
         ]
       }
@@ -1705,5 +1890,485 @@ export const modules = {
       ...STANDARD_ROW_AUDIT_FIELDS
     ]
   },
+
+  // Invoice modules: 3-page PDF print when postCreateAck.showPrintPdf is true.
+  // PDF code in lib/modules/*InvoicePdf.js; guides in docs/invoices-pdf.md and docs/*-invoice-pdf.md.
+  recovery_invoice: {
+    label: "Recovery Invoice",
+    icon: "📈",
+    group: "Invoice",
+    table: "recovery_invoice",
+    lookupDisplayField: "invoiceNo",
+    searchField: "invoiceNo",
+    postCreateAck: {
+      field: "invoiceNo",
+      title: "Recovery Invoice Generated",
+      hint: "Note this number for your reference before continuing.",
+      showPrintPdf: true,
+      printButtonLabel: "Print"
+    },
+    fields: [
+      {
+        name: "invoiceNo",
+        type: "text",
+        label: "Invoice No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" },
+            { field: "loanTypeLabel", header: "Loan Type" },
+            { field: "caseStatusLabel", header: "Case Status" },
+          ]
+        }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: true,
+        showInView: false,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "cancelledInvoice",
+        type: "select",
+        label: "Cancelled Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "No"
+      },
+      {
+        name: "finalInvoice",
+        type: "select",
+        label: "Final Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      { name: "cancellationReason", type: "text", rows:1, label: "Cancellation Reason", required: false, showInView: false },
+      { name: "grandTotal", type: "number", label: "Grand Total", required: false, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "recovery_charges",
+        table: "recovery_invoice_charges",
+        parentFkField: "recoveryInvoiceId", // FK column on child table
+        label: "Recovery Charges",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "percentage",
+            type: "number",
+            label: "Percentage",
+            placeholder: "Percentage",
+            required: false,
+            footerSum: false,
+            /** Client-only: plain digits, no ₹ formatting; no decimals. */
+            integerOnly: true,
+            columnWidth: "15rem"
+          },
+          {
+            name: "amount",
+            type: "number",
+            label: "Amount",
+            placeholder: "Amount",
+            required: true,
+            columnWidth: "15rem"
+          }
+          // add more line fields, lookups, etc.
+        ]
+      }
+    ]
+  },
+
+  sarfaesi_invoice: {
+    label: "SARFAESI Invoice",
+    icon: "🏠",
+    group: "Invoice",
+    table: "sarfaesi_invoice",
+    lookupDisplayField: "invoiceNo",
+    searchField: "invoiceNo",
+    postCreateAck: {
+      field: "invoiceNo",
+      title: "SARFAESI Invoice Generated",
+      hint: "Note this number for your reference before continuing.",
+      showPrintPdf: true,
+      printButtonLabel: "Print"
+    },
+    fields: [
+      {
+        name: "invoiceNo",
+        type: "text",
+        label: "Invoice No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" },
+            { field: "loanTypeLabel", header: "Loan Type" },
+            { field: "caseStatusLabel", header: "Case Status" },
+          ]
+        }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: true,
+        showInView: false,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "cancelledInvoice",
+        type: "select",
+        label: "Cancelled Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "No"
+      },
+      {
+        name: "finalInvoice",
+        type: "select",
+        label: "Final Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      { name: "cancellationReason", type: "text", rows:1, label: "Cancellation Reason", required: false, showInView: false },
+      { name: "grandTotal", type: "number", label: "Grand Total", required: false, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "sarfaesi_charges",
+        table: "sarfaesi_invoice_charges",
+        parentFkField: "sarfaesiInvoiceId", // FK column on child table
+        label: "SARFAESI Charges",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",
+            lookup: {
+              module: "lookup_value_master",
+              valueField: "id",
+              labelField: "lookupValue",
+              filterLookupTypeName: "SARFAESI Invoice Particulars",
+              extraLovParams: { f_active: "Yes" }
+            }
+          },
+          {
+            name: "remarks",
+            type: "text",
+            label: "Remarks",
+            required: true,
+            rows: 1,
+            columnWidth: "20rem"
+          },
+          {
+            name: "amount",
+            type: "number",
+            label: "Amount",
+            placeholder: "Amount",
+            required: true,
+            columnWidth: "10rem"
+          }
+          // add more line fields, lookups, etc.
+        ]
+      }
+    ]
+  },
+
+  vehicle_invoice: {
+    label: "Vehicle Invoice",
+    icon: "🚕",
+    group: "Invoice",
+    table: "vehicle_invoice",
+    lookupDisplayField: "invoiceNo",
+    searchField: "invoiceNo",
+    postCreateAck: {
+      field: "invoiceNo",
+      title: "Vehicle Invoice Generated",
+      hint: "Note this number for your reference before continuing.",
+      showPrintPdf: true
+    },
+    fields: [
+      {
+        name: "invoiceNo",
+        type: "text",
+        label: "Invoice No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      { name: "date", type: "date", label: "Date", required: true, showInView: true, maxToday: true },
+      {
+        name: "caseNo",
+        type: "lookup",
+        label: "Case No",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "new_case_inward",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "caseNo",
+          pickerColumns: [
+            { field: "caseNo", header: "Case No" },
+            { field: "unitLabel", header: "Unit" },
+            { field: "branchLabel", header: "Branch" },
+            { field: "borrower", header: "Borrower" },
+            { field: "loanCategoryLabel", header: "Loan Category" },
+            { field: "loanTypeLabel", header: "Loan Type" },
+            { field: "caseStatusLabel", header: "Case Status" },
+          ]
+        }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        required: true,
+        showInView: false,
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "cancelledInvoice",
+        type: "select",
+        label: "Cancelled Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "No"
+      },
+      {
+        name: "finalInvoice",
+        type: "select",
+        label: "Final Invoice",
+        required: true,
+        showInView: true,
+        options: [
+          { label: "Yes", value: "Yes" },
+          { label: "No", value: "No" }
+        ],
+        default: "Yes"
+      },
+      { name: "cancellationReason", type: "text", rows:1, label: "Cancellation Reason", required: false, showInView: false },
+      { name: "grandTotal", type: "number", label: "Grand Total", required: false, showInView: true },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "vehicle_charges",
+        table: "vehicle_invoice_charges",
+        parentFkField: "vehicleInvoiceId", // FK column on child table
+        label: "Seizing Charges",
+        indexColumnWidth: "2.25rem",
+        fields: [
+          {
+            name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",
+            lookup: {
+              module: "lookup_value_master",
+              valueField: "id",
+              labelField: "lookupValue",
+              filterLookupTypeName: "Vehicle Invoice Particulars",
+              extraLovParams: { f_active: "Yes" }
+            }
+          },
+          {
+            name: "remarks",
+            type: "text",
+            label: "Remarks",
+            required: true,
+            rows: 1,
+            columnWidth: "20rem"
+          },
+          {
+            name: "amount",
+            type: "number",
+            label: "Amount",
+            placeholder: "Amount",
+            required: true,
+            columnWidth: "10rem"
+          }
+          // add more line fields, lookups, etc.
+        ]
+      }
+    ]
+  },
+
+  invoices_received: {
+    label: "Invoice Received",
+    icon: "💵",
+    group: "Invoice",
+    table: "invoices_received",
+    lookupDisplayField: "refNo",
+    fields: [
+      {
+        name: "refNo",
+        type: "text",
+        label: "Ref No",
+        required: false,
+        showInView: true,
+        excludeFromForm: true,
+        displayOnEdit: true,
+        // Filled automatically on first save; shown when editing so users see their reference number.
+      },
+      {
+        name: "receivedDate",
+        type: "date",
+        label: "Received Date",
+        required: true,
+        showInView: true,
+        maxToday: true
+      },
+      {
+        name: "recoveryInvoice",
+        type: "lookup",
+        label: "Recovery Invoice",
+        required: false,
+        showInView: true,
+        lookup: {
+          module: "recovery_invoice",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "invoiceNo",
+          pickerColumns: [
+            { field: "date", header: "Date" },
+            { field: "invoiceNo", header: "Invoice No" },
+            { field: "caseNoLabel", header: "Case No" },
+            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
+            { field: "grandTotal", header: "Invoice Amount" },
+          ]
+        }
+      },
+      {
+        name: "sarfaesiInvoice",
+        type: "lookup",
+        label: "SARFAESI Invoice",
+        required: false,
+        showInView: true,
+        lookup: {
+          module: "sarfaesi_invoice",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "invoiceNo",
+          pickerColumns: [
+            { field: "date", header: "Date" },
+            { field: "invoiceNo", header: "Invoice No" },
+            { field: "caseNoLabel", header: "Case No" },
+            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
+            { field: "grandTotal", header: "Invoice Amount" },
+          ]
+        }
+      },
+      {
+        name: "vehicleInvoice",
+        type: "lookup",
+        label: "Vehicle Invoice",
+        required: false,
+        showInView: true,
+        lookup: {
+          module: "vehicle_invoice",
+          valueField: "id",
+          ui: "picker",
+          pickerLimit: 25,
+          pickerSortBy: "invoiceNo",
+          pickerColumns: [
+            { field: "date", header: "Date" },
+            { field: "invoiceNo", header: "Invoice No" },
+            { field: "caseNoLabel", header: "Case No" },
+            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
+            { field: "grandTotal", header: "Invoice Amount" },
+          ]
+        }
+      },
+      { name: "billedAmount", type: "number", label: "Billed Amount", required: true, showInView: true },
+      { name: "tdsPercentage", type: "number", label: "TDS Less %", required: false, showInView: true },
+      { name: "tdsAmount", type: "number", label: "TDS Amount", required: false, showInView: true },
+      { name: "receivedAmount", type: "number", label: "Received Amount", required: true, showInView: true },
+      {
+        name: "roundOff",
+        type: "select",
+        label: "Round Off",
+        showInView: false,
+        required: false,
+        options: [
+          { label: "Round Up", value: "Round Up" },
+          { label: "Round Down", value: "Round Down" }
+        ],
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ]
+  },
+
+
+
+
 
 };

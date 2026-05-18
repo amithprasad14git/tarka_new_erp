@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `new_case_inward` (
   `npaDate` date NOT NULL,
   `npaStatus` int DEFAULT NULL,
   `closureBalance` bigint NOT NULL,
+  `finalInvoice` varchar(8) NOT NULL DEFAULT 'No',
   `createdBy` int DEFAULT NULL,
   `createdDate` datetime DEFAULT NULL,
   `modifiedBy` int DEFAULT NULL,

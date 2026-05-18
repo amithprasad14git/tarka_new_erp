@@ -103,10 +103,10 @@ export default function TopbarWeather() {
         aria-label={labelReady}
       >
         {status === "loading" && (
-          <span className="topbar-weather-loading muted">Loading weather...</span>
+          <span className="topbar-weather-loading muted">Loading Weather...</span>
         )}
         {status === "error" && (
-          <span className="topbar-weather-fallback">☁️ Weather unavailable</span>
+          <span className="topbar-weather-fallback">☁️ Weather Unavailable</span>
         )}
         {status === "ready" && data && (
           <>

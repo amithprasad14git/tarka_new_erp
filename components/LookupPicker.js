@@ -84,7 +84,11 @@ export default function LookupPicker({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setSelectedId(initialValue != null && initialValue !== "" ? String(initialValue) : "");
+    const nextId = initialValue != null && initialValue !== "" ? String(initialValue) : "";
+    setSelectedId(nextId);
+    if (!nextId) {
+      setSelectedLabel("");
+    }
   }, [initialValue]);
 
   useEffect(() => {

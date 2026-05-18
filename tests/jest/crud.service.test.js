@@ -73,6 +73,10 @@ jest.mock("../../lib/childTablesLoad", () => ({
 
 jest.mock("../../lib/audit", () => ({
   writeAuditLog: jest.fn(),
+  buildAuditRecordLabel: jest.fn((_moduleKey, row, recordId) => {
+    if (row?.name != null && String(row.name).trim() !== "") return String(row.name).trim();
+    return recordId != null ? `Record #${recordId}` : "";
+  }),
   pickAuditUpdateSnapshots: jest.fn((oldRow, newRow) => {
     if (oldRow == null || newRow == null) {
       return { oldData: oldRow ?? null, newData: newRow ?? null };

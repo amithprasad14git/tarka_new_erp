@@ -2,7 +2,8 @@
 
 /**
  * Line-item grids under the main master form (`childTables` in config).
- * Uses the same table + button styling as the master module (master-orders-table, master-btn).
+ * Uses master-orders-table + a flat section shell (no nested card) with a 1px border on the grid wrap
+ * — see `.master-child-table-wrap` / `.master-child-table` in app/globals.css.
  *
  * IMPORTANT ARCHITECTURE RULE (layman):
  * - This is a reusable child-table engine.
@@ -51,6 +52,8 @@ function validateRowFields(ct, row) {
       if (!Number.isFinite(n)) {
         return `${f.label || f.name} must be a valid number.`;
       }
+      const intErr = validateIntegerOnlyField(f, v);
+      if (intErr) return intErr;
     }
     if (f.type === "checkbox") {
       const n = v === true ? 1 : v === false ? 0 : Number(v);
@@ -74,12 +77,24 @@ function validateRowFields(ct, row) {
       return `${dep.label || dep.name} is required when ${cb?.label || cbName} is selected.`;
     }
   }
+  return validateIntegerOnlyRulesForRow(ct, row);
+}
+
+/** Client-side: `integerOnly` number fields (whole numbers, no decimals). */
+export function validateIntegerOnlyRulesForRow(ct, row) {
+  const fields = ct.fields || [];
+  for (const f of fields) {
+    if (f.type !== "number" || !f.integerOnly) continue;
+    const intErr = validateIntegerOnlyField(f, row[f.name]);
+    if (intErr) return intErr;
+  }
   return null;
 }
 
 function inputPlaceholder(f) {
   if (f.placeholder) return String(f.placeholder);
   if (f.type === "date") return "Date";
+  if (f.type === "number" && f.integerOnly) return "Whole number";
   if (f.type === "number") return "Amount";
   return "";
 }
@@ -116,6 +131,38 @@ function formatInrAmount(value) {
     maximumFractionDigits: 2
   }).format(value || 0);
   return `₹ ${amount}`;
+}
+
+/** Grouped digits only — no currency symbol (e.g. percentage column). */
+function formatPlainIntegerIn(value) {
+  const s = String(value ?? "").trim().replace(/,/g, "");
+  if (s === "") return "—";
+  const n = Number(s);
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-IN", {
+    maximumFractionDigits: 0,
+    useGrouping: true
+  }).format(Math.trunc(n));
+}
+
+function integerOnlyFieldHasInvalidDecimal(value) {
+  const s = String(value ?? "").trim().replace(/,/g, "");
+  if (s === "") return false;
+  return !/^\d+$/.test(s);
+}
+
+function validateIntegerOnlyField(f, v) {
+  if (!f.integerOnly || f.type !== "number") return null;
+  const empty = v === null || v === undefined || (typeof v === "string" && !String(v).trim());
+  if (empty) return null;
+  if (integerOnlyFieldHasInvalidDecimal(v)) {
+    return `${f.label || f.name} must be a whole number (no decimals).`;
+  }
+  const n = Number(String(v).replace(/,/g, "").trim());
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    return `${f.label || f.name} must be a whole number (no decimals).`;
+  }
+  return null;
 }
 
 /**
@@ -187,10 +234,13 @@ function PlusIcon() {
  *   }>,
  *   value: Record<string, Array<Record<string, unknown>>>,
  *   onChange: (next: Record<string, Array<Record<string, unknown>>>) => void,
- *   childFieldUiOverrides?: Record<string, Record<string, { helperText?: string, min?: string }>>,
+ *   childFieldUiOverrides?: Record<string, Record<string, { helperText?: string, min?: string, max?: string, readOnly?: boolean }>>,
  *   disabled?: boolean,
  *   onNotify?: (kind: "success" | "error", message: string) => void
  * }} props
+ *
+ * Child `readOnly` (field config or override): lookup shows fixed label while editing
+ * (used by SARFAESI Case Status Update particulars).
  */
 export default function ModuleChildTablesPanel({
   childTables,
@@ -319,14 +369,15 @@ export default function ModuleChildTablesPanel({
           .map((v) => String(v?.helperText || "").trim())
           .filter(Boolean);
         const colWidths = childTableColumnWidths(ct, fields);
+        const includeNumberInFooterTotal = (f) => f.type === "number" && f.footerSum !== false;
         const numericFieldTotals = fields.reduce((acc, f) => {
-          if (f.type !== "number") return acc;
+          if (!includeNumberInFooterTotal(f)) return acc;
           acc[f.name] = rows.reduce((sum, row) => sum + toNumberOrZero(row?.[f.name]), 0);
           return acc;
         }, {});
 
         return (
-          <div key={tableKey} className="card table-section module-child-card">
+          <div key={tableKey} className="table-section module-child-card">
             <h2 className="module-child-section-title">{ct.label || ct.table}</h2>
             <p className="table-scroll-hint" role="note">
               Save each line with <strong>Save</strong> before saving the main form. Scroll sideways if columns do not fit.
@@ -475,6 +526,24 @@ export default function ModuleChildTablesPanel({
                                       aria-label={f.label || f.name}
                                     />
                                   </>
+                                ) : f.type === "number" && f.integerOnly ? (
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    className="master-inline-input master-inline-input-number"
+                                    placeholder={inputPlaceholder(f)}
+                                    value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
+                                    disabled={inputsDisabled}
+                                    aria-label={f.label || f.name}
+                                    onChange={(e) => {
+                                      const v = e.target.value.replace(/\D/g, "");
+                                      const next = [...(value[tableKey] || [])];
+                                      const prev = next[index] || {};
+                                      next[index] = { ...prev, [f.name]: v, _lineSaved: false };
+                                      setRows(tableKey, next);
+                                    }}
+                                  />
                                 ) : f.type === "number" ? (
                                   <InrNumberInput
                                     id={`${tableKey}-${f.name}-${index}`}
@@ -491,31 +560,37 @@ export default function ModuleChildTablesPanel({
                                     }}
                                   />
                                 ) : f.type === "lookup" && f.lookup ? (
-                                  <select
-                                    className="master-inline-input"
-                                    value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
-                                    disabled={inputsDisabled}
-                                    onChange={(e) => {
-                                      const next = [...(value[tableKey] || [])];
-                                      const prev = next[index] || {};
-                                      next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
-                                      setRows(tableKey, next);
-                                    }}
-                                    aria-label={f.label || f.name}
-                                  >
-                                    <option value="">Select…</option>
-                                    {(lookupOptionsByField[`${tableKey}:${f.name}`] || []).map((optRow) => {
-                                      const vf = String(f.lookup.valueField || "id");
-                                      const v = optRow?.[vf];
-                                      if (v == null || v === "") return null;
-                                      const optionKey = String(v);
-                                      return (
-                                        <option key={optionKey} value={optionKey}>
-                                          {formatLookupRowLabel(optRow, f.lookup) || optionKey}
-                                        </option>
-                                      );
-                                    })}
-                                  </select>
+                                  f.readOnly || ui.readOnly ? (
+                                    <span className="master-child-readonly">
+                                      {formatLookupReadonlyValue(tableKey, f, row, lookupOptionsByField)}
+                                    </span>
+                                  ) : (
+                                    <select
+                                      className="master-inline-input"
+                                      value={row[f.name] == null || row[f.name] === "" ? "" : String(row[f.name])}
+                                      disabled={inputsDisabled}
+                                      onChange={(e) => {
+                                        const next = [...(value[tableKey] || [])];
+                                        const prev = next[index] || {};
+                                        next[index] = { ...prev, [f.name]: e.target.value, _lineSaved: false };
+                                        setRows(tableKey, next);
+                                      }}
+                                      aria-label={f.label || f.name}
+                                    >
+                                      <option value="">Select…</option>
+                                      {(lookupOptionsByField[`${tableKey}:${f.name}`] || []).map((optRow) => {
+                                        const vf = String(f.lookup.valueField || "id");
+                                        const v = optRow?.[vf];
+                                        if (v == null || v === "") return null;
+                                        const optionKey = String(v);
+                                        return (
+                                          <option key={optionKey} value={optionKey}>
+                                            {formatLookupRowLabel(optRow, f.lookup) || optionKey}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  )
                                 ) : f.type === "textarea" ||
                                     (f.type === "text" && Number.isFinite(Number(f.rows)) && Number(f.rows) > 1) ? (
                                   <textarea
@@ -561,7 +636,9 @@ export default function ModuleChildTablesPanel({
                               ) : (
                                 <span className="master-child-readonly">
                                   {f.type === "number"
-                                    ? formatInrAmount(toNumberOrZero(rowValueForField(row, f.name)))
+                                    ? f.integerOnly
+                                      ? formatPlainIntegerIn(rowValueForField(row, f.name))
+                                      : formatInrAmount(toNumberOrZero(rowValueForField(row, f.name)))
                                     : f.type === "lookup" && f.lookup
                                         ? formatLookupReadonlyValue(tableKey, f, row, lookupOptionsByField)
                                         : formatViewCellValue(f, rowValueForField(row, f.name))}
@@ -618,17 +695,23 @@ export default function ModuleChildTablesPanel({
                     );
                   })}
                 </tbody>
-                {fields.some((f) => f.type === "number") ? (
+                {fields.some((f) => includeNumberInFooterTotal(f)) ? (
                   <tfoot>
                     <tr>
                       <td className="master-child-idx-col" />
-                      {fields.map((f) => (
+                      {fields.map((f, fi) => (
                         <td
                           key={`total-${f.name}`}
                           className={`master-child-field-col${f.type === "number" ? " master-child-number-col" : ""}`}
                         >
-                          {f.type === "number" ? (
+                          {includeNumberInFooterTotal(f) ? (
                             <strong>{formatInrAmount(numericFieldTotals[f.name] || 0)}</strong>
+                          ) : f.type === "number" && f.footerSum === false ? (
+                            fi === 0 ? (
+                              <strong className="master-child-total-label">Total</strong>
+                            ) : (
+                              ""
+                            )
                           ) : f === fields[0] ? (
                             <strong className="master-child-total-label">Total</strong>
                           ) : (

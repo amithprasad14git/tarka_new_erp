@@ -46,7 +46,7 @@ describe("session", () => {
       expect(randomUUID).toHaveBeenCalledTimes(1);
       expect(pool.query).toHaveBeenCalledWith(
         "INSERT INTO `sessions` (id, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
-        ["session-uuid-123", 42, 10]
+        ["session-uuid-123", 42, 20]
       );
     });
 
@@ -99,7 +99,7 @@ describe("session", () => {
       await expect(refreshSessionExpiry("sid-1")).resolves.toBeUndefined();
       expect(pool.query).toHaveBeenCalledWith(
         "UPDATE `sessions` SET expires_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id=? AND expires_at > NOW()",
-        [10, "sid-1"]
+        [20, "sid-1"]
       );
     });
 
@@ -150,7 +150,7 @@ describe("session", () => {
       expect(pool.query).toHaveBeenNthCalledWith(
         2,
         "UPDATE `sessions` SET expires_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id=? AND expires_at > NOW()",
-        [10, "sid-1"]
+        [20, "sid-1"]
       );
     });
 

@@ -51,7 +51,7 @@ export default function PaginationBar({
       <div className="pagination-footer-left">
         <span className="pagination-summary">
           Showing <strong>{start}</strong>–<strong>{end}</strong> of <strong>{safeTotal}</strong>{" "}
-          results
+          Results
         </span>
         {leftExtra ? <span style={{ marginLeft: 10 }}>{leftExtra}</span> : null}
       </div>

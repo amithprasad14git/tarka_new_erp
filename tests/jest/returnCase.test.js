@@ -16,6 +16,11 @@ const fyFreezeNotLockedRoute = {
   reply: [[{ freezeTransactions: "No" }]]
 };
 
+const fyFreezeLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "Yes" }]]
+};
+
 /** DB routes when validation reaches case status + duplicate checks successfully. */
 const validateCaseStatusAndDupOk = [
   fyFreezeNotLockedRoute,
@@ -71,6 +76,34 @@ describe("returnCase module", () => {
       validateReturnCaseBeforeWrite(conn, {
         parentData: { date: "2026-04-30", caseNo: 15 },
         childTableRows: validChildPayload()
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  test("validateReturnCaseBeforeWrite blocks role 2 when FY is frozen", async () => {
+    const conn = createConn([fyFreezeLockedRoute]);
+    await expect(
+      validateReturnCaseBeforeWrite(conn, {
+        parentData: { date: "2026-04-30", caseNo: 15 },
+        childTableRows: validChildPayload(),
+        user: { role: 2 }
+      })
+    ).rejects.toMatchObject({
+      code: "RETURN_CASE_VALIDATION_FAILED",
+      message: "Transactions are locked for the selected financial year. Please contact the administrator."
+    });
+  });
+
+  test("validateReturnCaseBeforeWrite allows admin when FY is frozen", async () => {
+    const conn = createConn([
+      fyFreezeLockedRoute,
+      ...validateCaseStatusAndDupOk.slice(1)
+    ]);
+    await expect(
+      validateReturnCaseBeforeWrite(conn, {
+        parentData: { date: "2026-04-30", caseNo: 15 },
+        childTableRows: validChildPayload(),
+        user: { role: 1 }
       })
     ).resolves.toBeUndefined();
   });

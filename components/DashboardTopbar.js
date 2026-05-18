@@ -5,6 +5,9 @@
 
 /**
  * Header strip: ambient micro-icon lane (React-timed bursts), IST clock, theme, user menu.
+ *
+ * Sparkle timing (burst length, idle gap, drift speed) lives in `TopbarMicroFloatLane.js`
+ * at the top as `BURST_DURATION_MS`, `IDLE_GAP_MS`, and `ICON_DRIFT_SECONDS`.
  */
 import ThemeToggle from "./ThemeToggle";
 import TopbarIstClock from "./TopbarIstClock";

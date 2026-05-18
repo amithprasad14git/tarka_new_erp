@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.18% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>23/27</span>
+                <span class='fraction'>24/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.44% </span>
+                <span class="strong">72.22% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>29/43</span>
+                <span class='fraction'>39/54</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.5% </span>
+                <span class="strong">88% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>21/24</span>
+                <span class='fraction'>22/25</span>
             </div>
         
             
@@ -170,7 +170,25 @@
 <a name='L105'></a><a href='#L105'>105</a>
 <a name='L106'></a><a href='#L106'>106</a>
 <a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -256,10 +274,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -301,8 +331,11 @@
  * =============================================================================
  */
 import pool from "./db";
+import { buildAuditRecordLabel } from "./auditDisplay";
 import { formatInstantAsMysqlDatetimeIST } from "./istDateTime";
 import { escapeSqlTableId } from "./sqlModuleTable";
+&nbsp;
+export { buildAuditRecordLabel } from "./auditDisplay";
 &nbsp;
 function auditValuesEquivalent(a, b) {
   if (Object.is(a, b)) return true;
@@ -347,6 +380,7 @@ export function pickAuditUpdateSnapshots(oldRow, newRow) {
  * - moduleName — which screen/table key (e.g. employee_master).
  * - action — short verb: create | update | delete.
  * - recordId — primary key of the affected row.
+ * - recordLabel — optional human-readable label (e.g. invoice no); auto-built from row when omitted.
  * - oldData — before snapshot (object → stored as JSON string), null on create. For **update**, callers usually pass only changed columns (see pickAuditUpdateSnapshots).
  * - newData — after snapshot, null on delete. For **update**, usually only changed columns.
  *
@@ -358,23 +392,34 @@ export async function writeAuditLog({
   moduleName,
   action,
   recordId = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span>
+  recordLabel = null,
   oldData = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span>
   newData = <span class="branch-0 cbranch-no" title="branch not covered" >null</span>
 }) {
   // `oldData` / `newData` are JSON-stringified to keep a stable snapshot.
   // For delete actions, `newData` is left as null.
+  const resolvedLabel =
+    recordLabel != null &amp;&amp; String(recordLabel).trim() !== ""
+      ? String(recordLabel).trim()
+      : buildAuditRecordLabel(
+          moduleName,
+          newData &amp;&amp; typeof newData === "object" ? newData : oldData,
+          recordId
+        );
+&nbsp;
   const now = formatInstantAsMysqlDatetimeIST();
   const uid = userId ?? null;
   const at = escapeSqlTableId("audit_logs");
   await pool.query(
-    `INSERT INTO ${at} (user_id, module, action, record_id, old_data, new_data,
+    `INSERT INTO ${at} (user_id, module, action, record_id, record_label, old_data, new_data,
                             createdBy, createdDate, modifiedBy, modifiedDate)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       uid,
       moduleName ?? <span class="branch-1 cbranch-no" title="branch not covered" >null,</span>
       action ?? <span class="branch-1 cbranch-no" title="branch not covered" >null,</span>
       recordId ?? <span class="branch-1 cbranch-no" title="branch not covered" >null,</span>
+      resolvedLabel || <span class="branch-1 cbranch-no" title="branch not covered" >null,</span>
       oldData ? JSON.stringify(oldData) : null,
       newData ? JSON.stringify(newData) : null,
       uid,
@@ -391,7 +436,7 @@ export async function writeAuditLog({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-10T12:35:35.851Z
+                at 2026-05-17T15:30:49.384Z
             </div>
         <script src="../prettify.js"></script>
         <script>

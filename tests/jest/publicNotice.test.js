@@ -33,6 +33,11 @@ const fyFreezeNotLockedRoute = {
   reply: [[{ freezeTransactions: "No" }]]
 };
 
+const fyFreezeLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "Yes" }]]
+};
+
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -58,6 +63,37 @@ describe("publicNotice module", () => {
       validatePublicNoticeBeforeWrite(conn, {
         parentData: { date: "2026-04-30", caseNo: 15 },
         childTableRows: { public_notice_details: [{ displayName: "ABC Traders", type: 1, address: "Mysuru" }] }
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  test("validatePublicNoticeBeforeWrite blocks role 2 when FY is frozen", async () => {
+    const conn = createConn([fyFreezeLockedRoute]);
+    await expect(
+      validatePublicNoticeBeforeWrite(conn, {
+        parentData: { date: "2026-04-30", caseNo: 15 },
+        childTableRows: { public_notice_details: [{ displayName: "ABC", type: 1 }] },
+        user: { role: 2 }
+      })
+    ).rejects.toMatchObject({
+      code: "PUBLIC_NOTICE_VALIDATION_FAILED",
+      message: "Transactions are locked for the selected financial year. Please contact the administrator."
+    });
+  });
+
+  test("validatePublicNoticeBeforeWrite allows admin when FY is frozen", async () => {
+    const conn = createConn([
+      fyFreezeLockedRoute,
+      {
+        when: (sql) => sql.includes("FROM new_case_inward"),
+        reply: [[{ id: 15 }]]
+      }
+    ]);
+    await expect(
+      validatePublicNoticeBeforeWrite(conn, {
+        parentData: { date: "2026-04-30", caseNo: 15 },
+        childTableRows: { public_notice_details: [{ displayName: "ABC", type: 1 }] },
+        user: { role: 1 }
       })
     ).resolves.toBeUndefined();
   });

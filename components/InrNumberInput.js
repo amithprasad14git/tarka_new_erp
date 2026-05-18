@@ -55,7 +55,8 @@ export default function InrNumberInput({
   className = "",
   placeholder = "",
   ariaLabel = undefined,
-  onRawValueChange = undefined
+  onRawValueChange = undefined,
+  onBlur = undefined
 }) {
   const [rawValue, setRawValue] = useState(() => normalizeNumericInput(defaultValue));
 
@@ -79,6 +80,7 @@ export default function InrNumberInput({
           setRawValue(next);
           if (typeof onRawValueChange === "function") onRawValueChange(next);
         }}
+        onBlur={typeof onBlur === "function" ? onBlur : undefined}
         readOnly={Boolean(readOnly)}
         disabled={Boolean(disabled)}
         placeholder={placeholder}

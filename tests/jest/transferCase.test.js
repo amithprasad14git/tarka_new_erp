@@ -38,6 +38,35 @@ const fyFreezeNotLockedRoute = {
   reply: [[{ freezeTransactions: "No" }]]
 };
 
+const fyFreezeLockedRoute = {
+  when: (sql) => sql.includes("freezeTransactions") && sql.includes("financial_year_master"),
+  reply: [[{ freezeTransactions: "Yes" }]]
+};
+
+const validTransferParentData = {
+  date: "2026-04-10",
+  caseNo: 901,
+  fromUnit: 10,
+  toUnit: 20,
+  assignee: 33
+};
+
+const validTransferDbRoutes = [
+  fyFreezeNotLockedRoute,
+  {
+    when: (sql) => sql.includes("FROM new_case_inward"),
+    reply: [[{ id: 901, unit: 10 }]]
+  },
+  {
+    when: (sql) => sql.includes("unit_master"),
+    reply: [[{ id: 20 }]]
+  },
+  {
+    when: (sql) => sql.includes("FROM users"),
+    reply: [[{ id: 33 }]]
+  }
+];
+
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -51,25 +80,36 @@ function createConn(routes) {
 
 describe("transferCase module", () => {
   test("validateTransferCaseBeforeWrite accepts valid payload", async () => {
-    const conn = createConn([
-      fyFreezeNotLockedRoute,
-      {
-        when: (sql) => sql.includes("FROM new_case_inward"),
-        reply: [[{ id: 901, unit: 10 }]]
-      },
-      {
-        when: (sql) => sql.includes("unit_master"),
-        reply: [[{ id: 20 }]]
-      },
-      {
-        when: (sql) => sql.includes("FROM users"),
-        reply: [[{ id: 33 }]]
-      }
-    ]);
+    const conn = createConn(validTransferDbRoutes);
 
     await expect(
       validateTransferCaseBeforeWrite(conn, {
-        parentData: { date: "2026-04-10", caseNo: 901, fromUnit: 10, toUnit: 20, assignee: 33 }
+        parentData: validTransferParentData
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  test("validateTransferCaseBeforeWrite blocks role 2 when FY is frozen", async () => {
+    const conn = createConn([fyFreezeLockedRoute, ...validTransferDbRoutes.slice(1)]);
+
+    await expect(
+      validateTransferCaseBeforeWrite(conn, {
+        parentData: validTransferParentData,
+        user: { role: 2 }
+      })
+    ).rejects.toMatchObject({
+      code: "TRANSFER_CASE_VALIDATION_FAILED",
+      message: "Transactions are locked for the selected financial year. Please contact the administrator."
+    });
+  });
+
+  test("validateTransferCaseBeforeWrite allows admin when FY is frozen", async () => {
+    const conn = createConn([fyFreezeLockedRoute, ...validTransferDbRoutes.slice(1)]);
+
+    await expect(
+      validateTransferCaseBeforeWrite(conn, {
+        parentData: validTransferParentData,
+        user: { role: 1 }
       })
     ).resolves.toBeUndefined();
   });

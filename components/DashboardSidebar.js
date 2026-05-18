@@ -22,7 +22,8 @@ const groupIcons = {
   Accounts: "💵",
   Lookups: "🛠️",
   Banks: "🏛️",
-  Cases: "📚"
+  Cases: "📚",
+  Invoice: "🧾"
 };
 
 /**
@@ -235,7 +236,7 @@ export default function DashboardSidebar({ groups }) {
     <Link href="/dashboard" className="flux-brand-link">
       <img
         src={LOGO_SRC}
-        alt="Tarka — Solutions that work"
+        alt="Tarka — Solutions that Work"
         className="flux-brand-logo"
         width={200}
         height={44}

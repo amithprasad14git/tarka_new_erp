@@ -10,7 +10,7 @@ export default function AppFooter() {
     <footer className="app-footer" role="contentinfo">
       <div className="app-footer-inner">
         <p className="app-footer-line">
-          Copyrights © {year} | All Rights Reserved | NPA Enforcement and Recovery Squad Private Limited
+          Copyrights © {year} All Rights Reserved - NPA Enforcement and Recovery Squad Private Limited
         </p>
       </div>
     </footer>

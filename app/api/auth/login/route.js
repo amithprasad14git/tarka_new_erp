@@ -37,7 +37,7 @@ export async function POST(req) {
     if ("error" in result) {
       if (result.error === "inactive") {
         return Response.json(
-          { error: "This account is inactive. Contact an administrator." },
+          { error: "This account is inactive. Contact the administrator." },
           { status: 403 }
         );
       }

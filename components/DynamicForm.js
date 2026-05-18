@@ -44,7 +44,13 @@ export default function DynamicForm({
   lookupOptionsByField = null,
   /** Field name → true means lookup must not call remote LoV API */
   disableLookupRemoteByField = null,
-  onFieldValueChange = null
+  onFieldValueChange = null,
+  /** TEMP (NCI): main fields in one card; case-status block + `entryFooterContent` in a second card. */
+  nciSplitEntryCards = false,
+  /** Rendered inside the NCI follow-up card (e.g. Amount Recovered child grid). Must stay within this form. */
+  entryFooterContent = null,
+  /** Rendered inside the last NCI entry card (Save / View / Clear), with the same top rule as view mode. */
+  entryActionsBar = null
 }) {
   // Server-only fields to display when viewing/editing a saved row (not on blank “new” form).
   const displayOnEditFields = (config.fields || []).filter(
@@ -57,6 +63,9 @@ export default function DynamicForm({
   const formLayout = isNewCaseInwardModule(moduleKey)
     ? getNciDynamicFormLayoutSections(allInputFields, isEditingExistingRecord)
     : { mainFields: allInputFields, secondarySection: null };
+  const nciHasFollowupCard = Boolean(
+    nciSplitEntryCards && (formLayout.secondarySection || entryFooterContent)
+  );
 
   function renderEditableField(f, forceRequired = false) {
     // `forceRequired` supports layout adapters that enforce UI-required markers.
@@ -142,7 +151,13 @@ export default function DynamicForm({
               }}
             >
               {/* Empty value must exist when there is no default: otherwise defaultValue="" matches no option and submit/validation break. */}
-              <option value="">{required ? "Select…" : "—"}</option>
+              <option value="">
+                {ui.emptyOptionLabel != null && String(ui.emptyOptionLabel).trim() !== ""
+                  ? String(ui.emptyOptionLabel).trim()
+                  : required
+                    ? "Select…"
+                    : "—"}
+              </option>
               {f.options.map((opt) => (
                 <option key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}
@@ -171,6 +186,8 @@ export default function DynamicForm({
             defaultValue={initialValues?.[f.name] ?? ""}
             required={required}
             readOnly={fieldReadOnly}
+            onRawValueChange={ui.onRawValueChange}
+            onBlur={ui.onBlur}
           />
         ) : f.type === "date" ? (
           <input
@@ -235,14 +252,17 @@ export default function DynamicForm({
   return (
     <form
       id={formId || undefined}
+      className={nciSplitEntryCards ? "master-nci-split-form" : undefined}
       onSubmit={onSubmit}
       style={{
         marginBottom: "12px",
         ...(formRootStyle || {})
       }}
     >
-      <div className={className}>
-        <div className={formGridClassName}>
+      {nciSplitEntryCards ? (
+        <div className="card table-section master-nci-entry-card-main">
+          <div className={className}>
+            <div className={formGridClassName}>
           {displayOnEditFields.map((f) => {
             const raw =
               f.type === "lookup" && f.lookup
@@ -268,14 +288,64 @@ export default function DynamicForm({
             );
           })}
           {formLayout.mainFields.map((f) => renderEditableField(f))}
+            </div>
+          </div>
+          {nciSplitEntryCards && !nciHasFollowupCard && entryActionsBar ? entryActionsBar : null}
         </div>
-      </div>
-      {formLayout.secondarySection ? (
-        <div className="card master-entry-form-case-status" style={{ marginTop: "12px" }}>
+      ) : (
+        <div className={className}>
+          <div className={formGridClassName}>
+            {displayOnEditFields.map((f) => {
+              const raw =
+                f.type === "lookup" && f.lookup
+                  ? rowValueForField(initialValues, getLookupRowLabelKey(f)) ??
+                    rowValueForField(initialValues, f.name)
+                  : rowValueForField(initialValues, f.name);
+              const text =
+                raw != null && String(raw).trim() !== "" ? String(raw) : "—";
+              const rid = `readonly-label-${f.name}`;
+              return (
+                <div
+                  key={`readonly-${f.name}`}
+                  className="form-field form-field-outline form-field-outline-readonly"
+                >
+                  <div className="form-field-outline-box" role="group" aria-labelledby={rid}>
+                    <span className="form-field-outline-label" id={rid}>
+                      {labelWithRequiredMark(f.label, false)}
+                    </span>
+                    <div className="form-field-outline-control">
+                      <div className="form-field-outline-readonly-value" aria-readonly="true">
+                        {text}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {formLayout.mainFields.map((f) => renderEditableField(f))}
+          </div>
+        </div>
+      )}
+      {!nciSplitEntryCards && formLayout.secondarySection ? (
+        <div className="master-entry-form-case-status table-section" style={{ marginTop: "12px" }}>
           <h2 className="module-child-section-title">{formLayout.secondarySection.title}</h2>
           <div className="form-grid form-grid-master">
             {formLayout.secondarySection.fields.map((f) => renderEditableField(f))}
           </div>
+        </div>
+      ) : null}
+      {nciSplitEntryCards && (formLayout.secondarySection || entryFooterContent) ? (
+        <div className="card table-section master-nci-entry-card-followup">
+          {formLayout.secondarySection ? (
+            <div className="master-entry-form-case-status table-section">
+              <h2 className="module-child-section-title">{formLayout.secondarySection.title}</h2>
+              <div className="form-grid form-grid-master">
+                {formLayout.secondarySection.fields.map((f) => renderEditableField(f))}
+              </div>
+            </div>
+          ) : null}
+          {entryFooterContent}
+          {nciSplitEntryCards && nciHasFollowupCard && entryActionsBar ? entryActionsBar : null}
         </div>
       ) : null}
       {!hideButtons ? (

@@ -516,7 +516,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
                     onClick={handleSave}
                     disabled={busy || !dirty}
                   >
-                    Save permissions
+                    Save Permissions
                   </button>
                 ) : null}
               </div>

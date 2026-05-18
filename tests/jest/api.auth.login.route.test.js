@@ -62,7 +62,7 @@ describe("api/auth/login route", () => {
     authenticateLogin.mockResolvedValue({ error: "inactive" });
     const res = await POST(makeReq({ email: "u@x.com", password: "x" }));
     expect(res.status).toBe(403);
-    await expect(res.json()).resolves.toEqual({ error: "This account is inactive. Contact an administrator." });
+    await expect(res.json()).resolves.toEqual({ error: "This account is inactive. Contact the administrator." });
   });
 
   test("returns 401 for invalid credentials", async () => {

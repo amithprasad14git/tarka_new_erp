@@ -22,9 +22,18 @@ jest.mock("../../lib/sqlModuleTable", () => ({
   escapeSqlTableId: jest.fn(() => "`audit_logs`")
 }));
 
+jest.mock("../../config/modules", () => ({
+  modules: {
+    sample_module: {
+      lookupDisplayField: "name",
+      fields: [{ name: "name", label: "Name" }]
+    }
+  }
+}));
+
 const pool = require("../../lib/db").default;
 const { formatInstantAsMysqlDatetimeIST } = require("../../lib/istDateTime");
-const { pickAuditUpdateSnapshots, writeAuditLog } = require("../../lib/audit");
+const { pickAuditUpdateSnapshots, writeAuditLog, buildAuditRecordLabel } = require("../../lib/audit");
 
 describe("pickAuditUpdateSnapshots", () => {
   test("returns only keys that differ", () => {
@@ -74,6 +83,7 @@ describe("audit.writeAuditLog", () => {
       "sample_module",
       "create",
       1,
+      "Created Row",
       null,
       JSON.stringify(newData),
       99,
@@ -81,6 +91,19 @@ describe("audit.writeAuditLog", () => {
       99,
       "2026-04-26 14:00:00"
     ]);
+  });
+
+  test("writeAuditLog stores explicit recordLabel", async () => {
+    await writeAuditLog({
+      userId: 1,
+      moduleName: "sample_module",
+      action: "update",
+      recordId: 2,
+      recordLabel: "INV/2627/0001",
+      oldData: { x: 1 },
+      newData: { x: 2 }
+    });
+    expect(pool.query.mock.calls[0][1][4]).toBe("INV/2627/0001");
   });
 
   test("update audit log writes both old_data and new_data serialized", async () => {
@@ -95,8 +118,9 @@ describe("audit.writeAuditLog", () => {
       newData
     });
 
-    expect(pool.query.mock.calls[0][1][4]).toBe(JSON.stringify(oldData));
-    expect(pool.query.mock.calls[0][1][5]).toBe(JSON.stringify(newData));
+    expect(pool.query.mock.calls[0][1][4]).toBe("Record #2");
+    expect(pool.query.mock.calls[0][1][5]).toBe(JSON.stringify(oldData));
+    expect(pool.query.mock.calls[0][1][6]).toBe(JSON.stringify(newData));
     expect(pool.query.mock.calls[0][1][2]).toBe("update");
   });
 
@@ -112,8 +136,8 @@ describe("audit.writeAuditLog", () => {
     });
 
     const params = pool.query.mock.calls[0][1];
-    expect(params[4]).toBe(JSON.stringify(oldData));
-    expect(params[5]).toBeNull();
+    expect(params[5]).toBe(JSON.stringify(oldData));
+    expect(params[6]).toBeNull();
     expect(params[2]).toBe("delete");
   });
 
@@ -129,8 +153,8 @@ describe("audit.writeAuditLog", () => {
 
     const params = pool.query.mock.calls[0][1];
     expect(params[0]).toBe(123); // user_id
-    expect(params[6]).toBe(123); // createdBy
-    expect(params[8]).toBe(123); // modifiedBy
+    expect(params[7]).toBe(123); // createdBy
+    expect(params[9]).toBe(123); // modifiedBy
   });
 
   test("payload serialization persists JSON snapshots", async () => {
@@ -146,8 +170,8 @@ describe("audit.writeAuditLog", () => {
     });
 
     const params = pool.query.mock.calls[0][1];
-    expect(JSON.parse(params[4])).toEqual(oldData);
-    expect(JSON.parse(params[5])).toEqual(newData);
+    expect(JSON.parse(params[5])).toEqual(oldData);
+    expect(JSON.parse(params[6])).toEqual(newData);
   });
 
   test("null actor handling stores null in user/actor columns", async () => {
@@ -162,8 +186,8 @@ describe("audit.writeAuditLog", () => {
 
     const params = pool.query.mock.calls[0][1];
     expect(params[0]).toBeNull();
-    expect(params[6]).toBeNull();
-    expect(params[8]).toBeNull();
+    expect(params[7]).toBeNull();
+    expect(params[9]).toBeNull();
   });
 
   test("malformed payload handling: circular JSON throws before DB insert", async () => {

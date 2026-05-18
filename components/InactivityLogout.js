@@ -4,12 +4,14 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * Browser-only idle timeout (separate from server session idle in lib/session.js). After 10 minutes
+ * Browser idle timeout (aligned with server session idle in lib/session.js). After SESSION_IDLE_MINUTES
  * without input, calls logout and sends the user to `/login?reason=inactive`.
  */
 import { useEffect, useRef } from "react";
+import { resolveSessionIdleMinutes } from "../lib/sessionIdleMinutes";
 
-const INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
+const INACTIVITY_LIMIT_MS =
+  resolveSessionIdleMinutes(process.env.NEXT_PUBLIC_SESSION_IDLE_MINUTES) * 60 * 1000;
 
 /** Client-side idle timer: calls logout API then redirects to login. */
 export default function InactivityLogout() {

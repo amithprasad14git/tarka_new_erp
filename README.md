@@ -35,9 +35,12 @@ Scripts (`package.json`):
 
 - `app/` - Next.js app routes, pages, API routes
 - `components/` - reusable UI components (forms, tables, topbar, lookups, etc.)
-- `config/modules.js` - module registry (tables, fields, labels, lookups, visibility rules)
-- `lib/` - server/business logic (RBAC, CRUD services, validations, sessions, enrichment)
+- `config/modules.js` - module registry (tables, fields, labels, lookups) **and** validation summary comments
+- `lib/modules/` - **per-module business rules** (server `*.js` and client `*Client.js`)
+- `lib/modules/crudModuleAdapters.js` - wires custom modules into save/delete pipeline
+- `lib/` - shared server logic (RBAC, CRUD services, sessions, enrichment)
 - `sql/` - SQL helpers/migrations/reference scripts
+- `docs/` - extra guides (accounts modules, [invoice PDFs](docs/invoices-pdf.md))
 
 ---
 
@@ -129,6 +132,95 @@ This file acts as ERP blueprint:
 - child table configuration
 
 Because of this, many new modules can be added with little/no custom code.
+
+Field-level rules (`required`, `maxToday`, `readOnly`, child `maxRows`, etc.) are defined **in this file**.  
+The **validation summary table** at the top of `config/modules.js` (comment block) is kept in sync with this README.
+
+---
+
+## 7A) Module-by-module validations (plain English)
+
+When a user saves a record, checks run in **two layers**:
+
+1. **Config rules** (`config/modules.js`) — required fields, date “not in the future” (`maxToday`), read-only modules, child row limits, etc. Applied by the generic CRUD service for **every** module.
+2. **Custom server rules** — only for modules that have a matching file under `lib/modules/` and an entry in `lib/modules/crudModuleAdapters.js`. These run on the server so the browser cannot skip them.
+
+**Also applies everywhere (not in modules.js):**
+
+- **Permissions** — `user_permissions` (view/create/edit/delete + own/unit/all row scope). See §5.
+- **Sessions** — inactive users cannot stay logged in.
+- **Audit stamps** — `createdBy`, `createdDate`, etc. filled by the server when configured.
+
+### Financial year freeze (many transaction modules)
+
+If **Financial Year Master** has `freezeTransactions = Yes` for the year that contains the transaction **date**:
+
+| Who | Behaviour |
+|-----|-----------|
+| **Role 2** (unit operator) | Save is **blocked** with a friendly “transactions are locked” message. |
+| **Role 1** (admin) | Save is **allowed** (for corrections). |
+
+Shared helper: `lib/modules/freezeTransactionsLock.js`.  
+**New Case Inward** uses a related rule on **case status update date** for **all non-admin** users (not only role 2).
+
+### Master data modules (config rules only)
+
+No custom `beforeWrite` adapter. Saving only enforces what you see on the form (`required`, types, lookups):
+
+`company_master`, `employee_master`, `unit_master`, `financial_year_master`, `current_account_opening_balance`, `party_master`, `bank_master`, `current_account_master`, `ho_zo_master`, `rbo_master`, `branch_master`, `lookup_type_master`, `lookup_value_master`, `new_case_inward_transaction_control`, `case_return_reasons`, `sarfaesi_case_particulars`
+
+| Module | Extra notes |
+|--------|-------------|
+| `users` | Only **Active = Yes** may log in (`lib/auth.js`). |
+| `user_permissions` | Picked user must exist and be active (`userPermissions.js`). |
+| `audit_logs` | **Read-only** — history is written by the app, not typed in by users. |
+| `rbo_master` | Changing RBO active flag can sync linked branches (`rboMaster.js`). |
+
+### Case workflow modules
+
+| Module | Logic file | Main validations & side effects |
+|--------|------------|----------------------------------|
+| `new_case_inward` | `newCaseInward.js` | Auto **Case No** after save; loan account length/numeric/duplicate rules; final-stage edit lock; case status + recovered amount dependencies; transaction-control backdates; FY freeze on case status date (non-admin). Child: amount recovered lines. |
+| `transfer_case` | `transferCase.js` | **Date = today**; case / from unit / to unit / assignee required; from unit must match case owner; to ≠ from; assignee in to-unit; **updates case owner** on save; ref `TRF/<FY>/<serial>`; FY freeze (role 2). |
+| `public_notice` | `publicNotice.js` | Date required, not future; FY freeze (role 2); case required; child **max 3** rows, display name + type required; ref `PN/<FY>/<serial>`; PDF print. |
+| `sarfaesi_case_status_update` | `sarfaesiCaseStatusUpdate.js` | Date required, not future; FY freeze (role 2); **SARFAESI** loan case only; **one status update per case**; ≥1 child row; particulars required (read-only in UI, preloaded); **remarks optional**; ref `SRFUP/<FY>/<####>`; case snapshot. Client: `sarfaesiCaseStatusUpdateClient.js`. |
+| `return_case` | `returnCase.js` | Date required, not future; FY freeze (role 2); case must exist and be in **Returned** status; duplicate case blocked; at least one **checked** child row with return reason; ref after save. |
+
+### Accounts modules
+
+All use FY freeze on **date** (role 2) and stamp a **voucher number** after save (patterns in each file). Unit operators are generally limited to their own unit’s accounts.
+
+| Module | Logic file | Highlights |
+|--------|------------|------------|
+| `accounts_assets_investments` | `accountsAssetsInvestments.js` | Payment mode; cheque no/date if cheque; unit scope. |
+| `accounts_cash_deposit_withdraw` | `accountsCashDepositWithdraw.js` | Deposit vs withdraw; NPA current account; cheque rules; unit scope. |
+| `accounts_current_ac_transfer` | `accountsCurrentAcTransfer.js` | From and to current accounts must differ. |
+| `accounts_expense_voucher` | `accountsExpenseVoucher.js` | Payment mode; cheque; unit scope. |
+| `accounts_loan_ac` | `accountsLoanAc.js` | Receipt vs payment; cheque; unit scope; voucher `LN/CR` or `LN/DR`. |
+| `accounts_suspense_entry` | `accountsSuspenseEntry.js` | Suspense voucher `SUSP/...`. |
+
+More detail for loan/suspense screens: [docs/README-accounts-modules.md](docs/README-accounts-modules.md).
+
+### Invoice modules
+
+Overview of all three printable invoices (shared layout, APIs, tests): **[docs/invoices-pdf.md](docs/invoices-pdf.md)**.
+
+| Module | Logic file | Highlights |
+|--------|------------|------------|
+| `recovery_invoice` | `recoveryInvoice.js` + `recoveryInvoiceClient.js` + `recoveryInvoicePdf.js` | FY freeze (role 2); invoice number; case picker; charges child; cancellation; final-invoice flag on case; 3-page PDF (recovery details + charges tables) — [docs/recovery-invoice-pdf.md](docs/recovery-invoice-pdf.md). |
+| `sarfaesi_invoice` | `sarfaesiInvoice.js` + `sarfaesiInvoiceClient.js` + `sarfaesiInvoicePdf.js` | FY freeze (role 2); **SARFAESI** cases only; invoice number; `sarfaesi_charges` child; cancellation; 3-page PDF (full-width charges only) — [docs/sarfaesi-invoice-pdf.md](docs/sarfaesi-invoice-pdf.md). |
+| `vehicle_invoice` | `vehicleInvoice.js` + `vehicleInvoiceClient.js` + `vehicleInvoicePdf.js` | FY freeze (role 2); **Vehicle Loan** cases; invoice number; `vehicle_charges` child; cancellation; 3-page PDF (same layout as SARFAESI) — [docs/vehicle-invoice-pdf.md](docs/vehicle-invoice-pdf.md). |
+
+Each invoice module uses **Print** in the entry toolbar and post-save acknowledgement when `postCreateAck.showPrintPdf` is enabled in `config/modules.js`. PDF routes: `app/api/<module>/pdf/[id]/route.js`.
+
+### Where to change validations
+
+| What you want to change | Where to edit |
+|-------------------------|---------------|
+| “This field is required on the form” | `config/modules.js` → module → `fields` / `childTables` |
+| Business rule on save (dates, duplicates, vouchers) | `lib/modules/<module>.js` |
+| Hook module into save pipeline | `lib/modules/crudModuleAdapters.js` |
+| UI-only (picker filters, preload rows, read-only child field) | `lib/modules/<module>Client.js` + `components/MasterModuleClient.js` |
 
 ---
 
@@ -335,16 +427,39 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 
 ---
 
-## 15) Recommended Future Improvements
+## 15) SARFAESI Case Status Update
 
-- Add automated tests for module-specific business rules (especially `new_case_inward`)
-- Move more hardcoded status policies to config for easier ops control
-- Add migration/versioning discipline for schema changes
-- Expand user-facing help docs by module
+Module key: `sarfaesi_case_status_update`  
+Server: `lib/modules/sarfaesiCaseStatusUpdate.js`  
+Client: `lib/modules/sarfaesiCaseStatusUpdateClient.js`
+
+**Purpose:** Record SARFAESI case checklist status — one row per case, with child lines for each active particular from **SARFAESI Case Particulars** master.
+
+**Validations:**
+
+- Parent **date** — required; cannot be in the future; FY freeze for role 2.
+- **Case No** — required; must be SARFAESI loan category; cannot already exist on another status-update record (edit excludes current row).
+- **Child details** — at least one row; each row needs **particulars** (active master record); **remarks** optional.
+- **Ref No** — auto `SRFUP/<financial year code>/<4-digit serial>` after create.
+
+**UI:**
+
+- New entry preloads all active particulars (sorted by sequence); particulars column is read-only; remarks editable.
+- Case snapshot (like Public Notice / Return Case).
+- Post-create acknowledgement shows ref no (no print button in config).
 
 ---
 
-## 16) Quick Start
+## 16) Recommended Future Improvements
+
+- Add automated tests for remaining module-specific business rules
+- Move more hardcoded status policies to config for easier ops control
+- Add migration/versioning discipline for schema changes
+- Keep `config/modules.js` validation comment table aligned when adding modules
+
+---
+
+## 17) Quick Start
 
 1. Install dependencies:
    - `npm install`
@@ -355,7 +470,7 @@ Ensure MySQL tables used by configured modules exist and column names match conf
 
 ---
 
-## 17) Babel/Jest Sanity Checklist
+## 18) Babel/Jest Sanity Checklist
 
 When changing test/build config, quickly verify both app runtime and tests still work:
 

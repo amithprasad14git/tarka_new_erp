@@ -54,6 +54,42 @@ import {
 import { useCaseSnapshotModel } from "../lib/modules/caseSnapshotClient";
 import { isTransferCaseModule, useTransferCaseClientModel } from "../lib/modules/transferCaseClient";
 import {
+  downloadRecoveryInvoicePdf,
+  getRecoveryInvoiceAckPrintLabel,
+  getRecoveryInvoicePrintButtonText,
+  getRecoveryInvoicePrintTargetId,
+  isRecoveryInvoiceModule,
+  mergeRecoveryInvoiceEntryInitialValues,
+  recoveryInvoiceRefHintFromRow,
+  shouldShowRecoveryInvoiceAckOnEdit,
+  useRecoveryInvoiceClientModel,
+  validateRecoveryInvoiceClientSubmit
+} from "../lib/modules/recoveryInvoiceClient";
+import {
+  downloadSarfaesiInvoicePdf,
+  getSarfaesiInvoiceAckPrintLabel,
+  getSarfaesiInvoicePrintButtonText,
+  getSarfaesiInvoicePrintTargetId,
+  isSarfaesiInvoiceModule,
+  mergeSarfaesiInvoiceEntryInitialValues,
+  sarfaesiInvoiceRefHintFromRow,
+  shouldShowSarfaesiInvoiceAckOnEdit,
+  useSarfaesiInvoiceClientModel,
+  validateSarfaesiInvoiceClientSubmit
+} from "../lib/modules/sarfaesiInvoiceClient";
+import {
+  downloadVehicleInvoicePdf,
+  getVehicleInvoiceAckPrintLabel,
+  getVehicleInvoicePrintButtonText,
+  getVehicleInvoicePrintTargetId,
+  isVehicleInvoiceModule,
+  mergeVehicleInvoiceEntryInitialValues,
+  shouldShowVehicleInvoiceAckOnEdit,
+  useVehicleInvoiceClientModel,
+  validateVehicleInvoiceClientSubmit,
+  vehicleInvoiceRefHintFromRow
+} from "../lib/modules/vehicleInvoiceClient";
+import {
   isAccountsAssetsInvestmentsModule,
   useAccountsAssetsInvestmentsClientModel
 } from "../lib/modules/accountsAssetsInvestmentsClient";
@@ -76,17 +112,32 @@ import {
   shouldShowReturnCaseAckOnEdit,
   useReturnCaseClientModel
 } from "../lib/modules/returnCaseClient";
+import { useSarfaesiCaseStatusUpdateClientModel } from "../lib/modules/sarfaesiCaseStatusUpdateClient";
 import {
+  InvoiceSnapshotModal,
+  isInvoicesReceivedModule,
+  useInvoicesReceivedClientModel
+} from "../lib/modules/invoicesReceivedClient";
+import {
+  auditJsonPreview,
+  buildAuditRecordLabel,
+  formatAuditLookupCompareValue,
+  formatAuditModuleLabel,
   isAuditLogsCreatedAtField,
+  getAuditLogsGridColumnClass,
   isAuditLogsJsonField,
   isAuditLogsModule,
+  isAuditLogsModuleColumn,
+  isAuditLogsRecordLabelColumn,
+  isPlaceholderAuditRecordLabel,
+  resolveAuditFieldLabel,
   shouldHideAuditLogsRecordId
 } from "../lib/modules/auditLogs";
 import PostCreateAckModal from "./PostCreateAckModal";
 import DynamicForm from "./DynamicForm";
 import LoadingOverlay from "./LoadingOverlay";
 import MasterActionsMenu from "./MasterActionsMenu";
-import ModuleChildTablesPanel, { newChildRowDraft } from "./ModuleChildTablesPanel";
+import ModuleChildTablesPanel, { newChildRowDraft, validateIntegerOnlyRulesForRow } from "./ModuleChildTablesPanel";
 import PaginationBar from "./PaginationBar";
 import ToastNotice from "./ToastNotice";
 import CaseSnapshotModal from "./CaseSnapshotModal";
@@ -184,6 +235,8 @@ function validateChildTableRows(moduleConfig, childRowsByKey) {
           return `${ct.label || key}, row ${i + 1}: ${f.label || f.name} is required when ${cb?.label || cbName} is selected.`;
         }
       }
+      const intOnlyErr = validateIntegerOnlyRulesForRow(ct, row);
+      if (intOnlyErr) return `${ct.label || key}, row ${i + 1}: ${intOnlyErr}`;
     }
   }
   return null;
@@ -212,7 +265,8 @@ function stripChildRowsForApi(childTables, childRowsByKey) {
             if (v === "" || v == null) obj[f.name] = null;
             else {
               const n = Number(v);
-              obj[f.name] = Number.isFinite(n) ? n : null;
+              if (!Number.isFinite(n)) obj[f.name] = null;
+              else obj[f.name] = f.integerOnly ? Math.trunc(n) : n;
             }
           } else if (f.type === "checkbox") {
             obj[f.name] = v === true || Number(v) === 1 ? 1 : 0;
@@ -236,13 +290,6 @@ function prettyAuditJsonText(raw) {
   } catch {
     return text;
   }
-}
-
-function auditJsonPreview(raw, max = 34) {
-  // Keep cell text intentionally short so wide JSON columns do not break table layout.
-  const p = prettyAuditJsonText(raw).replace(/\s+/g, " ").trim();
-  if (!p) return "";
-  return p.length > max ? `${p.slice(0, max)}...` : p;
 }
 
 function parseAuditJson(raw) {
@@ -295,7 +342,16 @@ function formatReadableDateOnly(value) {
   return `${dd}-${mm}-${yyyy}`;
 }
 
-function valueTextForCompare(fieldName, v) {
+function valueTextForCompare(fieldName, v, { targetModuleKey, snapshotRow, contextRow } = {}) {
+  if (targetModuleKey) {
+    const lookupText = formatAuditLookupCompareValue(
+      targetModuleKey,
+      fieldName,
+      snapshotRow,
+      contextRow
+    );
+    if (lookupText != null) return lookupText;
+  }
   if (v == null) return "";
   // Audit logs store many date fields in ISO; convert to business-friendly display format.
   if (looksLikeDateField(fieldName) && (typeof v === "string" || typeof v === "number")) {
@@ -312,7 +368,41 @@ function valueTextForCompare(fieldName, v) {
   return String(v);
 }
 
-function buildAuditCompareRows(oldRaw, newRaw) {
+function buildAuditCompareTitle({ targetModule, recordLabel, recordId }) {
+  const moduleLabel = formatAuditModuleLabel(targetModule);
+  const rec =
+    recordLabel != null && String(recordLabel).trim() !== ""
+      ? String(recordLabel).trim()
+      : recordId != null && String(recordId).trim() !== ""
+        ? `ID ${recordId}`
+        : "";
+  const head = [moduleLabel, rec].filter(Boolean).join(" — ");
+  return head ? `${head} — Old vs New` : "Old vs New";
+}
+
+function buildAuditCompareSubtitle({ auditEntryId, action, createdAt, fetchFailed, recordId }) {
+  const bits = [];
+  if (auditEntryId != null && String(auditEntryId).trim() !== "") {
+    bits.push(`Audit entry #${auditEntryId}`);
+  }
+  if (action != null && String(action).trim() !== "") bits.push(String(action).trim());
+  if (createdAt != null && String(createdAt).trim() !== "") {
+    bits.push(formatReadableDateTime(createdAt));
+  }
+  if (fetchFailed && recordId != null) {
+    bits.push(`Record ID ${recordId} (deleted or unavailable)`);
+  }
+  return bits.join(" · ");
+}
+
+function buildAuditCompareRows(
+  oldRaw,
+  newRaw,
+  targetModuleKey,
+  contextRow = null,
+  enrichedOld = null,
+  enrichedNew = null
+) {
   const oldObj = parseAuditJson(oldRaw);
   const newObj = parseAuditJson(newRaw);
   if (!oldObj && !newObj) return [];
@@ -323,9 +413,24 @@ function buildAuditCompareRows(oldRaw, newRaw) {
   return [...keys]
     .sort((a, b) => a.localeCompare(b))
     .map((k) => {
-      const oldVal = valueTextForCompare(k, oldObj?.[k] ?? "");
-      const newVal = valueTextForCompare(k, newObj?.[k] ?? "");
-      return { key: k, oldVal, newVal };
+      const oldSnap = enrichedOld ?? oldObj;
+      const newSnap = enrichedNew ?? newObj;
+      const oldVal = valueTextForCompare(k, oldObj?.[k] ?? "", {
+        targetModuleKey,
+        snapshotRow: oldSnap,
+        contextRow
+      });
+      const newVal = valueTextForCompare(k, newObj?.[k] ?? "", {
+        targetModuleKey,
+        snapshotRow: newSnap,
+        contextRow
+      });
+      return {
+        key: k,
+        label: targetModuleKey ? resolveAuditFieldLabel(targetModuleKey, k) : k,
+        oldVal,
+        newVal
+      };
     });
 }
 
@@ -431,22 +536,129 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   /** Audit Logs only: side-by-side old/new compare popup. */
   const [auditCompareDialog, setAuditCompareDialog] = useState(null);
 
+  useEffect(() => {
+    const entryId = auditCompareDialog?.auditEntryId;
+    if (!auditCompareDialog?.targetModule || auditCompareDialog.recordId == null || entryId == null) {
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = encodeURIComponent(String(auditCompareDialog.targetModule));
+        const rid = encodeURIComponent(String(auditCompareDialog.recordId));
+        const res = await fetch(`/api/crud/${mod}/${rid}`);
+        if (cancelled) return;
+        if (!res.ok) {
+          setAuditCompareDialog((prev) => {
+            if (!prev || prev.auditEntryId !== entryId) return prev;
+            return {
+              ...prev,
+              contextRow: null,
+              fetchFailed: res.status === 404,
+              subtitle: buildAuditCompareSubtitle({
+                auditEntryId: prev.auditEntryId,
+                action: prev.action,
+                createdAt: prev.createdAt,
+                fetchFailed: res.status === 404,
+                recordId: prev.recordId
+              })
+            };
+          });
+          return;
+        }
+        const json = await res.json();
+        const contextRow = json?.data ?? null;
+        const label = buildAuditRecordLabel(
+          auditCompareDialog.targetModule,
+          contextRow,
+          auditCompareDialog.recordId
+        );
+
+        const oldObj = parseAuditJson(auditCompareDialog.oldRaw);
+        const newObj = parseAuditJson(auditCompareDialog.newRaw);
+        let enrichedOld = null;
+        let enrichedNew = null;
+        if (oldObj || newObj) {
+          try {
+            const enrichRes = await fetch("/api/audit-logs/enrich-compare", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                moduleKey: auditCompareDialog.targetModule,
+                oldData: oldObj,
+                newData: newObj
+              })
+            });
+            if (enrichRes.ok) {
+              const enriched = await enrichRes.json();
+              enrichedOld = enriched?.oldData ?? null;
+              enrichedNew = enriched?.newData ?? null;
+            }
+          } catch {
+            /* compare still works with raw ids */
+          }
+        }
+
+        if (cancelled) return;
+        setAuditCompareDialog((prev) => {
+          if (!prev || prev.auditEntryId !== entryId) return prev;
+          const recordLabel =
+            label && isPlaceholderAuditRecordLabel(prev.recordLabel) ? label : prev.recordLabel;
+          return {
+            ...prev,
+            contextRow,
+            enrichedOld,
+            enrichedNew,
+            recordLabel,
+            title: buildAuditCompareTitle({
+              targetModule: prev.targetModule,
+              recordLabel,
+              recordId: prev.recordId
+            }),
+            fetchFailed: false,
+            subtitle: buildAuditCompareSubtitle({
+              auditEntryId: prev.auditEntryId,
+              action: prev.action,
+              createdAt: prev.createdAt,
+              fetchFailed: false,
+              recordId: prev.recordId
+            })
+          };
+        });
+      } catch {
+        /* ignore network errors for compare context */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auditCompareDialog?.auditEntryId]);
+
   /** In-memory rows for `config.childTables`, keyed by each child table's `key` (fallback: SQL `table` name). */
   const [childRowsByKey, setChildRowsByKey] = useState(() =>
     emptyChildRowsState(modules[moduleKey]?.childTables)
   );
+  const recoveryInvoiceClient = useRecoveryInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
+  const sarfaesiInvoiceClient = useSarfaesiInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
+  const vehicleInvoiceClient = useVehicleInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
   const recordsFetchKeyRef = useRef("");
   const permissionsFetchKeyRef = useRef("");
 
   const title = useMemo(() => config?.label || moduleKey, [config, moduleKey]);
   const isNciModule = isNewCaseInwardModule(moduleKey);
   const isPublicNotice = isPublicNoticeModule(moduleKey);
+  const isRecoveryInvoice = isRecoveryInvoiceModule(moduleKey);
+  const isSarfaesiInvoice = isSarfaesiInvoiceModule(moduleKey);
+  const isVehicleInvoice = isVehicleInvoiceModule(moduleKey);
   const isTransferCase = isTransferCaseModule(moduleKey);
   const isAccountsAssetsInvestments = isAccountsAssetsInvestmentsModule(moduleKey);
   const isAccountsExpenseVoucher = isAccountsExpenseVoucherModule(moduleKey);
   const isAccountsLoanAc = isAccountsLoanAcModule(moduleKey);
   const isAccountsCashDepositWithdraw = isAccountsCashDepositWithdrawModule(moduleKey);
   const isAccountsCurrentAcTransfer = isAccountsCurrentAcTransferModule(moduleKey);
+  const isInvoicesReceived = isInvoicesReceivedModule(moduleKey);
   const isAuditLogs = isAuditLogsModule(moduleKey);
   const isNciAdmin = isNewCaseInwardAdmin(moduleKey, permissions.role);
   const transferClient = useTransferCaseClientModel({
@@ -495,6 +707,13 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     formKey
   });
 
+  const invoicesReceivedClient = useInvoicesReceivedClientModel({
+    moduleKey,
+    config,
+    editingRow,
+    formKey
+  });
+
   /** Role 2 new entry: key on unit only (not NPA). NPA changes on Cash/non-Cash must not remount — uncontrolled fields would reset; NPA syncs via initialValues + LookupSelect. */
   const accountsAssetsDynamicFormKeySuffix = useMemo(() => {
     if (!isAccountsAssetsInvestments || editingRow) return "";
@@ -534,7 +753,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   );
 
   const entryFormInitialValues = useMemo(() => {
-    const v = editingRow ? { ...editingRow } : {};
+    let v = editingRow ? { ...editingRow } : {};
     if (newCaseInwardSessionUnit != null) v.unit = newCaseInwardSessionUnit;
     if (isTransferCase) {
       return { ...v, ...transferClient.autoValues };
@@ -554,6 +773,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (isAccountsLoanAc) {
       return { ...v, ...accountsLoanAcClient.autoValues };
     }
+    if (isInvoicesReceived) {
+      return { ...v, ...invoicesReceivedClient.autoValues };
+    }
+    v = mergeRecoveryInvoiceEntryInitialValues(moduleKey, editingRow, v);
+    v = mergeSarfaesiInvoiceEntryInitialValues(moduleKey, editingRow, v);
+    v = mergeVehicleInvoiceEntryInitialValues(moduleKey, editingRow, v);
     return v;
   }, [
     editingRow,
@@ -569,10 +794,17 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     isAccountsExpenseVoucher,
     accountsExpenseVoucherClient.autoValues,
     isAccountsLoanAc,
-    accountsLoanAcClient.autoValues
+    accountsLoanAcClient.autoValues,
+    isInvoicesReceived,
+    invoicesReceivedClient.autoValues,
+    moduleKey
   ]);
 
   const entryFormReadOnlyFields = useMemo(() => {
+    if (isInvoicesReceived) return invoicesReceivedClient.entryReadOnlyFields;
+    if (isVehicleInvoiceModule(moduleKey)) return vehicleInvoiceClient.entryReadOnlyFields;
+    if (isSarfaesiInvoiceModule(moduleKey)) return sarfaesiInvoiceClient.entryReadOnlyFields;
+    if (isRecoveryInvoiceModule(moduleKey)) return recoveryInvoiceClient.entryReadOnlyFields;
     if (isTransferCase) return transferClient.entryReadOnlyFields;
     if (isAccountsCurrentAcTransfer) return accountsCurrentAcTransferClient.entryReadOnlyFields;
     if (isAccountsCashDepositWithdraw) return accountsCashDwClient.entryReadOnlyFields;
@@ -596,13 +828,26 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     isAccountsExpenseVoucher,
     accountsExpenseVoucherClient.entryReadOnlyFields,
     isAccountsLoanAc,
-    accountsLoanAcClient.entryReadOnlyFields
+    accountsLoanAcClient.entryReadOnlyFields,
+    recoveryInvoiceClient.entryReadOnlyFields,
+    sarfaesiInvoiceClient.entryReadOnlyFields,
+    vehicleInvoiceClient.entryReadOnlyFields,
+    isInvoicesReceived,
+    invoicesReceivedClient.entryReadOnlyFields
   ]);
 
   const caseSnapshot = useCaseSnapshotModel({ moduleKey, editingRow });
   const publicNoticeClient = usePublicNoticeClientModel({ moduleKey, editingRow });
   const createChildDraftRow = useCallback((ct) => newChildRowDraft(ct), []);
   const returnCaseClient = useReturnCaseClientModel({
+    moduleKey,
+    editingRow,
+    formKey,
+    childTables: config?.childTables || [],
+    createDraftRow: createChildDraftRow,
+    setChildRowsByKey
+  });
+  const sarfaesiCaseStatusUpdateClient = useSarfaesiCaseStatusUpdateClientModel({
     moduleKey,
     editingRow,
     formKey,
@@ -624,8 +869,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const nciViewRecordModal = useNciViewRecordModal({ moduleKey, moduleConfig: config });
 
   const entryFieldUiOverrides = useMemo(() => {
+    if (invoicesReceivedClient.entryFieldUiOverrides) return invoicesReceivedClient.entryFieldUiOverrides;
+    if (vehicleInvoiceClient.entryFieldUiOverrides) return vehicleInvoiceClient.entryFieldUiOverrides;
+    if (sarfaesiInvoiceClient.entryFieldUiOverrides) return sarfaesiInvoiceClient.entryFieldUiOverrides;
+    if (recoveryInvoiceClient.entryFieldUiOverrides) return recoveryInvoiceClient.entryFieldUiOverrides;
     if (publicNoticeClient.entryFieldUiOverrides) return publicNoticeClient.entryFieldUiOverrides;
     if (returnCaseClient.entryFieldUiOverrides) return returnCaseClient.entryFieldUiOverrides;
+    if (sarfaesiCaseStatusUpdateClient.entryFieldUiOverrides)
+      return sarfaesiCaseStatusUpdateClient.entryFieldUiOverrides;
     if (accountsCurrentAcTransferClient.entryFieldUiOverrides)
       return accountsCurrentAcTransferClient.entryFieldUiOverrides;
     if (accountsCashDwClient.entryFieldUiOverrides) return accountsCashDwClient.entryFieldUiOverrides;
@@ -636,8 +887,13 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (transferClient.entryFieldUiOverrides) return transferClient.entryFieldUiOverrides;
     return nciClient.entryFieldUiOverrides;
   }, [
+    invoicesReceivedClient.entryFieldUiOverrides,
+    vehicleInvoiceClient.entryFieldUiOverrides,
+    sarfaesiInvoiceClient.entryFieldUiOverrides,
+    recoveryInvoiceClient.entryFieldUiOverrides,
     publicNoticeClient.entryFieldUiOverrides,
     returnCaseClient.entryFieldUiOverrides,
+    sarfaesiCaseStatusUpdateClient.entryFieldUiOverrides,
     accountsCurrentAcTransferClient.entryFieldUiOverrides,
     accountsCashDwClient.entryFieldUiOverrides,
     accountsAssetsClient.entryFieldUiOverrides,
@@ -649,7 +905,17 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
   const nciDisableLookupRemoteByField = nciClient.disableLookupRemoteByField;
   const childFieldUiOverrides = nciClient.childFieldUiOverrides;
-  const entryModeConfig = nciClient.entryModeConfig;
+  const entryModeConfig = useMemo(() => {
+    if (vehicleInvoiceClient.entryModeConfig) return vehicleInvoiceClient.entryModeConfig;
+    if (sarfaesiInvoiceClient.entryModeConfig) return sarfaesiInvoiceClient.entryModeConfig;
+    if (recoveryInvoiceClient.entryModeConfig) return recoveryInvoiceClient.entryModeConfig;
+    return nciClient.entryModeConfig;
+  }, [
+    vehicleInvoiceClient.entryModeConfig,
+    sarfaesiInvoiceClient.entryModeConfig,
+    recoveryInvoiceClient.entryModeConfig,
+    nciClient.entryModeConfig
+  ]);
 
   const showEntryChildTables = useMemo(() => {
     return shouldShowNciChildTables(moduleKey, Boolean(config?.childTables?.length), editingRow);
@@ -726,6 +992,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   function handleEntryFieldValueChange(fieldName, value) {
     // Let snapshot model observe caseNo changes first.
     caseSnapshot.handleCaseFieldValueChange(fieldName, value);
+    if (invoicesReceivedClient.handleFieldValueChange(fieldName, value)) return;
+    recoveryInvoiceClient.handleFieldValueChange(fieldName, value);
+    sarfaesiInvoiceClient.handleFieldValueChange(fieldName, value);
+    vehicleInvoiceClient.handleFieldValueChange(fieldName, value);
     if (nciClient.onFieldValueChange(fieldName, value)) {
       return;
     }
@@ -820,7 +1090,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   function commitColumnFilters(mergeFn) {
     setViewColumnFilterInput((prev) => {
       const merged = typeof mergeFn === "function" ? mergeFn(prev) : mergeFn;
-      setViewColumnFilters(merged);
+      return merged;
+    });
+    setViewColumnFilters((prev) => {
+      const merged = typeof mergeFn === "function" ? mergeFn(prev) : mergeFn;
       return merged;
     });
     setPage(1);
@@ -879,6 +1152,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     // "Clear Screen" resets this module back to a fresh entry form.
     setEditingRow(null);
     caseSnapshot.reset();
+    invoicesReceivedClient.resetSnapshot();
     setFormKey((k) => k + 1);
     setSelectedId(null);
     setViewColumnFilterInput({});
@@ -983,6 +1257,30 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     editingRowId: editingRow?.id ?? null
   });
 
+  const printRecoveryInvoiceTargetId = getRecoveryInvoicePrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
+  const printSarfaesiInvoiceTargetId = getSarfaesiInvoicePrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
+  const printVehicleInvoiceTargetId = getVehicleInvoicePrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
   async function handlePrintCaseDetails() {
     if (busy) return;
     if (!isNciModule || !permissions.canView) return;
@@ -1034,6 +1332,57 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  async function handlePrintRecoveryInvoiceFromToolbar() {
+    if (busy) return;
+    if (!isRecoveryInvoice || !permissions.canView) return;
+    const id = printRecoveryInvoiceTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = recoveryInvoiceRefHintFromRow(rowForName);
+    setBusy(true);
+    try {
+      await downloadRecoveryInvoicePdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download Recovery Invoice PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePrintSarfaesiInvoiceFromToolbar() {
+    if (busy) return;
+    if (!isSarfaesiInvoice || !permissions.canView) return;
+    const id = printSarfaesiInvoiceTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = sarfaesiInvoiceRefHintFromRow(rowForName);
+    setBusy(true);
+    try {
+      await downloadSarfaesiInvoicePdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download SARFAESI Invoice PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePrintVehicleInvoiceFromToolbar() {
+    if (busy) return;
+    if (!isVehicleInvoice || !permissions.canView) return;
+    const id = printVehicleInvoiceTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = vehicleInvoiceRefHintFromRow(rowForName);
+    setBusy(true);
+    try {
+      await downloadVehicleInvoicePdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download Vehicle Invoice PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handlePostCreateAckPrintPdf(recordId, valueText) {
     if (busy) return;
     if (!permissions.canView) return;
@@ -1046,6 +1395,48 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         await downloadPublicNoticePdf(recordId, valueText);
       } catch (err) {
         showToast("error", err.message || "Failed to download Public Notice PDF");
+      } finally {
+        setBusy(false);
+      }
+      await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
+      return;
+    }
+
+    if (isRecoveryInvoice) {
+      setPostCreateAckOpen(null);
+      setBusy(true);
+      try {
+        await downloadRecoveryInvoicePdf(recordId, valueText);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download Recovery Invoice PDF");
+      } finally {
+        setBusy(false);
+      }
+      await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
+      return;
+    }
+
+    if (isSarfaesiInvoice) {
+      setPostCreateAckOpen(null);
+      setBusy(true);
+      try {
+        await downloadSarfaesiInvoicePdf(recordId, valueText);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download SARFAESI Invoice PDF");
+      } finally {
+        setBusy(false);
+      }
+      await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
+      return;
+    }
+
+    if (isVehicleInvoice) {
+      setPostCreateAckOpen(null);
+      setBusy(true);
+      try {
+        await downloadVehicleInvoicePdf(recordId, valueText);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download Vehicle Invoice PDF");
       } finally {
         setBusy(false);
       }
@@ -1116,6 +1507,32 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       body.childTableRows = stripChildRowsForApi(config.childTables, childRowsByKey);
       body = applyReturnCaseSubmitBody(moduleKey, body);
     }
+    body = invoicesReceivedClient.mergeSubmitBody(body);
+    body = recoveryInvoiceClient.mergeSubmitBody(body);
+    body = sarfaesiInvoiceClient.mergeSubmitBody(body);
+    body = vehicleInvoiceClient.mergeSubmitBody(body);
+
+    if (isRecoveryInvoiceModule(moduleKey)) {
+      const recoveryErr = validateRecoveryInvoiceClientSubmit(body);
+      if (recoveryErr) {
+        showToast("error", recoveryErr);
+        return;
+      }
+    }
+    if (isSarfaesiInvoiceModule(moduleKey)) {
+      const sarfaesiErr = validateSarfaesiInvoiceClientSubmit(body);
+      if (sarfaesiErr) {
+        showToast("error", sarfaesiErr);
+        return;
+      }
+    }
+    if (isVehicleInvoiceModule(moduleKey)) {
+      const vehicleErr = validateVehicleInvoiceClientSubmit(body);
+      if (vehicleErr) {
+        showToast("error", vehicleErr);
+        return;
+      }
+    }
 
     if (isNewCaseInwardModule(moduleKey)) {
       const err = validateNciSubmitBody(body, editingRow);
@@ -1153,6 +1570,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         Boolean(pAckValid) &&
         (!editingRow ||
           shouldShowPublicNoticeAckOnEdit(moduleKey, editingRow) ||
+          shouldShowRecoveryInvoiceAckOnEdit(moduleKey, editingRow) ||
+          shouldShowSarfaesiInvoiceAckOnEdit(moduleKey, editingRow) ||
+          shouldShowVehicleInvoiceAckOnEdit(moduleKey, editingRow) ||
           shouldShowReturnCaseAckOnEdit(moduleKey, editingRow));
 
       if (wantsAck) {
@@ -1198,6 +1618,109 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     );
   }
 
+  const entryActionsBar = (
+    <div className={`master-view-actions${isNciModule ? " master-nci-entry-actions" : ""}`}>
+      <div className="master-view-actions-left">
+        {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintCaseDetails}
+            title="Download PDF with parent and line-item details"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getNciCaseDetailsPrintButtonText()}
+          </button>
+        ) : null}
+        {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintBranchCopy}
+            title="Download Branch Copy PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getNciBranchCopyPrintButtonText()}
+          </button>
+        ) : null}
+        {isPublicNotice && permissions.canView && printPublicNoticeTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintPublicNoticeFromToolbar}
+            title="Download Public Notice PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getPublicNoticePrintButtonText()}
+          </button>
+        ) : null}
+        {isRecoveryInvoice && permissions.canView && printRecoveryInvoiceTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintRecoveryInvoiceFromToolbar}
+            title="Download Recovery Invoice PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getRecoveryInvoicePrintButtonText()}
+          </button>
+        ) : null}
+        {isSarfaesiInvoice && permissions.canView && printSarfaesiInvoiceTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintSarfaesiInvoiceFromToolbar}
+            title="Download SARFAESI Invoice PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getSarfaesiInvoicePrintButtonText()}
+          </button>
+        ) : null}
+        {isVehicleInvoice && permissions.canView && printVehicleInvoiceTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintVehicleInvoiceFromToolbar}
+            title="Download Vehicle Invoice PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getVehicleInvoicePrintButtonText()}
+          </button>
+        ) : null}
+      </div>
+      <div className="master-view-actions-right">
+        {canSave ? (
+          <button form={formId} type="submit" className="master-btn master-btn-primary" disabled={busy}>
+            <SaveIcon />
+            Save
+          </button>
+        ) : null}
+        {!config.readOnly && permissions.canView ? (
+          <button
+            type="button"
+            onClick={handleViewOnly}
+            disabled={busy}
+            title="View saved data"
+            className="master-btn master-btn-info"
+          >
+            <EyeIcon />
+            View
+          </button>
+        ) : null}
+        <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>
+          <ClearIcon />
+          Clear Screen
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="master-module-page">
       <PostCreateAckModal
@@ -1208,13 +1731,23 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         suppressValue={postCreateAckOpen?.suppressValue === true}
         showCopyButton={postCreateAckOpen?.showCopyButton !== false}
         // Print slot: wired per module in handlePostCreateAckPrintPdf (NCI vs Public Notice).
-        showPrintPdf={(isNciModule || isPublicNotice) ? postCreateAckOpen?.showPrintPdf : false}
+        showPrintPdf={
+          isNciModule || isPublicNotice || isRecoveryInvoice || isSarfaesiInvoice || isVehicleInvoice
+            ? postCreateAckOpen?.showPrintPdf
+            : false
+        }
         printButtonLabel={
           isNciModule
             ? getNciAckPrintLabel(postCreateAckOpen?.printButtonLabel)
             : isPublicNotice
               ? getPublicNoticeAckPrintLabel(postCreateAckOpen?.printButtonLabel)
-              : "Print"
+              : isRecoveryInvoice
+                ? getRecoveryInvoiceAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+                : isSarfaesiInvoice
+                  ? getSarfaesiInvoiceAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+                  : isVehicleInvoice
+                    ? getVehicleInvoiceAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+                    : "Print"
         }
         recordId={postCreateAckOpen?.id}
         onContinue={handlePostCreateAckContinue}
@@ -1256,7 +1789,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="audit-json-modal-header">
-              <h3 className="audit-json-modal-title">{auditCompareDialog.title}</h3>
+              <div style={{ minWidth: 0 }}>
+                <h3 className="audit-json-modal-title">{auditCompareDialog.title}</h3>
+                {auditCompareDialog.subtitle ? (
+                  <p className="subtle" style={{ margin: "4px 0 0", fontSize: "12px" }}>
+                    {auditCompareDialog.subtitle}
+                  </p>
+                ) : null}
+              </div>
               <button
                 type="button"
                 className="audit-json-modal-close"
@@ -1266,7 +1806,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 ×
               </button>
             </div>
-            {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).length ? (
+            {buildAuditCompareRows(
+              auditCompareDialog.oldRaw,
+              auditCompareDialog.newRaw,
+              auditCompareDialog.targetModule,
+              auditCompareDialog.contextRow,
+              auditCompareDialog.enrichedOld,
+              auditCompareDialog.enrichedNew
+            ).length ? (
               <div className="audit-compare-table-wrap">
                 <table className="audit-compare-table">
                   <thead>
@@ -1277,9 +1824,16 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {buildAuditCompareRows(auditCompareDialog.oldRaw, auditCompareDialog.newRaw).map((row) => (
+                    {buildAuditCompareRows(
+                      auditCompareDialog.oldRaw,
+                      auditCompareDialog.newRaw,
+                      auditCompareDialog.targetModule,
+                      auditCompareDialog.contextRow,
+                      auditCompareDialog.enrichedOld,
+                      auditCompareDialog.enrichedNew
+                    ).map((row) => (
                       <tr key={row.key}>
-                        <td>{row.key}</td>
+                        <td>{row.label}</td>
                         <td>{row.oldVal || "—"}</td>
                         <td>{row.newVal || "—"}</td>
                       </tr>
@@ -1315,10 +1869,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         preview={caseSnapshot.preview}
       />
 
+      <InvoiceSnapshotModal
+        open={isInvoicesReceived && invoicesReceivedClient.snapshotModalOpen}
+        onClose={() => invoicesReceivedClient.setSnapshotModalOpen(false)}
+        loading={invoicesReceivedClient.snapshotLoading}
+        preview={invoicesReceivedClient.snapshotPreview}
+        hasSelection={invoicesReceivedClient.snapshotHasSelection}
+      />
+
       {nciViewRecordModal.viewRecordModal}
 
       {!effectiveViewMode ? (
-        <div className="card table-section master-entry-shell">
+        <div
+          className={
+            isNciModule ? "master-entry-shell-nci table-section" : "card table-section master-entry-shell"
+          }
+        >
           {/* Entry mode: same shell as view list — footer actions share master-view-actions + top rule */}
           {/* Key suffixes: remount DynamicForm when session-derived unit changes (role 2 new entry). Tags: -aai- assets, -cdw- cash DW, -aev- expense voucher, -ala- loan AC. */}
           <DynamicForm
@@ -1342,6 +1908,20 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             className="master-entry-form"
             formGridClassName="form-grid form-grid-master"
             formRootStyle={{ marginBottom: 0 }}
+            nciSplitEntryCards={isNciModule}
+            entryFooterContent={
+              isNciModule && showEntryChildTables ? (
+                <ModuleChildTablesPanel
+                  childTables={config.childTables}
+                  value={childRowsByKey}
+                  onChange={setChildRowsByKey}
+                  childFieldUiOverrides={childFieldUiOverrides}
+                  disabled={busy}
+                  onNotify={(kind, message) => showToast(kind, message)}
+                />
+              ) : null
+            }
+            entryActionsBar={isNciModule ? entryActionsBar : null}
           />
           {caseSnapshot.enabled ? (
             <div style={{ marginTop: "12px", marginBottom: "4px" }}>
@@ -1356,11 +1936,28 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 }
                 onClick={() => caseSnapshot.setModalOpen(true)}
               >
-                View selected case snapshot
+                View Selected Case Snapshot
               </button>
             </div>
           ) : null}
-          {showEntryChildTables ? (
+          {isInvoicesReceived ? (
+            <div style={{ marginTop: "12px", marginBottom: "4px" }}>
+              <button
+                type="button"
+                className="master-btn master-btn-outline"
+                disabled={!invoicesReceivedClient.snapshotHasSelection}
+                title={
+                  invoicesReceivedClient.snapshotHasSelection
+                    ? "View a read-only summary of the selected invoice"
+                    : "Select an invoice first"
+                }
+                onClick={() => invoicesReceivedClient.setSnapshotModalOpen(true)}
+              >
+                Invoice Snapshot
+              </button>
+            </div>
+          ) : null}
+          {showEntryChildTables && !isNciModule ? (
             <ModuleChildTablesPanel
               childTables={config.childTables}
               value={childRowsByKey}
@@ -1370,70 +1967,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               onNotify={(kind, message) => showToast(kind, message)}
             />
           ) : null}
-          <div className="master-view-actions">
-            <div className="master-view-actions-left">
-              {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
-                <button
-                  type="button"
-                  onClick={handlePrintCaseDetails}
-                  title="Download PDF with parent and line-item details"
-                  className="master-btn master-btn-outline"
-                  disabled={busy}
-                >
-                  <PrintCaseDetailsIcon />
-                  {getNciCaseDetailsPrintButtonText()}
-                </button>
-              ) : null}
-              {isNciModule && permissions.canView && printCaseDetailsTargetId != null ? (
-                <button
-                  type="button"
-                  onClick={handlePrintBranchCopy}
-                  title="Download Branch Copy PDF"
-                  className="master-btn master-btn-outline"
-                  disabled={busy}
-                >
-                  <PrintCaseDetailsIcon />
-                  {getNciBranchCopyPrintButtonText()}
-                </button>
-              ) : null}
-              {isPublicNotice && permissions.canView && printPublicNoticeTargetId != null ? (
-                <button
-                  type="button"
-                  onClick={handlePrintPublicNoticeFromToolbar}
-                  title="Download Public Notice PDF"
-                  className="master-btn master-btn-outline"
-                  disabled={busy}
-                >
-                  <PrintCaseDetailsIcon />
-                  {getPublicNoticePrintButtonText()}
-                </button>
-              ) : null}
+          {(isRecoveryInvoiceModule(moduleKey) ||
+            isSarfaesiInvoiceModule(moduleKey) ||
+            isVehicleInvoiceModule(moduleKey)) &&
+          showEntryChildTables ? (
+            <div className="recovery-invoice-grand-total-bar" role="status" aria-live="polite">
+              <span className="recovery-invoice-grand-total-label">Grand Total</span>
+              <span className="recovery-invoice-grand-total-value">
+                {isRecoveryInvoiceModule(moduleKey)
+                  ? recoveryInvoiceClient.grandTotalDisplay
+                  : isSarfaesiInvoiceModule(moduleKey)
+                    ? sarfaesiInvoiceClient.grandTotalDisplay
+                    : vehicleInvoiceClient.grandTotalDisplay}
+              </span>
             </div>
-            <div className="master-view-actions-right">
-              {canSave ? (
-                <button form={formId} type="submit" className="master-btn master-btn-primary" disabled={busy}>
-                  <SaveIcon />
-                  Save
-                </button>
-              ) : null}
-              {!config.readOnly && permissions.canView ? (
-                <button
-                  type="button"
-                  onClick={handleViewOnly}
-                  disabled={busy}
-                  title="View saved data"
-                  className="master-btn master-btn-info"
-                >
-                  <EyeIcon />
-                  View
-                </button>
-              ) : null}
-              <button type="button" onClick={handleNew} title="Clear screen" className="master-btn master-btn-warning" disabled={busy}>
-                <ClearIcon />
-                Clear Screen
-              </button>
-            </div>
-          </div>
+          ) : null}
+          {!isNciModule ? entryActionsBar : null}
         </div>
       ) : (
         // View mode: show a table with per-column filters + checkbox selection.
@@ -1458,7 +2007,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             </div>
           ) : null}
           <div className="table-wrap table-wrap-scroll-y master-orders-table-wrap">
-            <table className="data-table data-table-compact master-orders-table">
+            <table
+              className={`data-table data-table-compact master-orders-table${
+                isAuditLogs ? " master-orders-table--audit-logs" : ""
+              }`}
+            >
               <thead>
                 <tr>
                   {!auditLogsSimpleView ? (
@@ -1468,7 +2021,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   ) : null}
                   {nciStatusDotEnabled ? <th className="master-status-dot-col">Status</th> : null}
                   {viewFieldConfigs.map((f) => (
-                    <th key={f.name}>{f.label || f.name}</th>
+                    <th
+                      key={f.name}
+                      className={isAuditLogs ? getAuditLogsGridColumnClass(f.name) || undefined : undefined}
+                    >
+                      {f.label || f.name}
+                    </th>
                   ))}
                   {nciViewPeekEnabled ? (
                     <th
@@ -1507,7 +2065,15 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
                     if (f.type === "select" && Array.isArray(f.options)) {
                       return (
-                        <th key={f.name} className="master-filter-th">
+                        <th
+                          key={f.name}
+                          className={[
+                            "master-filter-th",
+                            isAuditLogs ? getAuditLogsGridColumnClass(f.name) : ""
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
                           <select
                             className="master-col-filter-input"
                             value={value}
@@ -1528,19 +2094,31 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       );
                     }
 
-                    const inputType = f.type === "number" ? "number" : "text";
-                    const filterPlaceholder = f.type === "date" ? "dd-mm-yyyy" : "";
+                    const inputType = "text";
+                    const filterPlaceholder =
+                      f.type === "date" ? "dd-mm-yyyy" : f.type === "number" ? "Amount (commas OK)" : "";
                     const filterTitle =
                       f.type === "date"
                         ? "Type dd-mm-yyyy or yyyy-mm-dd, then Enter"
-                        : "Press Enter to apply filter";
+                        : f.type === "number"
+                          ? "Type digits (commas OK); matches amounts containing those digits, then Enter"
+                          : "Press Enter to apply filter";
 
                     return (
-                      <th key={f.name} className="master-filter-th">
+                      <th
+                        key={f.name}
+                        className={[
+                          "master-filter-th",
+                          isAuditLogs ? getAuditLogsGridColumnClass(f.name) : ""
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
                         <input
                           className="master-col-filter-input"
                           value={value}
                           type={inputType}
+                          inputMode={f.type === "number" ? "decimal" : undefined}
                           onChange={(e) => onChangeValue(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key !== "Enter") return;
@@ -1606,9 +2184,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                         </td>
                       ) : null}
                       {viewFieldConfigs.map((f) => (
-                        <td key={f.name}>
+                        <td
+                          key={f.name}
+                          className={
+                            isAuditLogs ? getAuditLogsGridColumnClass(f.name) || undefined : undefined
+                          }
+                        >
                           {/* rowValueForField: MySQL may return column names in different casing than config. */}
-                          {isAuditLogsJsonField(moduleKey, f.name) ? (
+                          {isAuditLogsJsonField(f.name) ? (
                             (() => {
                               const raw = rowValueForField(r, f.name);
                               const preview = auditJsonPreview(raw);
@@ -1618,7 +2201,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                                 "—"
                               );
                             })()
-                          ) : isAuditLogsCreatedAtField(moduleKey, f.name) ? (
+                          ) : isAuditLogsCreatedAtField(f.name) ? (
                             (() => {
                               const raw = rowValueForField(r, f.name);
                               const d = raw ? new Date(raw) : null;
@@ -1629,6 +2212,19 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                               const hh = String(d.getHours()).padStart(2, "0");
                               const min = String(d.getMinutes()).padStart(2, "0");
                               return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+                            })()
+                          ) : isAuditLogs && isAuditLogsModuleColumn(f.name) ? (
+                            formatAuditModuleLabel(rowValueForField(r, f.name))
+                          ) : isAuditLogs && isAuditLogsRecordLabelColumn(f.name) ? (
+                            (() => {
+                              const text = String(rowValueForField(r, f.name) ?? "").trim();
+                              return text ? (
+                                <span className="audit-record-preview" title={text}>
+                                  {text}
+                                </span>
+                              ) : (
+                                "—"
+                              );
                             })()
                           ) : f.type === "lookup" ? (
                             rowValueForField(r, getLookupRowLabelKey(f)) ??
@@ -1663,13 +2259,36 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                           <button
                             type="button"
                             className="audit-json-open"
-                            onClick={() =>
+                            onClick={() => {
+                              const targetModule = String(rowValueForField(r, "module") ?? "").trim();
+                              const recordId = rowValueForField(r, "record_id");
+                              const recordLabel = String(rowValueForField(r, "record_label") ?? "").trim();
+                              const auditEntryId = rowValueForField(r, "id");
+                              const action = rowValueForField(r, "action");
+                              const createdAt = rowValueForField(r, "created_at");
                               setAuditCompareDialog({
-                                title: `Record ${rowValueForField(r, "id") || ""} — Old vs New`,
+                                targetModule,
+                                recordId,
+                                recordLabel,
+                                auditEntryId,
+                                action,
+                                createdAt,
+                                fetchFailed: false,
+                                title: buildAuditCompareTitle({ targetModule, recordLabel, recordId }),
+                                subtitle: buildAuditCompareSubtitle({
+                                  auditEntryId,
+                                  action,
+                                  createdAt,
+                                  fetchFailed: false,
+                                  recordId
+                                }),
+                                contextRow: null,
+                                enrichedOld: null,
+                                enrichedNew: null,
                                 oldRaw: rowValueForField(r, "old_data"),
                                 newRaw: rowValueForField(r, "new_data")
-                              })
-                            }
+                              });
+                            }}
                           >
                             Compare
                           </button>
@@ -1720,16 +2339,28 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           {!auditLogsSimpleView ? (
             <div className="master-view-actions">
               <div className="master-view-actions-left">
+                {!config.readOnly && permissions.canCreate ? (
+                  <button
+                    type="button"
+                    onClick={handleNew}
+                    title="New record"
+                    className="master-btn master-btn-warning"
+                    disabled={busy}
+                  >
+                    <ClearIcon />
+                    New Record
+                  </button>
+                ) : null}
                 {canOpenSelectedRecord ? (
                   <button
                     type="button"
                     className="master-btn master-btn-primary"
                     onClick={handleEditSelected}
-                    title={selectedRow?._canEdit === false ? "View full record" : "Edit record"}
+                    title={selectedRow?._canEdit === false ? "View Full Record" : "Edit Record"}
                     disabled={busy}
                   >
                     <EditIcon />
-                    {selectedRow?._canEdit === false ? "View record" : "Edit record"}
+                    {selectedRow?._canEdit === false ? "View Record" : "Edit Record"}
                   </button>
                 ) : null}
                 {selectedId && permissions.canDelete && selectedRow?._canDelete !== false ? (
@@ -1737,11 +2368,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     type="button"
                     className="master-btn master-btn-danger"
                     onClick={handleDeleteSelected}
-                    title="Delete record"
+                    title="Delete Record"
                     disabled={busy}
                   >
                     <TrashIcon />
-                    Delete record
+                    Delete Record
                   </button>
                 ) : null}
                 {printCaseDetailsTargetId != null ? (
@@ -1786,18 +2417,51 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     {getPublicNoticePrintButtonText()}
                   </button>
                 ) : null}
-              </div>
-              <div className="master-view-actions-right">
-                <button
-                  type="button"
-                  onClick={handleNew}
-                  title="New record"
-                  className="master-btn master-btn-warning"
-                  disabled={busy}
-                >
-                  <ClearIcon />
-                  New Record
-                </button>
+                {isRecoveryInvoice &&
+                effectiveViewMode &&
+                printRecoveryInvoiceTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintRecoveryInvoiceFromToolbar}
+                    title="Download Recovery Invoice PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getRecoveryInvoicePrintButtonText()}
+                  </button>
+                ) : null}
+                {isSarfaesiInvoice &&
+                effectiveViewMode &&
+                printSarfaesiInvoiceTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintSarfaesiInvoiceFromToolbar}
+                    title="Download SARFAESI Invoice PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getSarfaesiInvoicePrintButtonText()}
+                  </button>
+                ) : null}
+                {isVehicleInvoice &&
+                effectiveViewMode &&
+                printVehicleInvoiceTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintVehicleInvoiceFromToolbar}
+                    title="Download Vehicle Invoice PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getVehicleInvoicePrintButtonText()}
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}

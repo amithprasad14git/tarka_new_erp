@@ -725,7 +725,14 @@ body {
   flex-shrink: 0;
 }
 
-/* Micro floating icons (greeting → clock): bursts driven by React; CSS plays once only */
+/*
+ * --- Topbar sparkle lane (micro animation) ---
+ * React component: `components/TopbarMicroFloatLane.js`
+ * That file sets HOW LONG each animation runs (inline style: animationDuration / animationDelay).
+ * This CSS only defines the curved PATHS (keyframes below). To make motion calmer you can:
+ *   • increase duration in the JS file (ICON_DRIFT_SECONDS), and/or
+ *   • soften the keyframes here (smaller rotations / gentler opacity bumps).
+ */
 .topbar-micro-float-lane {
   position: relative;
   z-index: 0;
@@ -743,45 +750,6 @@ body {
   display: none;
 }
 
-.topbar-micro-idle-wisp {
-  position: absolute;
-  left: 0;
-  top: 0;
-  margin: 0;
-  padding: 0;
-
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    "Segoe UI Symbol",
-    "Apple Symbols",
-    sans-serif;
-
-  line-height: 1;
-  font-weight: 600;
-  text-align: center;
-
-  opacity: 0.05;
-
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-[data-theme="dark"] .topbar-micro-idle-wisp {
-  opacity: 0.075;
-}
-
-.topbar-micro-float-lane--reduced .topbar-micro-idle-wisp {
-  opacity: 0.06;
-}
-
-[data-theme="dark"] .topbar-micro-float-lane--reduced .topbar-micro-idle-wisp {
-  opacity: 0.088;
-}
-
 .topbar-micro-icon {
   position: absolute;
   left: -6%;
@@ -790,7 +758,8 @@ body {
   margin: 0;
   padding: 0;
 
-  animation-timing-function: cubic-bezier(0.45, 0.15, 0.35, 0.92);
+  /* ease-in-out = starts soft, ends soft (calmer than a snappy custom curve) */
+  animation-timing-function: ease-in-out;
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
 
@@ -813,7 +782,7 @@ body {
   animation-name: topbarMicroMotionX;
 }
 
-/* Sharp glyph styling (pulse removed — bursts timed in JS) */
+/* Sparkle glyph: size comes from JS; no infinite pulse */
 .topbar-micro-char {
   display: inline-block;
   transform-origin: 50% 55%;
@@ -836,124 +805,124 @@ body {
   text-rendering: geometricPrecision;
 }
 
-/* Foreground path: tallest opacity (≈0.85 peak), swaying drift */
+/* Track “fg” — brightest sparkle, gentle sway (small tilts = calmer than before) */
 @keyframes topbarMicroMotionFg {
   0% {
     left: -4%;
     opacity: 0.52;
-    transform: translate(-50%, -52%) rotate(-9deg);
+    transform: translate(-50%, -52%) rotate(-4deg);
   }
   20% {
     left: 19%;
     opacity: 0.62;
-    transform: translate(calc(-50% + 6px), -46%) rotate(5deg);
+    transform: translate(calc(-50% + 4px), -46%) rotate(3deg);
   }
   42% {
     left: 44%;
     opacity: 0.76;
-    transform: translate(calc(-50% - 5px), -56%) rotate(-6deg);
+    transform: translate(calc(-50% - 3px), -54%) rotate(-3deg);
   }
   58% {
     left: 62%;
-    opacity: 0.85;
-    transform: translate(calc(-50% + 7px), -49%) rotate(8deg);
+    opacity: 0.82;
+    transform: translate(calc(-50% + 4px), -49%) rotate(4deg);
   }
   78% {
     left: 86%;
     opacity: 0.68;
-    transform: translate(calc(-50% - 4px), -53%) rotate(-4deg);
+    transform: translate(calc(-50% - 3px), -52%) rotate(-2deg);
   }
   100% {
     left: 110%;
     opacity: 0;
-    transform: translate(-50%, -51%) rotate(11deg);
+    transform: translate(-50%, -51%) rotate(4deg);
   }
 }
 
-/* Mid layer (~0.65 peak) alternate curve */
+/* Track “md” — mid brightness, slightly different arc */
 @keyframes topbarMicroMotionMd {
   0% {
     left: -5%;
     opacity: 0.35;
-    transform: translate(-50%, -49%) rotate(7deg);
+    transform: translate(-50%, -49%) rotate(3deg);
   }
   24% {
     left: 24%;
     opacity: 0.5;
-    transform: translate(calc(-50% - 7px), -54%) rotate(-5deg);
+    transform: translate(calc(-50% - 4px), -52%) rotate(-3deg);
   }
   48% {
     left: 51%;
-    opacity: 0.65;
-    transform: translate(calc(-50% + 8px), -47%) rotate(4deg);
+    opacity: 0.62;
+    transform: translate(calc(-50% + 4px), -47%) rotate(2deg);
   }
   66% {
     left: 72%;
-    opacity: 0.58;
-    transform: translate(calc(-50% - 5px), -51%) rotate(-9deg);
+    opacity: 0.56;
+    transform: translate(calc(-50% - 3px), -50%) rotate(-4deg);
   }
   100% {
     left: 114%;
     opacity: 0;
-    transform: translate(-50%, -53%) rotate(6deg);
+    transform: translate(-50%, -52%) rotate(3deg);
   }
 }
 
-/* Background layer (~0.4 peak) tighter horizontal weave */
+/* Track “bk” — softer / dimmer path */
 @keyframes topbarMicroMotionBk {
   0% {
     left: -6%;
     opacity: 0.24;
-    transform: translate(-50%, -50%) rotate(-6deg);
+    transform: translate(-50%, -50%) rotate(-3deg);
   }
   18% {
     left: 16%;
     opacity: 0.32;
-    transform: translate(calc(-50% + 5px), -47%) rotate(8deg);
+    transform: translate(calc(-50% + 3px), -47%) rotate(4deg);
   }
   52% {
     left: 47%;
     opacity: 0.4;
-    transform: translate(calc(-50% - 6px), -55%) rotate(-8deg);
+    transform: translate(calc(-50% - 3px), -53%) rotate(-4deg);
   }
   74% {
     left: 79%;
     opacity: 0.34;
-    transform: translate(calc(-50% + 4px), -48%) rotate(5deg);
+    transform: translate(calc(-50% + 3px), -48%) rotate(2deg);
   }
   100% {
     left: 118%;
     opacity: 0;
-    transform: translate(-50%, -51%) rotate(-12deg);
+    transform: translate(-50%, -50%) rotate(-5deg);
   }
 }
 
-/* Fourth path variant (picked randomly per burst in React) */
+/* Track “x” — fourth fixed path (same every burst; see TopbarMicroFloatLane MOTION_SEQUENCE) */
 @keyframes topbarMicroMotionX {
   0% {
     left: -8%;
     opacity: 0.38;
-    transform: translate(-50%, -48%) rotate(-3deg);
+    transform: translate(-50%, -48%) rotate(-2deg);
   }
   22% {
     left: 28%;
     opacity: 0.55;
-    transform: translate(calc(-50% + 8px), -54%) rotate(9deg);
+    transform: translate(calc(-50% + 4px), -52%) rotate(4deg);
   }
   47% {
     left: 49%;
-    opacity: 0.7;
-    transform: translate(calc(-50% - 6px), -46%) rotate(-8deg);
+    opacity: 0.66;
+    transform: translate(calc(-50% - 4px), -46%) rotate(-4deg);
   }
   68% {
     left: 76%;
     opacity: 0.52;
-    transform: translate(calc(-50% + 5px), -52%) rotate(5deg);
+    transform: translate(calc(-50% + 3px), -51%) rotate(3deg);
   }
   100% {
     left: 116%;
     opacity: 0;
-    transform: translate(-50%, -54%) rotate(-11deg);
+    transform: translate(-50%, -52%) rotate(-4deg);
   }
 }
 
@@ -2669,16 +2638,73 @@ button {
   opacity: 1;
 }
 
-/* Audit Logs: keep old/new JSON readable with preview + popup viewer. */
-.audit-json-preview {
-  display: inline-block;
-  max-width: 180px;
+/* Audit Logs grid: fixed column widths (overrides global word-break on view tables). */
+.master-orders-table-wrap .master-orders-table.master-orders-table--audit-logs:not(.master-child-table) th,
+.master-orders-table-wrap .master-orders-table.master-orders-table--audit-logs:not(.master-child-table) td {
+  word-break: normal;
+  overflow-wrap: normal;
+  vertical-align: middle;
+}
+
+.master-orders-table.master-orders-table--audit-logs {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 52rem;
+}
+
+.master-orders-table--audit-logs .audit-col-user {
+  width: 7rem;
+  max-width: 7rem;
+}
+
+.master-orders-table--audit-logs .audit-col-module {
+  width: 11rem;
+  max-width: 11rem;
+}
+
+.master-orders-table--audit-logs .audit-col-action {
+  width: 4.5rem;
+  max-width: 4.5rem;
+}
+
+.master-orders-table--audit-logs .audit-col-record {
+  width: 8.5rem;
+  max-width: 8.5rem;
+}
+
+.master-orders-table--audit-logs .audit-col-created {
+  width: 8rem;
+  max-width: 8rem;
+}
+
+.master-orders-table--audit-logs .audit-col-json {
+  width: 9.5rem;
+  max-width: 9.5rem;
+}
+
+.master-orders-table--audit-logs .audit-col-user,
+.master-orders-table--audit-logs .audit-col-module,
+.master-orders-table--audit-logs .audit-col-action,
+.master-orders-table--audit-logs .audit-col-record,
+.master-orders-table--audit-logs .audit-col-created {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--muted);
+}
+
+.audit-record-preview,
+.audit-json-preview {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.25;
+}
+
+.audit-json-preview {
+  color: var(--muted);
 }
 
 .audit-compare-col {
@@ -4265,8 +4291,38 @@ button {
   margin-top: 12px;
 }
 
-.module-child-card.table-section {
-  padding-top: 16px;
+/* Child / case-status section shells: no nested card chrome — title + content only */
+.module-child-card.table-section,
+.master-entry-form-case-status.table-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* TEMP: NCI entry — two cards; Save/View/Clear live inside the last visible card (like view-mode footer). */
+.master-entry-shell-nci.table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+form.master-nci-split-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.master-nci-entry-card-main > .master-nci-entry-actions,
+.master-nci-entry-card-followup > .master-nci-entry-actions {
+  margin-top: 0;
+}
+
+.master-nci-entry-card-followup .module-child-tables {
+  margin-top: 12px;
 }
 
 /* Sub-section title: clearer than filters-heading; matches importance of line-item blocks */
@@ -4282,28 +4338,41 @@ button {
 }
 
 /*
- * Child grid: bordered box hugs the table width (same footprint as the grid), not full card width.
- * max-width: 100% keeps horizontal scroll when the table is wider than the card.
+ * Child grid: even 1px outer frame on the wrap; hugs table width (not full form width).
+ * max-width: 100% keeps horizontal scroll when the table is wider than the parent.
  */
 .table-wrap.master-orders-table-wrap.master-child-table-wrap {
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
-  /* .table-section is flex column; without this, stretch forces full card width */
   align-self: flex-start;
   border-radius: 12px;
-  border: none !important;
-  /* Zero-offset blurs so lift reads evenly on all four sides (no “bottom-only” drop) */
-  box-shadow:
-    0 0 10px rgba(15, 23, 42, 0.06),
-    0 0 24px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  background: var(--panel);
 }
 
-[data-theme="dark"] .table-wrap.master-orders-table-wrap.master-child-table-wrap {
-  border: none !important;
-  box-shadow:
-    0 0 12px rgba(0, 0, 0, 0.55),
-    0 0 28px rgba(0, 0, 0, 0.38);
+/* Perimeter: wrap owns top/left/right/bottom; inner rules stay between cells only */
+.master-child-table.data-table thead tr:first-child th {
+  border-top: none;
+}
+
+.master-child-table.data-table th:first-child,
+.master-child-table.data-table td:first-child {
+  border-left: none;
+}
+
+.master-child-table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.master-child-table.data-table:has(tfoot) tbody tr:last-child td {
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 58%, var(--muted));
+}
+
+[data-theme="dark"] .master-child-table.data-table:has(tfoot) tbody tr:last-child td {
+  border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent);
 }
 
 .module-child-tables .table-scroll-hint strong {
@@ -4630,54 +4699,54 @@ button.master-child-icon-act:disabled {
 
 .master-child-icon-act--save:not(:disabled) {
   color: #166534;
-  background: color-mix(in srgb, var(--panel) 88%, #15803d 12%) !important;
-  border-color: color-mix(in srgb, var(--line) 48%, #15803d 52%) !important;
+  background: color-mix(in srgb, var(--panel) 72%, #16a34a 28%) !important;
+  border-color: color-mix(in srgb, var(--line) 22%, #15803d 78%) !important;
 }
 
 .master-child-icon-act--save:not(:disabled):hover {
-  background: color-mix(in srgb, var(--panel) 82%, #15803d 18%) !important;
-  border-color: color-mix(in srgb, var(--line) 32%, #14532d 68%) !important;
-  color: #134022;
+  background: color-mix(in srgb, var(--panel) 64%, #15803d 36%) !important;
+  border-color: color-mix(in srgb, var(--line) 14%, #14532d 86%) !important;
+  color: #14532d;
 }
 
 .master-child-icon-act--edit:not(:disabled) {
-  color: color-mix(in srgb, var(--brand-dark) 90%, var(--text) 10%);
-  background: color-mix(in srgb, var(--panel) 88%, var(--brand) 12%) !important;
-  border-color: color-mix(in srgb, var(--line) 42%, var(--brand) 58%) !important;
+  color: var(--brand-dark);
+  background: color-mix(in srgb, var(--panel) 72%, var(--brand) 28%) !important;
+  border-color: color-mix(in srgb, var(--line) 20%, var(--brand) 80%) !important;
 }
 
 .master-child-icon-act--edit:not(:disabled):hover {
-  background: color-mix(in srgb, var(--panel) 80%, var(--brand) 20%) !important;
-  border-color: color-mix(in srgb, var(--line) 28%, var(--brand-dark) 72%) !important;
-  color: color-mix(in srgb, var(--brand-dark) 88%, var(--text) 12%);
+  background: color-mix(in srgb, var(--panel) 64%, var(--brand) 36%) !important;
+  border-color: color-mix(in srgb, var(--line) 12%, var(--brand-dark) 88%) !important;
+  color: color-mix(in srgb, var(--brand-dark) 96%, var(--text) 4%);
 }
 
 [data-theme="dark"] .master-child-icon-act--edit:not(:disabled) {
-  color: color-mix(in srgb, var(--brand) 88%, #0f172a 12%);
+  color: color-mix(in srgb, var(--brand) 96%, #f8fafc 4%);
 }
 
 .master-child-icon-act--delete:not(:disabled) {
-  color: color-mix(in srgb, var(--danger) 88%, var(--text) 12%);
-  background: color-mix(in srgb, var(--panel) 90%, var(--danger) 10%) !important;
-  border-color: color-mix(in srgb, var(--line) 42%, var(--danger) 58%) !important;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--panel) 74%, var(--danger) 26%) !important;
+  border-color: color-mix(in srgb, var(--line) 20%, var(--danger) 80%) !important;
 }
 
 .master-child-icon-act--delete:not(:disabled):hover {
-  background: color-mix(in srgb, var(--panel) 82%, var(--danger) 18%) !important;
-  border-color: color-mix(in srgb, var(--line) 28%, var(--danger) 72%) !important;
-  color: color-mix(in srgb, var(--danger) 82%, black 18%);
+  background: color-mix(in srgb, var(--panel) 66%, var(--danger) 34%) !important;
+  border-color: color-mix(in srgb, var(--line) 12%, var(--danger) 88%) !important;
+  color: color-mix(in srgb, var(--danger) 94%, #450a0a 6%);
 }
 
 .master-child-icon-act--add:not(:disabled) {
-  color: #115e59;
-  background: color-mix(in srgb, var(--panel) 88%, #0d9488 12%) !important;
-  border-color: color-mix(in srgb, var(--line) 48%, #0f766e 52%) !important;
+  color: #0f766e;
+  background: color-mix(in srgb, var(--panel) 72%, #14b8a6 28%) !important;
+  border-color: color-mix(in srgb, var(--line) 22%, #0f766e 78%) !important;
 }
 
 .master-child-icon-act--add:not(:disabled):hover {
-  background: color-mix(in srgb, var(--panel) 82%, #0f766e 18%) !important;
-  border-color: color-mix(in srgb, var(--line) 32%, #115e59 68%) !important;
-  color: #0f4f4c;
+  background: color-mix(in srgb, var(--panel) 64%, #0d9488 36%) !important;
+  border-color: color-mix(in srgb, var(--line) 14%, #115e59 86%) !important;
+  color: #0d5c56;
   filter: none;
 }
 
@@ -4800,6 +4869,7 @@ button.master-child-icon-act:disabled {
     display: none !important;
   }
 
+  /* Sparkle lane hidden here; burst/idle lengths are in `TopbarMicroFloatLane.js`. */
   .dashboard-topbar-actions .topbar-micro-float-lane {
     display: none !important;
   }
@@ -4923,6 +4993,7 @@ button.master-child-icon-act:disabled {
     justify-content: flex-end;
   }
 
+  /* Sparkle lane visible but narrow; timers still in `TopbarMicroFloatLane.js`. */
   .dashboard-topbar-actions .topbar-micro-float-lane {
     flex: 1 1 100px;
     min-width: 72px;
@@ -4949,4 +5020,63 @@ button.master-child-icon-act:disabled {
   .topbar-weather-city {
     max-width: 7rem;
   }
+}
+
+/* Recovery / SARFAESI Invoice — grand total below charges grid (shared classes) */
+.recovery-invoice-grand-total-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem 1rem;
+  margin-top: 0.85rem;
+  padding: 0.65rem 1rem 0.65rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--brand) 38%, var(--line));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand) 12%, var(--panel)) 0%,
+    var(--panel) 55%,
+    color-mix(in srgb, var(--brand) 8%, var(--panel)) 100%
+  );
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] .recovery-invoice-grand-total-bar {
+  border-color: color-mix(in srgb, var(--brand) 48%, var(--line));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand) 20%, var(--panel)) 0%,
+    var(--panel) 50%,
+    color-mix(in srgb, var(--brand) 14%, var(--panel)) 100%
+  );
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.recovery-invoice-grand-total-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.recovery-invoice-grand-total-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+/* Case snapshot modal — match NCI peek width and scroll */
+.case-snapshot-modal-shell {
+  max-width: min(920px, 100%);
+  max-height: 90vh;
+}
+
+.case-snapshot-modal-body {
+  padding: 12px 14px;
+  overflow: auto;
+  max-height: calc(90vh - 56px);
 }
