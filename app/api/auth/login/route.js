@@ -8,6 +8,7 @@
 import { authenticateLogin } from "../../../../lib/auth";
 import { createSession } from "../../../../lib/session";
 import { getLoopbackDbHostError, getMissingRequiredDbEnvVars } from "../../../../lib/db";
+import { getDbErrorHint } from "../../../../lib/dbConnectionError";
 import { cookies } from "next/headers";
 
 export async function POST(req) {
@@ -70,8 +71,12 @@ export async function POST(req) {
       sqlMessage: error?.sqlMessage,
       stack: error?.stack,
     });
+    const hint = getDbErrorHint(error);
     return Response.json(
-      { error: "Login failed on Server. Check DB Connection." },
+      {
+        error: "Login failed on Server. Check DB Connection.",
+        ...(hint ? { hint } : {})
+      },
       { status: 500 }
     );
   }

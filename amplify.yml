@@ -9,7 +9,8 @@ frontend:
         - npm ci
     build:
       commands:
-        - env | grep -E '^(DB_|SESSION_)' > .env.production
+        # Next.js SSR on Amplify needs DB_* in .env.production at build time (see AWS SSR env docs).
+        - node scripts/write-amplify-env.cjs
         - npm run build
   artifacts:
     baseDirectory: .next
