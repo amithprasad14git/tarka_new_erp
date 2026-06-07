@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/new-case-inward/transaction-control`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -12,6 +17,7 @@ import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable"
  * Auth-only endpoint: no module-level RBAC gate, so non-admin users can still
  * receive min-date hints needed to enforce picker boundaries.
  */
+// Active date-control rules so NCI date fields respect allow/days settings.
 export async function GET() {
   try {
     // Auth check only: this endpoint feeds date-picker limits to logged-in users.
@@ -42,3 +48,4 @@ export async function GET() {
     return Response.json({ error: "Failed to load transaction control settings" }, { status: 500 });
   }
 }
+

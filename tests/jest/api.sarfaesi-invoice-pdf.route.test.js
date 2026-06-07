@@ -1,3 +1,11 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.sarfaesi-invoice-pdf.route`.
+ * Run with: npm test
+ */
+
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -29,7 +37,9 @@ const {
 } = require("../../lib/modules/sarfaesiInvoicePdf");
 const { GET } = require("../../app/api/sarfaesi-invoice/pdf/[id]/route");
 
+// Checks printable PDF output is built without crashing and includes expected content.
 describe("api/sarfaesi-invoice/pdf/[id] route", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-sarfaesi-pdf" }) });
@@ -110,3 +120,4 @@ describe("api/sarfaesi-invoice/pdf/[id] route", () => {
     expect(res.headers.get("Content-Disposition")).toContain("Invoice_SAR_2627_0001.pdf");
   });
 });
+

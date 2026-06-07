@@ -756,7 +756,12 @@
 <a name='L691'></a><a href='#L691'>691</a>
 <a name='L692'></a><a href='#L692'>692</a>
 <a name='L693'></a><a href='#L693'>693</a>
-<a name='L694'></a><a href='#L694'>694</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L694'></a><a href='#L694'>694</a>
+<a name='L695'></a><a href='#L695'>695</a>
+<a name='L696'></a><a href='#L696'>696</a>
+<a name='L697'></a><a href='#L697'>697</a>
+<a name='L698'></a><a href='#L698'>698</a>
+<a name='L699'></a><a href='#L699'>699</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1083,10 +1088,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1129,6 +1136,7 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1210,6 +1218,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
@@ -1293,6 +1302,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1776,6 +1786,7 @@ export async function isNewCaseInwardFinalStatusById(conn, caseStatusId) {
 }
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >assertNewCaseInwardRowEditableByUser(</span>conn, user, oldRow) {
+  // Unit operators cannot change cases that have reached a final/closed status.
 <span class="cstat-no" title="statement not covered" >  if (Number(user?.role) !== 2) <span class="cstat-no" title="statement not covered" >return;</span></span>
   const locked = <span class="cstat-no" title="statement not covered" >await isNewCaseInwardFinalStatusById(conn, oldRow?.caseStatus);</span>
 <span class="cstat-no" title="statement not covered" >  if (!locked) <span class="cstat-no" title="statement not covered" >return;</span></span>
@@ -1785,6 +1796,7 @@ export async function <span class="fstat-no" title="function not covered" >asser
 }
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >applyNewCaseInwardBeforeWrite(</span>conn, { user, oldRow, merged, childTableRows, parentId = <span class="branch-0 cbranch-no" title="branch not covered" >null </span>}) {
+  // Delegates to validateNewCaseInwardBeforeWrite; admins may skip some backdate rules.
 <span class="cstat-no" title="statement not covered" >  await validateNewCaseInwardBeforeWrite(conn, {</span>
     parentData: oldRow ? { ...oldRow, ...merged } : merged,
     childTableRows,
@@ -1827,6 +1839,7 @@ export async function applyRole2FinalStageEditLock(conn, rows) {
 }
 &nbsp;
 async function assertNoActiveDuplicateLoanAccount(conn, loanAccountNo, currentId = <span class="branch-0 cbranch-no" title="branch not covered" >null)</span> {
+  // Same loan account cannot be open on two active cases; closed/reopen-allowed statuses may reuse.
   const normalized = normalizeLoanAccountNo(loanAccountNo);
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!normalized) <span class="cstat-no" title="statement not covered" >return;</span>
   const nci = escapeSqlTableIdForModuleConfig(modules.new_case_inward);
@@ -1903,6 +1916,7 @@ function getLoanCategoryCaseNoCode(loanCategoryId) {
  * @param {number} recordId Primary key of the row just inserted into new_case_inward.
  */
 export async function assignNewCaseInwardCaseNo(conn, recordId) {
+  // --- Case number: bank prefix + loan category code + 5-digit serial (after INSERT only) ---
   const nci = escapeSqlTableIdForModuleConfig(modules.new_case_inward);
   const br = escapeSqlTableIdForModuleConfig(modules.branch_master);
   const rbo = escapeSqlTableIdForModuleConfig(modules.rbo_master);
@@ -1999,6 +2013,7 @@ export async function validateNewCaseInwardBeforeWrite(
   conn,
   { parentData, childTableRows, parentId = null, skipDateValidationsForAdmin = false }
 ) {
+  // --- Loan account, active lookups, dates, transaction control, recovery child rows ---
   assertLoanAccountNoNumeric(parentData?.loanAccountNo);
   await assertNoActiveDuplicateLoanAccount(conn, parentData?.loanAccountNo, parentId);
   await assertNciParentLookupsActiveYes(conn, parentData);
@@ -2149,7 +2164,7 @@ export const NEW_CASE_INWARD_VIEW_GRID_PEEK_BUTTON_TOOLTIP = "Quick view record 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

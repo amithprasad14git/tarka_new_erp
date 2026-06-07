@@ -33,14 +33,34 @@ Scripts (`package.json`):
 
 ## 3) High-Level Folder Guide
 
+- `config/reports.js` - report definitions (filters, columns, layout); not in `modules.js`
+- `lib/reports/` - one `.js` file per report (SQL + `runReport`) + shared report services
+- [docs/REPORTS.md](docs/REPORTS.md) - **frozen v1** HTML/Excel report styling and pipeline (do not change per report)
+- [docs/REPORTS-FILES.md](docs/REPORTS-FILES.md) - index of all report-related source files
 - `app/` - Next.js app routes, pages, API routes
 - `components/` - reusable UI components (forms, tables, topbar, lookups, etc.)
 - `config/modules.js` - module registry (tables, fields, labels, lookups) **and** validation summary comments
 - `lib/modules/` - **per-module business rules** (server `*.js` and client `*Client.js`)
 - `lib/modules/crudModuleAdapters.js` - wires custom modules into save/delete pipeline
 - `lib/` - shared server logic (RBAC, CRUD services, sessions, enrichment)
-- `sql/` - SQL helpers/migrations/reference scripts
-- `docs/` - extra guides (accounts modules, [invoice PDFs](docs/invoices-pdf.md))
+- `docs/` - extra guides (accounts modules, **[reports (frozen styling)](docs/REPORTS.md)**, [printable PDFs](docs/invoices-pdf.md), [Return Case letter](docs/return-case-pdf.md), [code comments](docs/CODE-COMMENTS.md))
+
+---
+
+## 3B) Code comments (layman-friendly headers)
+
+Every **source file** under `app/`, `components/`, `lib/`, `config/`, `scripts/`, and `tests/` should start with a short **`/** … */` block** in plain English: what the file does, who uses it, and where related logic lives (e.g. paired `*Client.js`, `docs/*.md`).
+
+| Area | What the header should explain |
+|------|--------------------------------|
+| API routes | Which URL, login required?, JSON vs PDF download |
+| `lib/modules/*.js` | Save rules and side effects |
+| `lib/modules/*Client.js` | Browser-only UI (Print, pickers, preload) |
+| `lib/modules/*Pdf.js` | Printable layout; link to `docs/*-pdf.md` |
+| Components | Shared UI only — no module business rules |
+| Tests | Which module or route is being checked |
+
+Full convention (file headers **and** inline function comments): **[docs/CODE-COMMENTS.md](docs/CODE-COMMENTS.md)**.
 
 ---
 
@@ -184,7 +204,7 @@ No custom `beforeWrite` adapter. Saving only enforces what you see on the form (
 | `transfer_case` | `transferCase.js` | **Date = today**; case / from unit / to unit / assignee required; from unit must match case owner; to ≠ from; assignee in to-unit; **updates case owner** on save; ref `TRF/<FY>/<serial>`; FY freeze (role 2). |
 | `public_notice` | `publicNotice.js` | Date required, not future; FY freeze (role 2); case required; child **max 3** rows, display name + type required; ref `PN/<FY>/<serial>`; PDF print. |
 | `sarfaesi_case_status_update` | `sarfaesiCaseStatusUpdate.js` | Date required, not future; FY freeze (role 2); **SARFAESI** loan case only; **one status update per case**; ≥1 child row; particulars required (read-only in UI, preloaded); **remarks optional**; ref `SRFUP/<FY>/<####>`; case snapshot. Client: `sarfaesiCaseStatusUpdateClient.js`. |
-| `return_case` | `returnCase.js` | Date required, not future; FY freeze (role 2); case must exist and be in **Returned** status; duplicate case blocked; at least one **checked** child row with return reason; ref after save. |
+| `return_case` | `returnCase.js` + `returnCaseClient.js` + `returnCasePdf.js` | Date required, not future; FY freeze (role 2); case must exist and be in **Returned** status; duplicate case blocked; at least one **checked** child row with return reason; ref after save; 3-page letter PDF (selected detail rows only) — [docs/return-case-pdf.md](docs/return-case-pdf.md). |
 
 ### Accounts modules
 
@@ -201,17 +221,26 @@ All use FY freeze on **date** (role 2) and stamp a **voucher number** after save
 
 More detail for loan/suspense screens: [docs/README-accounts-modules.md](docs/README-accounts-modules.md).
 
-### Invoice modules
+### Printable PDFs (invoices & Return Case letter)
 
-Overview of all three printable invoices (shared layout, APIs, tests): **[docs/invoices-pdf.md](docs/invoices-pdf.md)**.
+Overview: **[docs/invoices-pdf.md](docs/invoices-pdf.md)** (invoices + Return Case summary).
+
+| Document | Module | Download name | Guide |
+|----------|--------|---------------|-------|
+| Recovery Invoice | `recovery_invoice` | `Invoice_<no>.pdf` | [recovery-invoice-pdf.md](docs/recovery-invoice-pdf.md) |
+| SARFAESI Invoice | `sarfaesi_invoice` | `Invoice_<no>.pdf` | [sarfaesi-invoice-pdf.md](docs/sarfaesi-invoice-pdf.md) |
+| Vehicle Invoice | `vehicle_invoice` | `Invoice_<no>.pdf` | [vehicle-invoice-pdf.md](docs/vehicle-invoice-pdf.md) |
+| **Return Case letter** | `return_case` | `RETURN_<refNo>.pdf` | [return-case-pdf.md](docs/return-case-pdf.md) |
+
+All use **Print** in the entry toolbar and post-save acknowledgement when `postCreateAck.showPrintPdf` is enabled in `config/modules.js`. API routes live under `app/api/<module>/pdf/[id]/route.js` (Return Case: `app/api/return-case/pdf/[id]/route.js`).
+
+### Invoice modules (detail)
 
 | Module | Logic file | Highlights |
 |--------|------------|------------|
-| `recovery_invoice` | `recoveryInvoice.js` + `recoveryInvoiceClient.js` + `recoveryInvoicePdf.js` | FY freeze (role 2); invoice number; case picker; charges child; cancellation; final-invoice flag on case; 3-page PDF (recovery details + charges tables) — [docs/recovery-invoice-pdf.md](docs/recovery-invoice-pdf.md). |
-| `sarfaesi_invoice` | `sarfaesiInvoice.js` + `sarfaesiInvoiceClient.js` + `sarfaesiInvoicePdf.js` | FY freeze (role 2); **SARFAESI** cases only; invoice number; `sarfaesi_charges` child; cancellation; 3-page PDF (full-width charges only) — [docs/sarfaesi-invoice-pdf.md](docs/sarfaesi-invoice-pdf.md). |
-| `vehicle_invoice` | `vehicleInvoice.js` + `vehicleInvoiceClient.js` + `vehicleInvoicePdf.js` | FY freeze (role 2); **Vehicle Loan** cases; invoice number; `vehicle_charges` child; cancellation; 3-page PDF (same layout as SARFAESI) — [docs/vehicle-invoice-pdf.md](docs/vehicle-invoice-pdf.md). |
-
-Each invoice module uses **Print** in the entry toolbar and post-save acknowledgement when `postCreateAck.showPrintPdf` is enabled in `config/modules.js`. PDF routes: `app/api/<module>/pdf/[id]/route.js`.
+| `recovery_invoice` | `recoveryInvoice.js` + `recoveryInvoiceClient.js` + `recoveryInvoicePdf.js` | FY freeze (role 2); invoice number; case picker; charges child; cancellation; final-invoice flag on case; 3-page PDF (recovery details + charges tables). |
+| `sarfaesi_invoice` | `sarfaesiInvoice.js` + `sarfaesiInvoiceClient.js` + `sarfaesiInvoicePdf.js` | FY freeze (role 2); **SARFAESI** cases only; invoice number; `sarfaesi_charges` child; cancellation; 3-page PDF (full-width charges only). |
+| `vehicle_invoice` | `vehicleInvoice.js` + `vehicleInvoiceClient.js` + `vehicleInvoicePdf.js` | FY freeze (role 2); **Vehicle Loan** cases; invoice number; `vehicle_charges` child; cancellation; 3-page PDF (same layout as SARFAESI). |
 
 ### Where to change validations
 
@@ -371,6 +400,7 @@ Automated tests for voucher stamping live in `tests/jest/accountsLoanAc.test.js`
 - `GET|POST /api/crud/:module` - list/create
 - `GET|PUT|DELETE /api/crud/:module/:id` - one-record operations
 - `GET|POST /api/user-permissions-matrix` - permission matrix UI backend
+- `GET /api/reports/:reportKey/run?format=html|excel&...` - run report (filters as query params); see [docs/REPORTS.md](docs/REPORTS.md)
 - `GET /api/new-case-inward/loan-account-rule?branchId=` - branch->bank loan rule resolver
 - `GET /api/new-case-inward/case-details-pdf/:id` - download New Case Inward case details PDF
 - `GET /api/new-case-inward/branch-copy-pdf/:id` - download New Case Inward branch copy PDF

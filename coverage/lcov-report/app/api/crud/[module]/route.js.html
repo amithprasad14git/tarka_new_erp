@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">47.57% </span>
+                <span class="strong">47.59% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>108/227</span>
+                <span class='fraction'>109/229</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40.08% </span>
+                <span class="strong">40.16% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>95/237</span>
+                <span class='fraction'>96/239</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">49.05% </span>
+                <span class="strong">49.06% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>104/212</span>
+                <span class='fraction'>105/214</span>
             </div>
         
             
@@ -577,7 +577,18 @@
 <a name='L512'></a><a href='#L512'>512</a>
 <a name='L513'></a><a href='#L513'>513</a>
 <a name='L514'></a><a href='#L514'>514</a>
-<a name='L515'></a><a href='#L515'>515</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L515'></a><a href='#L515'>515</a>
+<a name='L516'></a><a href='#L516'>516</a>
+<a name='L517'></a><a href='#L517'>517</a>
+<a name='L518'></a><a href='#L518'>518</a>
+<a name='L519'></a><a href='#L519'>519</a>
+<a name='L520'></a><a href='#L520'>520</a>
+<a name='L521'></a><a href='#L521'>521</a>
+<a name='L522'></a><a href='#L522'>522</a>
+<a name='L523'></a><a href='#L523'>523</a>
+<a name='L524'></a><a href='#L524'>524</a>
+<a name='L525'></a><a href='#L525'>525</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -694,6 +705,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
@@ -701,6 +713,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -1078,6 +1096,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -1089,6 +1108,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Application route/page/API handler for this feature area.
@@ -1114,6 +1134,7 @@
  * =============================================================================
  */
 import { modules } from "../../../../config/modules";
+import { isReportKey } from "../../../../lib/reportConfig";
 import pool, { queryWithRetry } from "../../../../lib/db";
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../lib/session";
@@ -1207,6 +1228,7 @@ function normalizeListQuery(req, moduleConfig) {
  * 6) COUNT + SELECT with limit/offset; enrich lookup labels; annotate _canEdit/_canDelete.
  * 7) JSON response { data, meta }.
  */
+// Paged grid list with filters, search, row scope, and module-specific LoV rules.
 export async function GET(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -1215,6 +1237,12 @@ export async function GET(req, { params }) {
     }
 &nbsp;
     const { module } = await params;
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (isReportKey(module)) {
+<span class="cstat-no" title="statement not covered" >      return Response.json(</span>
+        { error: "This key is a report. Use GET /api/reports/" + module + "/run" },
+        { status: 400 }
+      );
+    }
     const m = modules[module];
     if (!m) {
       return Response.json({ error: "Unknown module" }, { status: 404 });
@@ -1591,6 +1619,7 @@ export async function GET(req, { params }) {
  *
  * The service handles unknown module, read-only, forbidden, validation errors, and success.
  */
+// Create a new row; validation and audit run in crud.service.
 export async function POST(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -1605,6 +1634,7 @@ export async function POST(req, { params }) {
 <span class="cstat-no" title="statement not covered" >    return Response.json({ error: "Failed to create record" }, { status: 500 });</span>
   }
 }
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -1612,7 +1642,7 @@ export async function POST(req, { params }) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

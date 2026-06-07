@@ -12,7 +12,7 @@ export default function ToastNotice({ toast, onClose }) {
   const isError = toast.kind === "error";
 
   return (
-    // Uses global `.toast*` CSS classes so other modules can reuse this component.
+    // Fixed banner at bottom of screen; errors use alert role for screen readers.
     <div
       className={`toast toast-${toast.kind}`}
       role={isError ? "alert" : "status"}
@@ -25,4 +25,5 @@ export default function ToastNotice({ toast, onClose }) {
     </div>
   );
 }
+
 

@@ -1,12 +1,34 @@
-# Invoice PDF printing — overview
+# Invoice & letter PDF printing — overview
 
-All three invoice modules generate a **3-page A4 PDF** (Triplicate, Duplicate, Original) from the same visual language: logo, header grid, centre badge, borrower block, charges area, amount in words, current account + RCM, signatory, footer image.
-
-Use this page to choose the right module guide; each invoice type has its own PDF file and API route.
+This page lists **printable PDFs** in the ERP: three invoice types plus the **Return Case letter**.
 
 ---
 
-## Comparison
+## Return Case letter (not an invoice)
+
+| | Return Case |
+|---|-------------|
+| **Module key** | `return_case` |
+| **PDF module** | `lib/modules/returnCasePdf.js` |
+| **API** | `GET /api/return-case/pdf/:id` |
+| **Pages** | 3 (Office / RBO / Branch copy labels) |
+| **Download name** | `RETURN_<refNo>.pdf` |
+| **Child data on PDF** | Checked rows only from `return_case_details` |
+| **Detailed guide** | [return-case-pdf.md](return-case-pdf.md) |
+
+Print works like invoices: **Print** in toolbar or post-save popup → browser **download** (not a new tab).
+
+---
+
+## Invoice PDFs
+
+All three invoice modules generate a **3-page A4 PDF** (Triplicate, Duplicate, Original) from the same visual language: logo, header grid, centre badge, borrower block, charges area, amount in words, current account + RCM, signatory, footer image.
+
+Use the module guides below for invoice-specific details.
+
+---
+
+## Invoice comparison
 
 | | Recovery Invoice | SARFAESI Invoice | Vehicle Invoice |
 |---|------------------|------------------|-----------------|
@@ -68,6 +90,7 @@ Do **not** alias `HDR_*` to `ACCOUNT_*` — they are tuned independently.
 
 | Module | Unit PDF | API route |
 |--------|----------|-----------|
+| Return Case | `tests/jest/returnCasePdf.test.js` | `tests/jest/api.return-case-pdf.route.test.js` |
 | Recovery | `tests/jest/recoveryInvoicePdf.test.js` | `tests/jest/api.recovery-invoice-pdf.route.test.js` |
 | SARFAESI | `tests/jest/sarfaesiInvoicePdf.test.js` | `tests/jest/api.sarfaesi-invoice-pdf.route.test.js` |
 | Vehicle | `tests/jest/vehicleInvoicePdf.test.js` | — |

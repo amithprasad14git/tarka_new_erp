@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/new-case-inward/loan-account-rule`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +12,7 @@ import { getSessionUser } from "../../../../lib/session";
 import { resolveNewCaseInwardBankRuleByBranch } from "../../../../lib/modules/newCaseInward";
 
 /** Returns bank-specific Loan Account No length rule by selected Branch. */
+// Tell the NCI form how many digits Loan Account No must have for the selected branch’s bank.
 export async function GET(req) {
   try {
     const cookieStore = await cookies();
@@ -20,6 +26,7 @@ export async function GET(req) {
       return Response.json({ bankId: null, bankName: "", loanAccountNoLength: null });
     }
 
+    // Branch → bank master rule (length validation on client).
     const conn = await pool.getConnection();
     try {
       const rule = await resolveNewCaseInwardBankRuleByBranch(conn, branchId);
@@ -34,3 +41,4 @@ export async function GET(req) {
     return Response.json({ error: "Failed to load loan account rule" }, { status: 500 });
   }
 }
+

@@ -72,6 +72,7 @@ export default function MasterActionsMenu({
       const el = detailsRef.current;
       if (!el?.open) return;
       if (el.contains(e.target)) return;
+      // Close the actions dropdown when user clicks outside.
       el.open = false;
     }
     document.addEventListener("pointerdown", handlePointerDown, true);
@@ -140,3 +141,4 @@ export default function MasterActionsMenu({
     </details>
   );
 }
+

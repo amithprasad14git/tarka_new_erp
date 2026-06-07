@@ -23,6 +23,7 @@ export function displayNameFromEmail(email) {
   if (!email || typeof email !== "string") return "";
   const local = email.split("@")[0]?.trim() || "";
   if (!local) return email;
+  // Turn john.doe_style local parts into "John Doe" for greetings.
   return local
     .replace(/[._-]+/g, " ")
     .split(/\s+/)
@@ -55,3 +56,4 @@ export function DashboardUserProvider({ children, fullName = "", email, unitId =
 export function useDashboardUser() {
   return useContext(DashboardUserContext);
 }
+

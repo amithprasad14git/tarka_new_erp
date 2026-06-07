@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `publicNotice`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     public_notice: { table: "public_notice" },
@@ -38,6 +46,7 @@ const fyFreezeLockedRoute = {
   reply: [[{ freezeTransactions: "Yes" }]]
 };
 
+// Helper used by tests: createConn.
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -49,6 +58,7 @@ function createConn(routes) {
   };
 }
 
+// Automated checks for: publicNotice module.
 describe("publicNotice module", () => {
   test("validatePublicNoticeBeforeWrite passes for valid payload", async () => {
     const conn = createConn([
@@ -154,4 +164,5 @@ describe("publicNotice module", () => {
     );
   });
 });
+
 

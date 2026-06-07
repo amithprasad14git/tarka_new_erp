@@ -1,5 +1,9 @@
-// Application route/page/API handler for this feature area.
-// Keep module-specific business logic in lib/modules/<module> files.
+// Application API route — Public Notice PDF download.
+
+/**
+ * GET /api/public-notice/pdf/:id — builds and downloads the Public Notice PDF.
+ * Loads notice + case + branch data; drawing in lib/modules/publicNoticePdf.js.
+ */
 
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
@@ -9,12 +13,14 @@ import { rowValueForField } from "../../../../../lib/gridRowValue";
 import { buildPublicNoticePdfBuffer, safePublicNoticePdfFilename } from "../../../../../lib/modules/publicNoticePdf";
 import mysql from "mysql2";
 
+// Session cookie → logged-in user.
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
 }
 
+// Map lookup_value_master ids to display text for notice person “type” column.
 async function lookupValueLabelsByIds(ids) {
   const uniq = [...new Set(ids.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0))];
   if (!uniq.length) return new Map();
@@ -30,6 +36,7 @@ async function lookupValueLabelsByIds(ids) {
   return map;
 }
 
+// Bank code and branch line for notice letterhead.
 async function loadBranchChainForPdf(branchId) {
   if (!Number.isFinite(branchId) || branchId <= 0) {
     return { bankCode: "", rboName: "", branchDisplay: "" };
@@ -63,6 +70,7 @@ async function loadBranchChainForPdf(branchId) {
   return { bankCode, rboName, branchDisplay };
 }
 
+// Unit code printed on the notice.
 async function loadUnitShortCode(unitId) {
   if (!Number.isFinite(unitId) || unitId <= 0) return "";
   const [rows] = await queryWithRetry(`SELECT unitCode FROM unit_master WHERE id = ? LIMIT 1`, [unitId]);
@@ -87,6 +95,7 @@ export async function GET(_req, { params }) {
     const { data, childTableRows } = result.body;
     const refNo = String(rowValueForField(data, "refNo") ?? "").trim();
 
+    // Up to three persons from child grid; resolve “type” lookup ids to labels.
     const rawDetails = Array.isArray(childTableRows?.public_notice_details)
       ? childTableRows.public_notice_details
       : [];
@@ -131,6 +140,7 @@ export async function GET(_req, { params }) {
       String(rowValueForField(data, "caseNoLabel") ?? "").trim() ||
       refNo;
 
+    // Legacy layout with bank logo — see lib/modules/publicNoticePdf.js.
     const buffer = await buildPublicNoticePdfBuffer({
       nciRow,
       branchContext,
@@ -151,3 +161,4 @@ export async function GET(_req, { params }) {
     return Response.json({ error: "Failed to build PDF" }, { status: 500 });
   }
 }
+

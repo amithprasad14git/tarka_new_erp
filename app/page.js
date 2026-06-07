@@ -8,5 +8,7 @@ import { redirect } from "next/navigation";
  * Note: dashboard routes enforce auth via their server layout (redirects to login).
  */
 export default function HomePage() {
+  // No home screen — send visitors straight to the sign-in page.
   redirect("/login");
 }
+

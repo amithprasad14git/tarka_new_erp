@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `sarfaesiInvoicePdf`.
+ * Run with: npm test
+ */
+
 const { buildSarfaesiInvoicePdfBuffer, countSarfaesiInvoicePdfPages } = require("../../lib/modules/sarfaesiInvoicePdf");
 
 const minimalPayload = {
@@ -36,6 +43,7 @@ const minimalPayload = {
   }
 };
 
+// Checks printable PDF output is built without crashing and includes expected content.
 describe("sarfaesiInvoicePdf", () => {
   test("buildSarfaesiInvoicePdfBuffer returns a non-empty buffer", async () => {
     const buf = await buildSarfaesiInvoicePdfBuffer(minimalPayload);
@@ -49,3 +57,4 @@ describe("sarfaesiInvoicePdf", () => {
     expect(pages).toBe(3);
   });
 });
+

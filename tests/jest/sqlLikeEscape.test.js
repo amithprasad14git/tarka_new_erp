@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `sqlLikeEscape`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +14,7 @@
 
 const { escapeSqlLikePattern } = require("../../lib/sqlLikeEscape");
 
+// Automated checks for: sqlLikeEscape.escapeSqlLikePattern.
 describe("sqlLikeEscape.escapeSqlLikePattern", () => {
   test("percent escaping", () => {
     expect(escapeSqlLikePattern("100%")).toBe("100\\%");
@@ -40,4 +48,5 @@ describe("sqlLikeEscape.escapeSqlLikePattern", () => {
     expect(escapeSqlLikePattern(undefined)).toBe("");
   });
 });
+
 

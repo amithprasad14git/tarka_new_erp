@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `auth`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/auth.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
   return {
@@ -21,7 +29,9 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 const pool = require("../../lib/db").default;
 const { authenticateLogin } = require("../../lib/auth");
 
+// Checks sign-in rules: good password, wrong password, inactive account, and safe handling of bad input.
 describe("auth.authenticateLogin", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -93,4 +103,5 @@ describe("auth.authenticateLogin", () => {
     expect(sql).not.toContain(payload);
   });
 });
+
 

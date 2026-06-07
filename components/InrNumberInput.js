@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 function groupIndianDigits(digits) {
   if (!digits) return "";
+  // Indian grouping: last 3 digits, then pairs of 2 from the right (e.g. 12,34,567).
   if (digits.length <= 3) return digits;
   const last3 = digits.slice(-3);
   const leading = digits.slice(0, -3);
@@ -61,6 +62,7 @@ export default function InrNumberInput({
   const [rawValue, setRawValue] = useState(() => normalizeNumericInput(defaultValue));
 
   useEffect(() => {
+    // Keep raw numeric state in sync when parent resets defaultValue (e.g. clear form).
     setRawValue(normalizeNumericInput(defaultValue));
   }, [defaultValue]);
 
@@ -90,3 +92,4 @@ export default function InrNumberInput({
     </>
   );
 }
+

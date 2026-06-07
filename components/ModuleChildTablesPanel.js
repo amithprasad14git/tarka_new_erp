@@ -32,6 +32,7 @@ export function newChildRowDraft(ct) {
     _editing: true,
     _lineSaved: false
   };
+  // Checkbox columns default to unchecked (0) on new lines.
   for (const f of ct?.fields || []) {
     if (f.type === "checkbox") draft[f.name] = 0;
   }
@@ -40,6 +41,7 @@ export function newChildRowDraft(ct) {
 
 function validateRowFields(ct, row) {
   const fields = ct.fields || [];
+  // Required columns and basic type checks before a child line is marked saved.
   for (const f of fields) {
     if (!f.required) continue;
     const v = row[f.name];

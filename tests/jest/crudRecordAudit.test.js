@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crudRecordAudit`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/crudRecordAudit.js (strip behavior focused)
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../lib/istDateTime", () => ({
   formatInstantAsMysqlDatetimeIST: jest.fn(() => "2026-04-26 15:30:00")
 }));
@@ -18,6 +26,7 @@ const {
   applyUpdateAudit
 } = require("../../lib/crudRecordAudit");
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("crudRecordAudit.stripClientAuditFields", () => {
   test("strips created_by", () => {
     const out = stripClientAuditFields({ name: "A", created_by: 1 });
@@ -78,6 +87,7 @@ describe("crudRecordAudit.stripClientAuditFields", () => {
   });
 });
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("crudRecordAudit column mapping and row-audit detection", () => {
   test("default audit column names are exposed", () => {
     expect(DEFAULT_AUDIT_COLUMNS).toEqual({
@@ -131,6 +141,7 @@ describe("crudRecordAudit column mapping and row-audit detection", () => {
   });
 });
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("crudRecordAudit apply stamps", () => {
   test("applyCreateAudit stamps creator + modifier + timestamps", () => {
     const cols = {
@@ -166,4 +177,5 @@ describe("crudRecordAudit apply stamps", () => {
     });
   });
 });
+
 

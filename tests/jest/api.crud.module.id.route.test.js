@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.crud.module.id.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -20,11 +28,14 @@ const { getSessionUser } = require("../../lib/session");
 const { getCrudRecordById, updateCrudRecord, deleteCrudRecord } = require("../../lib/services/crud.service");
 const { GET, PUT, DELETE } = require("../../app/api/crud/[module]/[id]/route");
 
+// Builds a fake HTTP request with a JSON body — used to call route handlers in tests.
 function makeReq(body) {
   return { json: jest.fn().mockResolvedValue(body) };
 }
 
+// Checks the HTTP API handler returns the right status codes and messages.
 describe("api/crud/[module]/[id] route", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-crud-id" }) });
@@ -66,4 +77,5 @@ describe("api/crud/[module]/[id] route", () => {
     await expect(res.json()).resolves.toEqual({ ok: true });
   });
 });
+
 

@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `accountsLoanAc`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     accounts_loan_ac: { table: "accounts_loan_ac" },
@@ -38,12 +46,14 @@ const {
   applyAccountsLoanAcBeforeWrite
 } = require("../../lib/modules/accountsLoanAc");
 
+// Helper used by tests: createConn.
 function createConn() {
   return {
     query: jest.fn()
   };
 }
 
+// Automated checks for: accountsLoanAc module.
 describe("accountsLoanAc module", () => {
   test("assignAccountsLoanAcVoucherNo stamps Receipt as LN/CR/<year>/<serial>", async () => {
     const conn = createConn();
@@ -340,3 +350,4 @@ describe("accountsLoanAc module", () => {
     expect(npaUpdate[1]).toEqual([77]);
   });
 });
+

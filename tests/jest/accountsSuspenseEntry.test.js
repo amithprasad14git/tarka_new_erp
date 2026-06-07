@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `accountsSuspenseEntry`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     accounts_suspense_entry: { table: "accounts_suspense_entry" },
@@ -35,6 +43,7 @@ const {
 
 const { FREEZE_TRANSACTIONS_LOCKED_MESSAGE } = require("../../lib/modules/freezeTransactionsLock");
 
+// Automated checks for: accountsSuspenseEntry module.
 describe("accountsSuspenseEntry module", () => {
   test("validateAccountsSuspenseEntryBeforeWrite blocks role 2 when FY is frozen", async () => {
     const conn = {
@@ -204,3 +213,4 @@ describe("accountsSuspenseEntry module", () => {
     expect(updateCalls[0][1][0]).toBe("SUSP/2526/0001");
   });
 });
+

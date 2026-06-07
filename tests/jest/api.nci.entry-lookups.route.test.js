@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.nci.entry-lookups.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -73,7 +81,9 @@ const { getSessionUser } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const { GET } = require("../../app/api/new-case-inward/entry-lookups/route");
 
+// Automated checks for: api/new-case-inward/entry-lookups route.
 describe("api/new-case-inward/entry-lookups route", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-nci" }) });
@@ -108,4 +118,5 @@ describe("api/new-case-inward/entry-lookups route", () => {
     expect(lookupValueQueryParams).toEqual(["Case Received From"]);
   });
 });
+
 

@@ -8,6 +8,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { modules } from "../../config/modules";
+import { reports } from "../../config/reports";
 import { dashboards } from "../../config/dashboards";
 import { getSessionUser } from "../../lib/session";
 import { hasAnyModuleAccess } from "../../lib/rbac";
@@ -20,7 +21,7 @@ import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
 import AppFooter from "../../components/AppFooter";
 
-/** Authenticated shell: sidebar, theme, idle logout, and RBAC-filtered menu. */
+// Protected workspace shell: sidebar menu, tabs, idle logout, RBAC-filtered modules.
 export default async function DashboardLayout({ children }) {
   // Read httpOnly session cookie and resolve the logged-in user on the server.
   const cookieStore = await cookies();
@@ -42,8 +43,19 @@ export default async function DashboardLayout({ children }) {
     }
   }
 
-  // Convert visible modules into sidebar groups (group name -> list of links).
-  const groups = visibleEntries.reduce((acc, [key, config]) => {
+  const visibleReportEntries = [];
+  for (const [key, config] of Object.entries(reports)) {
+    const canAccess = await hasAnyModuleAccess(user, key);
+    if (canAccess) visibleReportEntries.push([key, config]);
+  }
+
+  const allVisibleKeys = [
+    ...visibleEntries.map(([k]) => k),
+    ...visibleReportEntries.map(([k]) => k)
+  ];
+
+  // Convert visible modules + reports into sidebar groups (group name -> list of links).
+  const groups = [...visibleEntries, ...visibleReportEntries].reduce((acc, [key, config]) => {
     const groupName = config.group || "Other";
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push({ key, label: config.label || key, icon: config.icon || "📄" });
@@ -79,7 +91,7 @@ export default async function DashboardLayout({ children }) {
           <div className="flux-main-scroll-region">
             <div className="flux-content">
               <DashboardTabs
-                visibleModuleKeys={visibleEntries.map(([k]) => k)}
+                visibleModuleKeys={allVisibleKeys}
                 visibleDashboards={visibleDashboards}
               />
             </div>
@@ -90,3 +102,4 @@ export default async function DashboardLayout({ children }) {
     </DashboardUserProvider>
   );
 }
+

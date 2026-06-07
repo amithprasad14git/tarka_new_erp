@@ -20,6 +20,7 @@ import UserMenu from "./UserMenu";
  */
 export default function DashboardTopbar({ userEmail }) {
   return (
+    // Right-side cluster: sparkle lane, clock, theme, account menu.
     <div className="dashboard-topbar-actions">
       <TopbarMicroFloatLane />
       <TopbarIstClock />
@@ -28,3 +29,4 @@ export default function DashboardTopbar({ userEmail }) {
     </div>
   );
 }
+

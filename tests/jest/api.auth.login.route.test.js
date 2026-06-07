@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.auth.login.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -24,13 +32,16 @@ const { createSession } = require("../../lib/session");
 const { getMissingRequiredDbEnvVars, getLoopbackDbHostError } = require("../../lib/db");
 const { POST } = require("../../app/api/auth/login/route");
 
+// Builds a fake HTTP request with a JSON body — used to call route handlers in tests.
 function makeReq(body) {
   return { json: jest.fn().mockResolvedValue(body) };
 }
 
+// Checks sign-in rules: good password, wrong password, inactive account, and safe handling of bad input.
 describe("api/auth/login route", () => {
   let consoleErrorSpy;
 
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -89,4 +100,5 @@ describe("api/auth/login route", () => {
     await expect(res.json()).resolves.toEqual({ ok: true });
   });
 });
+
 

@@ -34,7 +34,7 @@ export default function InactivityLogout() {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
-      // Schedule logout after inactivity window.
+      // Log out after SESSION_IDLE_MINUTES with no mouse/keyboard/scroll activity.
       timerRef.current = setTimeout(logoutForInactivity, INACTIVITY_LIMIT_MS);
     }
 
@@ -53,3 +53,4 @@ export default function InactivityLogout() {
 
   return null;
 }
+

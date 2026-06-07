@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `returnCase`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     return_case: { table: "return_case" },
@@ -53,6 +61,7 @@ jest.mock("../../lib/istDateTime", () => ({
 
 const { validateReturnCaseBeforeWrite, assignReturnCaseRefNo } = require("../../lib/modules/returnCase");
 
+// Helper used by tests: createConn.
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -64,6 +73,7 @@ function createConn(routes) {
   };
 }
 
+// Automated checks for: returnCase module.
 describe("returnCase module", () => {
   const validChildPayload = () => ({
     return_case_details: [{ select: 1, returnReason: "Borrower mismatch in documents" }]
@@ -239,3 +249,4 @@ describe("returnCase module", () => {
     );
   });
 });
+

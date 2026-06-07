@@ -1,5 +1,13 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `invoicesReceivedClient`.
+ * Run with: npm test
+ */
+
 const { computeInvoicesReceivedAmounts } = require("../../lib/modules/invoicesReceivedAmounts");
 
+// Checks money amounts convert to the correct words for invoices and letters.
 describe("computeInvoicesReceivedAmounts", () => {
   test("empty TDS % yields zero TDS and received equals billed", () => {
     expect(computeInvoicesReceivedAmounts({ billedAmount: 1000, tdsPercentage: "", roundOff: "" })).toEqual({
@@ -39,3 +47,4 @@ describe("computeInvoicesReceivedAmounts", () => {
     expect(r.receivedAmount).toBe(900);
   });
 });
+

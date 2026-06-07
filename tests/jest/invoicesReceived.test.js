@@ -1,3 +1,11 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `invoicesReceived`.
+ * Run with: npm test
+ */
+
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     invoices_received: { table: "invoices_received" },
@@ -34,6 +42,7 @@ const {
   validateInvoicesReceivedBeforeWrite
 } = require("../../lib/modules/invoicesReceived");
 
+// Helper used by tests: createConn.
 function createConn(routes = []) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -52,6 +61,7 @@ const fyFrozen = {
   reply: [[{ freezeTransactions: "Yes" }]]
 };
 
+// Automated checks for: invoicesReceived module.
 describe("invoicesReceived module", () => {
   test("assignInvoicesReceivedRefNo stamps IR/year/serial", async () => {
     const conn = createConn([
@@ -146,3 +156,4 @@ describe("invoicesReceived module", () => {
     ).rejects.toThrow(FREEZE_TRANSACTIONS_LOCKED_MESSAGE);
   });
 });
+

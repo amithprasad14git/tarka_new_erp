@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crud.service`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/services/crud.service.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     sample_module: {
@@ -176,6 +184,7 @@ const {
   getCrudRecordById
 } = require("../../lib/services/crud.service");
 
+// Helper used by tests: makeTxConn.
 function makeTxConn() {
   return {
     beginTransaction: jest.fn(async () => {}),
@@ -186,11 +195,13 @@ function makeTxConn() {
   };
 }
 
+// Browser test: create, view, edit, and delete a user through the live UI.
 describe("crud.service", () => {
   const user = { id: 99, role: 2, unit: 1 };
   /** Keep expected error-path tests from polluting Jest output. */
   let consoleErrorSpy;
 
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     // Clear any leftover mockResolvedValueOnce queues between tests.
@@ -214,6 +225,7 @@ describe("crud.service", () => {
     consoleErrorSpy.mockRestore();
   });
 
+// Browser test: create, view, edit, and delete a user through the live UI.
   describe("createCrudRecord", () => {
     test("successful create", async () => {
       hasModulePermission.mockResolvedValueOnce(true);
@@ -343,6 +355,7 @@ describe("crud.service", () => {
     });
   });
 
+// Browser test: create, view, edit, and delete a user through the live UI.
   describe("updateCrudRecord", () => {
     test("successful update", async () => {
       hasModulePermission.mockResolvedValueOnce(true);
@@ -504,6 +517,7 @@ describe("crud.service", () => {
     });
   });
 
+// Browser test: create, view, edit, and delete a user through the live UI.
   describe("deleteCrudRecord", () => {
     test("successful delete + audit log", async () => {
       hasModulePermission.mockResolvedValueOnce(true);
@@ -551,6 +565,7 @@ describe("crud.service", () => {
     });
   });
 
+// Browser test: create, view, edit, and delete a user through the live UI.
   describe("getCrudRecordById", () => {
     test("returns 404 for unknown module", async () => {
       const result = await getCrudRecordById(user, "missing_module", 1);
@@ -622,4 +637,5 @@ describe("crud.service", () => {
     });
   });
 });
+
 

@@ -16,9 +16,11 @@ export const metadata = {
 
 /** Root HTML shell for all routes (global CSS, hydration warning for extensions). */
 export default function RootLayout({ children }) {
+  // Wrap every page with shared HTML shell and global styles.
   return (
     <html lang="en">
       <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
+

@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * React UI component: TopbarWeather
+ * Reusable screen piece used across dashboard modules.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 // Compact topbar weather (Open-Meteo via /api/dashboard/weather).
 
 import { useCallback, useEffect, useState } from "react";
@@ -9,6 +15,7 @@ import { getWeatherWithFallback } from "../lib/topbarWeatherClient";
 function kindFromCode(code) {
   if (code == null || Number.isNaN(code)) return "cloud";
   const c = Number(code);
+  // Map Open-Meteo WMO weather codes to a small set of icon styles.
   if (c === 0) return "clear";
   if (c <= 2) return "partly";
   if (c === 3) return "cloud";
@@ -66,6 +73,7 @@ export default function TopbarWeather() {
     /** @type {ReturnType<typeof setTimeout> | null} */
     let pollId = null;
 
+    // Poll on a staggered interval (15–30 min) after the first fetch.
     async function runPoll() {
       const result = await getWeatherWithFallback();
       if (cancelled) return;
@@ -124,3 +132,4 @@ export default function TopbarWeather() {
     </div>
   );
 }
+

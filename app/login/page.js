@@ -1,5 +1,7 @@
 "use client";
 
+// Application page or layout — what users see in the browser.
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -35,6 +37,7 @@ const CAROUSEL_SLIDES = [
 const CAROUSEL_INTERVAL_MS = 6000;
 
 /** Public login form; on success redirects to `/dashboard`. */
+// Sign-in screen: carousel plus form that sets the httpOnly session cookie on success.
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -44,6 +47,7 @@ export default function Login() {
   const [slide, setSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Rotate hero slides on a timer until the user picks one manually.
   useEffect(() => {
     const t = setInterval(() => {
       setSlide((s) => (s + 1) % CAROUSEL_SLIDES.length);
@@ -51,17 +55,19 @@ export default function Login() {
     return () => clearInterval(t);
   }, []);
 
+  // Dot buttons jump the carousel to a specific slide.
   const goToSlide = useCallback((index) => {
     setSlide(index);
   }, []);
 
-  /** Submits credentials to `/api/auth/login` and navigates to dashboard. */
+  // POST credentials; server sets session cookie — we only navigate on success.
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // Ask the auth API to validate email/password and issue a session.
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,11 +77,13 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
+        // Show server message (wrong password, inactive user, DB down, etc.).
         const msg = [data.error, data.hint].filter(Boolean).join(" ");
         setError(msg || "Login failed");
         return;
       }
 
+      // Cookie is httpOnly — browser sends it on dashboard requests automatically.
       router.push("/dashboard");
     } catch (err) {
       setError("Unable to connect to server");
@@ -214,6 +222,7 @@ export default function Login() {
   );
 }
 
+// SVG icon for “show password” toggle (no text label needed).
 function EyeIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -223,6 +232,7 @@ function EyeIcon() {
   );
 }
 
+// SVG icon for “hide password” toggle.
 function EyeOffIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -231,3 +241,4 @@ function EyeOffIcon() {
     </svg>
   );
 }
+

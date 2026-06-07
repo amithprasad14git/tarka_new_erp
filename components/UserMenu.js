@@ -75,10 +75,10 @@ export default function UserMenu({ email }) {
 
   async function handleChangePasswordSubmit(e) {
     e.preventDefault();
-    // Clear previous result and show button loader while API call runs.
     setPasswordMessage({ kind: "", text: "" });
     setChangingPassword(true);
     try {
+      // Server verifies current password before accepting the new one.
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -284,3 +284,4 @@ function EyeOffIcon() {
     </svg>
   );
 }
+

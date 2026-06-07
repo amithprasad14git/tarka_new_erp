@@ -2,6 +2,7 @@
  * Tests for lib/auditDisplay.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     recovery_invoice: {
@@ -34,7 +35,9 @@ const {
   resolveAuditFieldLabel
 } = require("../../lib/auditDisplay");
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("auditDisplay", () => {
+// Checks the system records who changed what and shows it in a readable way.
   describe("buildAuditRecordLabel", () => {
     it("uses lookupDisplayField for single column", () => {
       expect(
@@ -61,6 +64,7 @@ describe("auditDisplay", () => {
     });
   });
 
+// Checks the system records who changed what and shows it in a readable way.
   describe("formatAuditModuleLabel", () => {
     it("returns module label from config", () => {
       expect(formatAuditModuleLabel("recovery_invoice")).toBe("Recovery Invoice");
@@ -71,6 +75,7 @@ describe("auditDisplay", () => {
     });
   });
 
+// Checks the system records who changed what and shows it in a readable way.
   describe("resolveAuditFieldLabel", () => {
     it("returns field label from config", () => {
       expect(resolveAuditFieldLabel("recovery_invoice", "finalInvoice")).toBe("Final Invoice");

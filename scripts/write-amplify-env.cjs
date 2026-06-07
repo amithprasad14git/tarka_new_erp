@@ -19,13 +19,17 @@ const KEYS = [
   "NEXT_PUBLIC_SESSION_IDLE_MINUTES"
 ];
 
+// Collect only the env vars Amplify provides; skip empty ones.
 const lines = [];
 for (const key of KEYS) {
   const value = process.env[key];
+  // Skip unset or blank values so we do not write empty lines to .env.production.
   if (value == null || String(value).trim() === "") continue;
+  // JSON.stringify wraps the value in quotes and escapes special characters safely.
   lines.push(`${key}=${JSON.stringify(String(value))}`);
 }
 
+// Write the collected lines to the file Next.js reads during production builds.
 fs.writeFileSync(".env.production", `${lines.join("\n")}\n`, "utf8");
 const names = lines.map((l) => l.split("=")[0]);
 console.log(

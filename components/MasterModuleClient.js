@@ -109,6 +109,12 @@ import {
 } from "../lib/modules/accountsCurrentAcTransferClient";
 import {
   applyReturnCaseSubmitBody,
+  downloadReturnCasePdf,
+  getReturnCaseAckPrintLabel,
+  getReturnCasePrintButtonText,
+  getReturnCasePrintTargetId,
+  isReturnCaseModule,
+  returnCaseRefHintFromRow,
   shouldShowReturnCaseAckOnEdit,
   useReturnCaseClientModel
 } from "../lib/modules/returnCaseClient";
@@ -145,6 +151,7 @@ import CaseSnapshotModal from "./CaseSnapshotModal";
 function emptyChildRowsState(childTables) {
   if (!childTables?.length) return {};
   const o = {};
+  // Start each child grid with one blank draft line ready to edit.
   for (const t of childTables) o[t.key || t.table] = [newChildRowDraft(t)];
   return o;
 }
@@ -177,6 +184,7 @@ function childRowsStateFromApi(childTables, childTableRows) {
 }
 
 function rowHasAnyContent(row, fields) {
+  // Skip completely blank child lines when validating/saving the parent.
   for (const f of fields) {
     const v = row[f.name];
     if (f.type === "checkbox") {
@@ -197,6 +205,7 @@ function validateChildTableRows(moduleConfig, childRowsByKey) {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!rowHasAnyContent(row, fields)) continue;
+      // Each child line must be saved individually before the parent can submit.
       if (row._editing || !row._lineSaved) {
         return `${ct.label || key}, row ${i + 1}: use Save on the line before saving the parent record.`;
       }
@@ -247,6 +256,7 @@ function stripChildRowsForApi(childTables, childRowsByKey) {
   for (const ct of childTables) {
     const key = ct.key || ct.table;
     const fields = ct.fields || [];
+    // Only send saved lines that have at least one non-empty cell.
     out[key] = (childRowsByKey[key] || [])
       .filter((row) => row._lineSaved && rowHasAnyContent(row, fields))
       .map((row) => {
@@ -542,6 +552,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       return;
     }
 
+    // Fetch live row + enriched snapshots when user opens audit compare dialog.
     let cancelled = false;
     (async () => {
       try {
@@ -652,6 +663,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const isRecoveryInvoice = isRecoveryInvoiceModule(moduleKey);
   const isSarfaesiInvoice = isSarfaesiInvoiceModule(moduleKey);
   const isVehicleInvoice = isVehicleInvoiceModule(moduleKey);
+  const isReturnCase = isReturnCaseModule(moduleKey);
   const isTransferCase = isTransferCaseModule(moduleKey);
   const isAccountsAssetsInvestments = isAccountsAssetsInvestmentsModule(moduleKey);
   const isAccountsExpenseVoucher = isAccountsExpenseVoucherModule(moduleKey);
@@ -1071,6 +1083,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (!config) return;
     const filtersKey = JSON.stringify(viewColumnFilters || {});
     const fetchKey = `${moduleKey}|${String(page)}|${String(limit)}|${String(viewMode)}|${filtersKey}`;
+    // Avoid duplicate list fetches when React re-renders with the same query key.
     if (recordsFetchKeyRef.current === fetchKey) return;
     recordsFetchKeyRef.current = fetchKey;
     loadRecords();
@@ -1281,6 +1294,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     editingRowId: editingRow?.id ?? null
   });
 
+  const printReturnCaseTargetId = getReturnCasePrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
   async function handlePrintCaseDetails() {
     if (busy) return;
     if (!isNciModule || !permissions.canView) return;
@@ -1383,6 +1404,24 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  async function handlePrintReturnCaseFromToolbar() {
+    // Return Case: download RETURN_<refNo>.pdf (same pattern as invoice Print).
+    if (busy) return;
+    if (!isReturnCase || !permissions.canView) return;
+    const id = printReturnCaseTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = returnCaseRefHintFromRow(rowForName);
+    setBusy(true);
+    try {
+      await downloadReturnCasePdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", err.message || "Failed to download Return Case PDF");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handlePostCreateAckPrintPdf(recordId, valueText) {
     if (busy) return;
     if (!permissions.canView) return;
@@ -1437,6 +1476,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         await downloadVehicleInvoicePdf(recordId, valueText);
       } catch (err) {
         showToast("error", err.message || "Failed to download Vehicle Invoice PDF");
+      } finally {
+        setBusy(false);
+      }
+      await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
+      return;
+    }
+
+    if (isReturnCase) {
+      // Post-save Print → download Return Case letter PDF, then return to list.
+      setPostCreateAckOpen(null);
+      setBusy(true);
+      try {
+        await downloadReturnCasePdf(recordId, valueText);
+      } catch (err) {
+        showToast("error", err.message || "Failed to download Return Case PDF");
       } finally {
         setBusy(false);
       }
@@ -1693,6 +1747,18 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             {getVehicleInvoicePrintButtonText()}
           </button>
         ) : null}
+        {isReturnCase && permissions.canView && printReturnCaseTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintReturnCaseFromToolbar}
+            title="Download Return Case PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getReturnCasePrintButtonText()}
+          </button>
+        ) : null}
       </div>
       <div className="master-view-actions-right">
         {canSave ? (
@@ -1732,7 +1798,12 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         showCopyButton={postCreateAckOpen?.showCopyButton !== false}
         // Print slot: wired per module in handlePostCreateAckPrintPdf (NCI vs Public Notice).
         showPrintPdf={
-          isNciModule || isPublicNotice || isRecoveryInvoice || isSarfaesiInvoice || isVehicleInvoice
+          isNciModule ||
+          isPublicNotice ||
+          isRecoveryInvoice ||
+          isSarfaesiInvoice ||
+          isVehicleInvoice ||
+          isReturnCase
             ? postCreateAckOpen?.showPrintPdf
             : false
         }
@@ -1747,7 +1818,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   ? getSarfaesiInvoiceAckPrintLabel(postCreateAckOpen?.printButtonLabel)
                   : isVehicleInvoice
                     ? getVehicleInvoiceAckPrintLabel(postCreateAckOpen?.printButtonLabel)
-                    : "Print"
+                    : isReturnCase
+                      ? getReturnCaseAckPrintLabel(postCreateAckOpen?.printButtonLabel)
+                      : "Print"
         }
         recordId={postCreateAckOpen?.id}
         onContinue={handlePostCreateAckContinue}
@@ -2460,6 +2533,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   >
                     <PrintCaseDetailsIcon />
                     {getVehicleInvoicePrintButtonText()}
+                  </button>
+                ) : null}
+                {isReturnCase &&
+                effectiveViewMode &&
+                printReturnCaseTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintReturnCaseFromToolbar}
+                    title="Download Return Case PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getReturnCasePrintButtonText()}
                   </button>
                 ) : null}
               </div>

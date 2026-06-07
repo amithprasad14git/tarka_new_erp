@@ -32,6 +32,7 @@ export default function PostCreateAckModal({
   const titleId = useId();
 
   useEffect(() => {
+    // Reset "Copied" feedback when the modal closes or reopens.
     if (!open) setCopied(false);
   }, [open]);
 
@@ -44,6 +45,7 @@ export default function PostCreateAckModal({
 
   async function handleCopy() {
     try {
+      // Copy the assigned reference number to the clipboard for the user.
       await navigator.clipboard.writeText(String(value));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -105,3 +107,4 @@ export default function PostCreateAckModal({
     </div>
   );
 }
+

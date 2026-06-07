@@ -40,6 +40,7 @@ export default function CaseSnapshotModal({
               Select Case No to view Snapshot.
             </div>
           ) : loading ? (
+            // Skeleton placeholders while case detail API loads.
             <div className="pn-skeleton-card" aria-hidden>
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="pn-skeleton-row">

@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `vehicleInvoicePdf`.
+ * Run with: npm test
+ */
+
 const { buildVehicleInvoicePdfBuffer, countVehicleInvoicePdfPages } = require("../../lib/modules/vehicleInvoicePdf");
 
 const minimalPayload = {
@@ -34,6 +41,7 @@ const minimalPayload = {
   }
 };
 
+// Checks printable PDF output is built without crashing and includes expected content.
 describe("vehicleInvoicePdf", () => {
   test("buildVehicleInvoicePdfBuffer returns a non-empty buffer", async () => {
     const buf = await buildVehicleInvoicePdfBuffer(minimalPayload);
@@ -47,3 +55,4 @@ describe("vehicleInvoicePdf", () => {
     expect(pages).toBe(3);
   });
 });
+

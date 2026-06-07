@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.permissions.module.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -24,7 +32,9 @@ const { getSessionUser } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const { GET } = require("../../app/api/permissions/[module]/route");
 
+// Checks who may view, create, edit, or delete records based on their permission row.
 describe("api/permissions/[module] route", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-perm" }) });
@@ -65,4 +75,5 @@ describe("api/permissions/[module] route", () => {
     });
   });
 });
+
 

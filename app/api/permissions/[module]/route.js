@@ -10,7 +10,7 @@ import { getSessionUser } from "../../../../lib/session";
 import { hasModulePermission } from "../../../../lib/rbac";
 import { cookies } from "next/headers";
 
-/** Returns RBAC permissions for the logged-in user for a given module key. */
+// Tell the UI which buttons to show (view/create/edit/delete) for one module.
 export async function GET(req, { params }) {
   try {
     // The client calls this route to decide which buttons to show (edit/delete/etc).
@@ -52,4 +52,5 @@ export async function GET(req, { params }) {
     return Response.json({ error: "Failed to load permissions" }, { status: 500 });
   }
 }
+
 

@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `permissionScope`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +14,7 @@
 
 const { normalizeActionScope, actionScopesFromDbRow } = require("../../lib/permissionScope");
 
+// Checks who may view, create, edit, or delete records based on their permission row.
 describe("permissionScope.normalizeActionScope", () => {
   test("own normalization", () => {
     expect(normalizeActionScope("own")).toBe("own");
@@ -45,6 +53,7 @@ describe("permissionScope.normalizeActionScope", () => {
   });
 });
 
+// Checks who may view, create, edit, or delete records based on their permission row.
 describe("permissionScope.actionScopesFromDbRow", () => {
   test("returns all scopes as all for null row", () => {
     expect(actionScopesFromDbRow(null)).toEqual({
@@ -82,4 +91,5 @@ describe("permissionScope.actionScopesFromDbRow", () => {
     });
   });
 });
+
 

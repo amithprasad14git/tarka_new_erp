@@ -68,6 +68,7 @@ function buildCycle(theme) {
   const palette = dark ? PALETTE_DARK : PALETTE_LIGHT;
   const runId = `burst_${Date.now()}`;
 
+  // Each sparkle gets a fixed path, color, and stagger so every burst looks the same.
   const items = MOTION_SEQUENCE.map((motion, i) => ({
     id: `${runId}_${i}`,
     char: GLYPH,

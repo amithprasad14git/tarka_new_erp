@@ -1,5 +1,8 @@
 // Configuration file for project/runtime behavior.
-// Keep module-specific business logic in lib/modules/<module> files.
+
+/**
+ * Babel transforms for Jest (tests use preset-env; app uses Next.js compiler).
+ */
 
 module.exports = function babelConfig(api) {
   const isTest = api.env("test");

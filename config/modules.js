@@ -1,5 +1,6 @@
 // Configuration file for project/runtime behavior.
 // Keep module-specific business logic in lib/modules/<module> files.
+// Read-only reports are defined in config/reports.js (not in this file).
 
 /**
  * =============================================================================
@@ -125,7 +126,7 @@
  * | transfer_case | transferCase.js | Date = today; case/from/to/assignee rules; updates case owner; ref TRF/…; FY freeze (role 2). |
  * | public_notice | publicNotice.js | Date not future; FY freeze (role 2); case required; child max 3 rows; ref PN/… |
  * | sarfaesi_case_status_update | sarfaesiCaseStatusUpdate.js | Date not future; FY freeze (role 2); SARFAESI case only; one update per case; child particulars (readonly UI) + optional remarks; ref SRFUP/… |
- * | return_case | returnCase.js | Date not future; FY freeze (role 2); case must be “Returned”; dup case; checked child rows + return reason; ref format. |
+ * | return_case | returnCase.js + returnCaseClient.js + returnCasePdf.js | Date not future; FY freeze (role 2); case “Returned”; checked child rows; 3-page letter PDF. |
  * | accounts_assets_investments | accountsAssetsInvestments.js | FY freeze (role 2); payment mode / cheque / unit scope; voucher no. |
  * | accounts_cash_deposit_withdraw | accountsCashDepositWithdraw.js | FY freeze (role 2); deposit/withdraw + NPA account + cheque rules; unit scope; voucher no. |
  * | accounts_current_ac_transfer | accountsCurrentAcTransfer.js | FY freeze (role 2); from ≠ to account; voucher no. |
@@ -174,6 +175,7 @@ const STANDARD_ROW_AUDIT_FIELDS = [
 ];
 
 // All screens/modules the ERP knows about. Key = internal name; value = settings + fields.
+// Each module value typically has: label, icon, group, table, fields[], and optional flags (readOnly, postCreateAck, …).
 export const modules = {
 
   // ---------------------------------------------------------------------------
@@ -1344,7 +1346,7 @@ export const modules = {
         table: "sarfaesi_case_status_update_details",
         parentFkField: "sarfaesiUpdateId",
         label: "Details",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "3rem",
         fields: [
           {
             name: "particulars",
@@ -1373,9 +1375,14 @@ export const modules = {
   },
 
   // -----------------------------------------------------------------------------
-  // Return Case: formal return workflow for cases already in "Returned" status.
-  // Server: lib/modules/returnCase.js — date, FY freeze (role 2), case status check, dup case,
-  //   checked child rows + return reason. Client: returnCaseClient.js (preload reasons, submit filter).
+  // Return Case — formal letter when an NPA case is returned to the bank.
+  //
+  // Flow: user picks a case in “Returned” status, ticks return reasons, saves.
+  // After save they can Print → 3-page PDF (RETURN_<refNo>.pdf).
+  //
+  // Server rules: lib/modules/returnCase.js
+  // Browser (preload reasons, Print download): lib/modules/returnCaseClient.js
+  // PDF layout: lib/modules/returnCasePdf.js — docs/return-case-pdf.md
   // -----------------------------------------------------------------------------
   return_case: {
     label: "Return Case",
@@ -1387,7 +1394,8 @@ export const modules = {
       field: "refNo",
       title: "Return Case saved",
       hint: "Your reference number is shown below. Continue to go back to the list.",
-      showPrintPdf: false,
+      showPrintPdf: true,
+      printButtonLabel: "Print",
       showCopyButton: true
     },
     fields: [
@@ -1521,7 +1529,7 @@ export const modules = {
       {
         name: "paidTo",
         type: "lookup",
-        label: "Party",
+        label: "Paid To",
         required: true,
         showInView: true,
         lookup: { module: "party_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "partyName", extraLovParams: { f_active: "Yes" },
@@ -1705,7 +1713,7 @@ export const modules = {
       {
         name: "paidTo",
         type: "lookup",
-        label: "Party",
+        label: "Paid To",
         required: true,
         showInView: true,
         lookup: { module: "party_master", valueField: "id",  ui: "popup", pickerLimit: 25, pickerSortBy: "partyName", extraLovParams: { f_active: "Yes" },
@@ -2372,3 +2380,4 @@ export const modules = {
 
 
 };
+

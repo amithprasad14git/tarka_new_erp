@@ -2,6 +2,7 @@
  * Tests for lib/modules/invoiceFinalInvoice.js (Final Invoice / NCI sync).
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     new_case_inward: { table: "new_case_inward" },
@@ -18,7 +19,9 @@ const {
   appendInvoiceCasePickerExcludeFinalYesFilter
 } = require("../../lib/modules/invoiceFinalInvoice");
 
+// Automated checks for: invoiceFinalInvoice.
 describe("invoiceFinalInvoice", () => {
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("normalizeFinalInvoiceFlag", () => {
     it("normalizes to Yes or No", () => {
       expect(normalizeFinalInvoiceFlag("yes")).toBe("Yes");
@@ -27,6 +30,7 @@ describe("invoiceFinalInvoice", () => {
     });
   });
 
+// Automated checks for: anyInvoiceFinalYesForCase.
   describe("anyInvoiceFinalYesForCase", () => {
     it("returns true when union query returns rows", async () => {
       const conn = {
@@ -49,6 +53,7 @@ describe("invoiceFinalInvoice", () => {
     });
   });
 
+// Automated checks for: recomputeNciFinalInvoiceForCase.
   describe("recomputeNciFinalInvoiceForCase", () => {
     it("sets NCI to Yes when any invoice is final", async () => {
       const conn = {
@@ -77,6 +82,7 @@ describe("invoiceFinalInvoice", () => {
     });
   });
 
+// Checks list search and column filters build safe SQL and match the right rows.
   describe("appendInvoiceCasePickerExcludeFinalYesFilter", () => {
     it("appends finalInvoice filter on NCI", () => {
       const whereParts = [];

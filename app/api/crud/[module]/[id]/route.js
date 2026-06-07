@@ -38,6 +38,7 @@ async function getRequestUser() {
 /**
  * GET — load one parent row (and configured child tables) for the entry form.
  */
+// Load one record (and child tables) for view/edit form.
 export async function GET(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -59,6 +60,7 @@ export async function GET(req, { params }) {
  * module → row exists → row scope allows this row → **then** req.json() runs via callback →
  * validate → update DB → audit log.
  */
+// Update existing row; JSON body is read only after edit permission passes in service.
 export async function PUT(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -77,6 +79,7 @@ export async function PUT(req, { params }) {
  * DELETE — remove one row permanently (after permission and scope checks in the service).
  * No request body is read.
  */
+// Permanently delete one row after permission and row-scope checks in service.
 export async function DELETE(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -90,3 +93,4 @@ export async function DELETE(req, { params }) {
     return Response.json({ error: "Failed to delete record" }, { status: 500 });
   }
 }
+

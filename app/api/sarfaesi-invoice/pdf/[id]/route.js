@@ -1,3 +1,5 @@
+// Application API route — SARFAESI Invoice PDF download.
+
 /**
  * GET /api/sarfaesi-invoice/pdf/:id — 3-page SARFAESI Invoice PDF download.
  *
@@ -15,12 +17,14 @@ import {
   safeSarfaesiInvoicePdfFilename
 } from "../../../../../lib/modules/sarfaesiInvoicePdf";
 
+// Session cookie → logged-in user.
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
 }
 
+// Bank / RBO / branch text for SARFAESI invoice PDF header.
 async function loadBranchChainForPdf(branchId) {
   if (!Number.isFinite(branchId) || branchId <= 0) {
     return { bankCode: "", bankName: "", rboName: "", branchDisplay: "", branchPlace: "" };
@@ -61,12 +65,14 @@ async function loadBranchChainForPdf(branchId) {
   };
 }
 
+// Unit code for invoice letterhead.
 async function loadUnitShortCode(unitId) {
   if (!Number.isFinite(unitId) || unitId <= 0) return "";
   const [rows] = await queryWithRetry(`SELECT unitCode FROM unit_master WHERE id = ? LIMIT 1`, [unitId]);
   return String(rowValueForField(rows?.[0] || {}, "unitCode") ?? "").trim();
 }
 
+// Payment details block from current_account_master + bank.
 async function loadCurrentAccountForPdf(caId) {
   if (!Number.isFinite(caId) || caId <= 0) return null;
   const [rows] = await queryWithRetry(
@@ -99,6 +105,7 @@ async function loadCurrentAccountForPdf(caId) {
   };
 }
 
+// SARFAESI Invoice PDF download (charges + case context).
 export async function GET(_req, { params }) {
   try {
     const user = await getRequestUser();
@@ -146,6 +153,7 @@ export async function GET(_req, { params }) {
     const caId = Number(rowValueForField(data, "npaCurrentAc"));
     const currentAccount = await loadCurrentAccountForPdf(caId);
 
+    // Build PDF; layout is frozen in lib/modules/sarfaesiInvoicePdf.js.
     const buffer = await buildSarfaesiInvoicePdfBuffer({
       invoice: data,
       charges,
@@ -156,6 +164,7 @@ export async function GET(_req, { params }) {
     });
 
     const filename = safeSarfaesiInvoicePdfFilename(invoiceNo || id);
+    // Attachment response so browser saves the invoice PDF.
     return new Response(buffer, {
       status: 200,
       headers: {

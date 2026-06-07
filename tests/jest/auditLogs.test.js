@@ -2,8 +2,13 @@
  * Tests for lib/modules/auditLogs.js
  */
 
-const { auditJsonPreview, AUDIT_JSON_PREVIEW_MAX_CHARS } = require("../../lib/modules/auditLogs");
+const {
+  auditJsonPreview,
+  auditJsonFullDisplay,
+  AUDIT_JSON_PREVIEW_MAX_CHARS
+} = require("../../lib/modules/auditLogs");
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("auditLogs.auditJsonPreview", () => {
   it("summarizes JSON objects as changed field names", () => {
     const raw = JSON.stringify({ finalInvoice: "Yes", modifiedDate: "2026-05-16" });
@@ -33,5 +38,18 @@ describe("auditLogs.auditJsonPreview", () => {
 
   it("handles parsed object input", () => {
     expect(auditJsonPreview({ invoiceNo: "INV/1" })).toBe("invoiceNo");
+  });
+});
+
+describe("auditLogs.auditJsonFullDisplay", () => {
+  it("pretty-prints full JSON without truncation", () => {
+    const raw = JSON.stringify({ finalInvoice: "Yes", modifiedDate: "2026-05-16" });
+    expect(auditJsonFullDisplay(raw)).toBe(
+      '{\n  "finalInvoice": "Yes",\n  "modifiedDate": "2026-05-16"\n}'
+    );
+  });
+
+  it("returns empty string for null", () => {
+    expect(auditJsonFullDisplay(null)).toBe("");
   });
 });

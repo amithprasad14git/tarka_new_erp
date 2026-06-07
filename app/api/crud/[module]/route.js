@@ -21,6 +21,7 @@
  * =============================================================================
  */
 import { modules } from "../../../../config/modules";
+import { isReportKey } from "../../../../lib/reportConfig";
 import pool, { queryWithRetry } from "../../../../lib/db";
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../lib/session";
@@ -114,6 +115,7 @@ function normalizeListQuery(req, moduleConfig) {
  * 6) COUNT + SELECT with limit/offset; enrich lookup labels; annotate _canEdit/_canDelete.
  * 7) JSON response { data, meta }.
  */
+// Paged grid list with filters, search, row scope, and module-specific LoV rules.
 export async function GET(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -122,6 +124,12 @@ export async function GET(req, { params }) {
     }
 
     const { module } = await params;
+    if (isReportKey(module)) {
+      return Response.json(
+        { error: "This key is a report. Use GET /api/reports/" + module + "/run" },
+        { status: 400 }
+      );
+    }
     const m = modules[module];
     if (!m) {
       return Response.json({ error: "Unknown module" }, { status: 404 });
@@ -498,6 +506,7 @@ export async function GET(req, { params }) {
  *
  * The service handles unknown module, read-only, forbidden, validation errors, and success.
  */
+// Create a new row; validation and audit run in crud.service.
 export async function POST(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -512,3 +521,4 @@ export async function POST(req, { params }) {
     return Response.json({ error: "Failed to create record" }, { status: 500 });
   }
 }
+

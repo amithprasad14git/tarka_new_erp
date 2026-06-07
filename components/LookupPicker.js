@@ -100,6 +100,7 @@ export default function LookupPicker({
   useEffect(() => {
     if (!selectedId || selectedLabel) return;
     let cancelled = false;
+    // When we have an id but no label yet, resolve display text from LoV API.
     async function resolve() {
       try {
         const q = new URLSearchParams({
@@ -132,6 +133,7 @@ export default function LookupPicker({
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    // Load paged picker rows whenever modal opens or search/page changes.
     async function load() {
       setLoading(true);
       try {
@@ -177,14 +179,22 @@ export default function LookupPicker({
   function selectRow(row) {
     const v = row[valueField];
     const nextValue = String(v);
+    // Double-click selection: store id, notify parent, close modal.
     setSelectedId(nextValue);
     if (typeof onValueChange === "function") onValueChange(nextValue);
     setSelectedLabel(formatLookupRowLabel(row, lookup));
     setOpen(false);
   }
 
+  function clearSelection() {
+    setSelectedId("");
+    setSelectedLabel("");
+    if (typeof onValueChange === "function") onValueChange("");
+  }
+
   const totalPages = Math.max(1, Number(meta.totalPages) || 1);
   const displayText = selectedLabel || (selectedId ? `(id: ${selectedId})` : "");
+  const showClear = Boolean(selectedId) && !disabled;
   const sortColumnHeader =
     columns.find((col) => String(col.field) === String(sortField))?.header ||
     lookup?.pickerSortByLabel ||
@@ -200,15 +210,26 @@ export default function LookupPicker({
         <input
           type="text"
           readOnly
-          className="lookup-picker-display"
+          className={`lookup-picker-display${showClear ? " lookup-picker-display--with-clear" : ""}`}
           id={id}
           value={displayText}
           placeholder="Select…"
           aria-required={Boolean(required)}
         />
+        {showClear ? (
+          <button
+            type="button"
+            className="lookup-picker-clear"
+            onClick={clearSelection}
+            aria-label="Clear selection"
+            title="Clear selection"
+          >
+            ×
+          </button>
+        ) : null}
         <button
           type="button"
-          className="lookup-picker-trigger"
+          className={`lookup-picker-trigger${showClear ? " lookup-picker-trigger--with-clear" : ""}`}
           disabled={Boolean(disabled)}
           onClick={() => {
             if (disabled) return;
@@ -330,3 +351,4 @@ export default function LookupPicker({
     </div>
   );
 }
+

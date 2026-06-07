@@ -1,5 +1,9 @@
 // Configuration file for project/runtime behavior.
-// Keep module-specific business logic in lib/modules/<module> files.
+
+/**
+ * Jest test runner settings (unit tests under tests/jest).
+ * Run: npm test
+ */
 
 /** @type {import('jest').Config} */
 module.exports = {
@@ -19,11 +23,9 @@ module.exports = {
     "!**/.next/**",
     "!**/coverage/**",
     "!**/tests/**",
-    "!**/playwrighttests/**",
     "!**/*.test.{js,jsx}",
     "!jest.config.js",
     "!babel.config.js",
-    "!playwright.config.js",
     "!next.config.js"
   ]
 };

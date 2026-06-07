@@ -69,9 +69,8 @@ export default function DynamicForm({
 
   function renderEditableField(f, forceRequired = false) {
     // `forceRequired` supports layout adapters that enforce UI-required markers.
-    // to enforce required UI on fields that are conditionally mandatory.
     const fieldReadOnly = Boolean(readOnlyFields?.[f.name]);
-    const ui = fieldUiOverrides?.[f.name] || {};
+    const ui = { ...(f.ui || {}), ...(fieldUiOverrides?.[f.name] || {}) };
     const lookupConfig = f.type === "lookup" && f.lookup ? { ...f.lookup, ...(ui.lookup || {}) } : f.lookup;
     const textareaRows = Number.parseInt(String(f.rows ?? ""), 10);
     const useTextarea =
@@ -94,6 +93,21 @@ export default function DynamicForm({
     // use today's date as max. This keeps "future date not allowed" simple in modules.js.
 
     const fieldDomId = `field-${f.name}`;
+    const selectDefault =
+      f.type === "select"
+        ? initialValues?.[f.name] != null && initialValues?.[f.name] !== ""
+          ? String(initialValues[f.name])
+          : f.default != null && f.default !== ""
+            ? String(f.default)
+            : ""
+        : "";
+    const hasFixedSelectDefault =
+      f.type === "select" &&
+      f.default != null &&
+      f.default !== "" &&
+      f.default !== "monthStart" &&
+      f.default !== "monthEnd" &&
+      f.default !== "today";
 
     return (
       <div key={f.name} className="form-field form-field-outline">
@@ -124,40 +138,29 @@ export default function DynamicForm({
               <input
                 type="hidden"
                 name={f.name}
-                value={
-                  initialValues?.[f.name] != null && initialValues?.[f.name] !== ""
-                    ? String(initialValues[f.name])
-                    : f.default != null
-                      ? String(f.default)
-                      : ""
-                }
+                value={selectDefault}
                 required={required}
               />
             ) : null}
             <select
               id={fieldDomId}
               name={fieldReadOnly ? undefined : f.name}
-              defaultValue={
-                initialValues?.[f.name] != null && initialValues?.[f.name] !== ""
-                  ? String(initialValues[f.name])
-                  : f.default != null
-                    ? String(f.default)
-                    : ""
-              }
+              defaultValue={selectDefault}
               required={!fieldReadOnly && required}
               disabled={fieldReadOnly}
               onChange={(e) => {
                 if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
               }}
             >
-              {/* Empty value must exist when there is no default: otherwise defaultValue="" matches no option and submit/validation break. */}
-              <option value="">
-                {ui.emptyOptionLabel != null && String(ui.emptyOptionLabel).trim() !== ""
-                  ? String(ui.emptyOptionLabel).trim()
-                  : required
-                    ? "Select…"
-                    : "—"}
-              </option>
+              {!hasFixedSelectDefault ? (
+                <option value="">
+                  {ui.emptyOptionLabel != null && String(ui.emptyOptionLabel).trim() !== ""
+                    ? String(ui.emptyOptionLabel).trim()
+                    : required
+                      ? "Select…"
+                      : "—"}
+                </option>
+              ) : null}
               {f.options.map((opt) => (
                 <option key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}
@@ -188,6 +191,22 @@ export default function DynamicForm({
             readOnly={fieldReadOnly}
             onRawValueChange={ui.onRawValueChange}
             onBlur={ui.onBlur}
+          />
+        ) : f.type === "month" ? (
+          <input
+            id={fieldDomId}
+            name={f.name}
+            type="month"
+            defaultValue={
+              initialValues?.[f.name] != null && initialValues[f.name] !== ""
+                ? String(initialValues[f.name])
+                : ""
+            }
+            required={required}
+            readOnly={fieldReadOnly}
+            onChange={(e) => {
+              if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+            }}
           />
         ) : f.type === "date" ? (
           <input

@@ -101,6 +101,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
   useEffect(() => {
     if (!isActive) return;
     let cancelled = false;
+    // Load whether the current user may edit this permissions screen.
     (async () => {
       try {
         const res = await fetch("/api/permissions/user_permissions");
@@ -157,6 +158,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
     }
     setBusy(true);
     try {
+      // One row per module with view/create/edit/delete flags and scopes.
       const res = await fetch(`/api/user-permissions-matrix?userId=${encodeURIComponent(uid)}`);
       const text = await res.text();
       const payload = text ? JSON.parse(text) : null;
@@ -274,6 +276,31 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
             </td>
           </tr>
         );
+      }
+      if (row.isReport) {
+        nodes.push(
+          <tr key={row.module}>
+            <td className="perm-matrix-module">
+              <span className="perm-matrix-module-label">{row.label}</span>
+              <span className="perm-matrix-module-sep" aria-hidden>
+                ·
+              </span>
+              <span className="perm-matrix-module-key muted">{row.module}</span>
+            </td>
+            <td className="perm-matrix-cb perm-matrix-divider-left muted" colSpan={10}>
+              <label className="perm-matrix-report-view-only">
+                <input
+                  type="checkbox"
+                  checked={Boolean(row.can_view)}
+                  onChange={(e) => updateCell(row.module, "can_view", e.target.checked)}
+                  aria-label={`View report: ${row.label}`}
+                />
+                <span> View (report)</span>
+              </label>
+            </td>
+          </tr>
+        );
+        continue;
       }
       nodes.push(
         <tr key={row.module}>
@@ -413,7 +440,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
 
           {strayDbRows > 0 ? (
             <p className="perm-matrix-stray muted">
-              {strayDbRows} DB row(s) reference unknown module keys (not in <code>config/modules.js</code>).
+              {strayDbRows} DB row(s) reference unknown module keys (not in config/modules.js or config/reports.js).
             </p>
           ) : null}
 
@@ -527,3 +554,4 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
     </div>
   );
 }
+

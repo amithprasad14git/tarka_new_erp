@@ -332,7 +332,15 @@
 <a name='L267'></a><a href='#L267'>267</a>
 <a name='L268'></a><a href='#L268'>268</a>
 <a name='L269'></a><a href='#L269'>269</a>
-<a name='L270'></a><a href='#L270'>270</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -385,12 +393,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -448,6 +458,7 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -482,6 +493,7 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -503,9 +515,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -561,6 +575,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -571,6 +586,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -654,12 +670,14 @@ export function appendSarfaesiCaseStatusUpdateCasePickerFilter({
 }) {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!mysql || !mainTableRef || !whereParts || !whereValues) <span class="cstat-no" title="statement not covered" >return;</span>
 &nbsp;
+  // Case picker: SARFAESI loan category only (same rule as SARFAESI invoice).
   appendSarfaesiInvoiceCasePickerLoanCategoryFilter({ mysql, mainTableRef, whereParts, whereValues });
 &nbsp;
   const parentTable = escapeSqlTableIdForModuleConfig(modules.sarfaesi_case_status_update);
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!parentTable) <span class="cstat-no" title="statement not covered" >return;</span>
 &nbsp;
   const nciRef = `${mainTableRef}.${mysql.escapeId("id")}`;
+  // One status-update record per case; when editing, keep the current case in the list.
   const parentId = asPositiveInt(parentRecordId);
   <span class="missing-if-branch" title="if path not taken" >I</span>if (parentId) {
 <span class="cstat-no" title="statement not covered" >    whereParts.push(</span>
@@ -723,6 +741,7 @@ async function assertCaseNotAlreadyUsed(conn, caseId, parentRecordId) {
 }
 &nbsp;
 async function assertSarfaesiCaseStatusUpdateDateNotInFrozenFy(conn, parentData, user) {
+  // Unit operators (role 2) cannot post into a frozen financial year; admins can.
   if (!shouldEnforceFreezeTransactionsForUser(user)) return;
   await assertDateNotInFrozenFinancialYear(conn, parentData?.date, {
     onBlocked: () =&gt; throwSarfaesiCaseStatusUpdateValidation(FREEZE_TRANSACTIONS_LOCKED_MESSAGE)
@@ -751,6 +770,7 @@ async function assertParticularsAreActive(conn, childTableRows) {
   const ids = [...new Set(rows.map((r) =&gt; asPositiveInt(r?.particulars)).filter(Boolean))];
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!ids.length) <span class="cstat-no" title="statement not covered" >return;</span>
 &nbsp;
+  // Every particulars id on the form must still be Active = Yes in master.
   const pt = escapeSqlTableIdForModuleConfig(modules.sarfaesi_case_particulars);
   const placeholders = ids.map(() =&gt; "?").join(", ");
   const [activeRows] = await conn.query(
@@ -772,10 +792,12 @@ export async function validateSarfaesiCaseStatusUpdateBeforeWrite(conn, {
   parentRecordId = null,
   user
 }) {
+  // --- Date, FY freeze, SARFAESI case only, one update per case, active particulars rows ---
   const ymd = toYyyyMmDdForSqlDateField(parentData?.date);
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!ymd) {
 <span class="cstat-no" title="statement not covered" >    throwSarfaesiCaseStatusUpdateValidation("Date is required.");</span>
   }
+  // Back-dated or future-dated entries are not allowed.
   const todayYmd = getYmdISTFromInstant(new Date());
   <span class="missing-if-branch" title="if path not taken" >I</span>if (ymd &gt; todayYmd) {
 <span class="cstat-no" title="statement not covered" >    throwSarfaesiCaseStatusUpdateValidation("Date cannot be greater than today.");</span>
@@ -830,6 +852,7 @@ async function resolveYearCodeByDate(conn, bizDate) {
 }
 &nbsp;
 export async function assignSarfaesiCaseStatusUpdateRefNo(conn, recordId) {
+  // --- Ref SRFUP/&lt;yearCode&gt;/#### after INSERT ---
   const parentTable = escapeSqlTableIdForModuleConfig(modules.sarfaesi_case_status_update);
   const seqTable = escapeSqlTableId("module_number_sequence");
   const [rows] = await conn.query(`SELECT id, date FROM ${parentTable} WHERE id = ? LIMIT 1`, [recordId]);
@@ -840,6 +863,7 @@ export async function assignSarfaesiCaseStatusUpdateRefNo(conn, recordId) {
   }
 &nbsp;
   const yearCode = await resolveYearCodeByDate(conn, rowValueForField(rows[0], "date"));
+  // Ref no restarts each FY: SRFUP/&lt;yearCode&gt;/####.
   const sequencePrefix = `SRFUP/${yearCode}`;
 &nbsp;
   await conn.query(
@@ -877,7 +901,7 @@ export async function assignSarfaesiCaseStatusUpdateRefNo(conn, recordId) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -1,3 +1,5 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -8,6 +10,7 @@
  * These tests cover the equivalent auth gate behavior through `getSessionUser`.
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
   return {
@@ -24,7 +27,9 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 const pool = require("../../lib/db").default;
 const { getSessionUser, getSession, refreshSessionExpiry } = require("../../lib/session");
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
 describe("session auth behavior (getSessionUser focused)", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -87,7 +92,9 @@ describe("session auth behavior (getSessionUser focused)", () => {
   });
 });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
 describe("session auth helper primitives", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -103,4 +110,5 @@ describe("session auth helper primitives", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 });
+
 

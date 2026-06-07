@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/new-case-inward/branch-copy-pdf/[id]`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -30,6 +35,7 @@ async function getRequestUser() {
  * 3) Load bank/branch/unit context needed by the Branch Copy layout.
  * 4) Build PDF buffer and return it as a downloadable file.
  */
+// Branch Copy PDF for one NCI case (bank letter to branch).
 export async function GET(_req, { params }) {
   try {
     const user = await getRequestUser();
@@ -131,3 +137,4 @@ export async function GET(_req, { params }) {
     return Response.json({ error: "Failed to generate Branch Copy PDF" }, { status: 500 });
   }
 }
+

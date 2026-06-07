@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `rowScope`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/rowScope.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("mysql2", () => ({
   escapeId: jest.fn((v) => `\`${String(v)}\``)
 }));
@@ -50,11 +58,14 @@ const moduleCfg = {
   fields: [{ name: "id" }, { name: "createdBy" }]
 };
 
+// Automated checks for: rowScope.
 describe("rowScope", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("normalizeDataScope", () => {
     test("normalizes own, unit, all and defaults invalid to all", () => {
       expect(normalizeDataScope("own")).toBe("own");
@@ -65,6 +76,7 @@ describe("rowScope", () => {
     });
   });
 
+// Checks list search and column filters build safe SQL and match the right rows.
   describe("appendRowScopeFilter", () => {
     test("all scope adds no filter", () => {
       const whereParts = [];
@@ -124,6 +136,7 @@ describe("rowScope", () => {
     });
   });
 
+// Automated checks for: rowMatchesScope.
   describe("rowMatchesScope", () => {
     test("all scope and admin bypass allow access", async () => {
       await expect(rowMatchesScope(moduleCfg, { id: 7, role: 2 }, "all", { createdBy: 99 })).resolves.toBe(true);
@@ -173,6 +186,7 @@ describe("rowScope", () => {
     });
   });
 
+// Automated checks for: annotateRowsModifyAccess.
   describe("annotateRowsModifyAccess", () => {
     test("admin bypass marks all rows editable/deletable", async () => {
       const rows = [{ id: 1 }, { id: 2 }];
@@ -254,6 +268,7 @@ describe("rowScope", () => {
     });
   });
 
+// Automated checks for: canUserModifyRow.
   describe("canUserModifyRow", () => {
     test("delegates to edit scope for update action", async () => {
       getScopeForAction.mockResolvedValueOnce("own");
@@ -272,4 +287,5 @@ describe("rowScope", () => {
     });
   });
 });
+
 

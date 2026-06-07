@@ -16,6 +16,8 @@ import { createPortal } from "react-dom";
 const MOBILE_MQ = "(max-width: 900px)";
 const LOGO_SRC = "/images/NPA_04_bg_removed.png";
 
+// Icons for sidebar section headers — keys must match `group` in config/modules.js and config/reports.js exactly.
+// Keys with spaces must be quoted, e.g. "Case Related Reports": "📊"
 const groupIcons = {
   Administration: "🛡️",
   HR: "👥",
@@ -23,7 +25,10 @@ const groupIcons = {
   Lookups: "🛠️",
   Banks: "🏛️",
   Cases: "📚",
-  Invoice: "🧾"
+  Invoice: "🧾",
+  "Case Related Reports": "📊",
+  "General Reports": "🗂️",
+  "Accounts Reports": "💱",
 };
 
 /**
@@ -55,6 +60,7 @@ export default function DashboardSidebar({ groups }) {
     const applyLayout = () => {
       const isMobile = mq.matches;
       setMobile(isMobile);
+      // Mobile uses overlay drawer; desktop restores saved collapsed/expanded preference.
       if (isMobile) {
         setDrawerOpen(false);
         setCollapsed(true);
@@ -383,3 +389,4 @@ export default function DashboardSidebar({ groups }) {
     </aside>
   );
 }
+

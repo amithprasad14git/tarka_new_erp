@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crudListSearch`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/crudListSearch.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("mysql2", () => ({
   escapeId: jest.fn((v) => `\`${String(v)}\``)
 }));
@@ -32,7 +40,9 @@ const { getModuleGlobalSearchColumns, getRefLookupSearchColumns } = require("../
 const { appendGlobalSearchClause, appendLookupFkFilter } = require("../../lib/crudListSearch");
 const { escapeSqlLikePattern } = require("../../lib/sqlLikeEscape");
 
+// Checks list search and column filters build safe SQL and match the right rows.
 describe("crudListSearch.appendGlobalSearchClause", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -91,7 +101,9 @@ describe("crudListSearch.appendGlobalSearchClause", () => {
   });
 });
 
+// Checks list search and column filters build safe SQL and match the right rows.
 describe("crudListSearch.appendLookupFkFilter", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -205,16 +217,19 @@ describe("crudListSearch.appendLookupFkFilter", () => {
   });
 });
 
+// Automated checks for: sqlLikeEscape helper usage expectations.
 describe("sqlLikeEscape helper usage expectations", () => {
   test("SQL LIKE escaping for date/text filter terms", () => {
     expect(escapeSqlLikePattern("100%_done\\x")).toBe("100\\%\\_done\\\\x");
   });
 });
 
+// Automated checks for: not-applicable in this file.
 describe("not-applicable in this file", () => {
   test("numeric filtering and date filtering are handled by CRUD route type logic, not crudListSearch", () => {
     // This test documents scope boundaries: `crudListSearch.js` only builds global text search and lookup FK text filters.
     expect(true).toBe(true);
   });
 });
+
 

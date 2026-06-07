@@ -8,10 +8,11 @@
  * passes `filterLookupTypeName` / `filterLookupType` when set on `lookup` (see lib/lookupLovQueryParams.js).
  * `lookup.ui`: LoV — omit, `"lov"`, `"dropdown"`, `"select"`, `"list"`. Modal — `"picker"`, `"popup"`, `"modal"`, `"dialog"`.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { normalizeLookupUi } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+import { buildLookupLovCacheKey, fetchLookupLovCached } from "../lib/lookupLovCache";
 import LookupPicker from "./LookupPicker";
 
 function appendExtraLovParams(query, lookup) {
@@ -74,8 +75,6 @@ export default function LookupSelect({
 
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const remoteLoadedKeyRef = useRef("");
-  const remoteInFlightKeyRef = useRef("");
   const [value, setValue] = useState(() =>
     initialValue != null && initialValue !== "" ? String(initialValue) : ""
   );
@@ -93,18 +92,11 @@ export default function LookupSelect({
       extraLovParams
     };
   }, [lookup?.module, lookup?.filterLookupTypeName, lookup?.filterLookupType, extraLovParamsKey]);
-  const lookupFetchKey = useMemo(() => {
-    const extraEntries = Object.entries(lookupFetchConfig.extraLovParams || {})
-      .map(([k, v]) => [String(k || "").trim(), v == null ? "" : String(v).trim()])
-      .filter(([k, v]) => Boolean(k) && Boolean(v))
-      .sort(([a], [b]) => a.localeCompare(b));
-    return JSON.stringify({
-      module: lookupFetchConfig.module,
-      filterLookupTypeName: lookupFetchConfig.filterLookupTypeName,
-      filterLookupType: lookupFetchConfig.filterLookupType,
-      extraEntries
-    });
-  }, [lookupFetchConfig]);
+
+  const lovCacheKey = useMemo(
+    () => buildLookupLovCacheKey(lookupFetchConfig, labelField),
+    [lookupFetchConfig, labelField]
+  );
 
   useEffect(() => {
     setValue(initialValue != null && initialValue !== "" ? String(initialValue) : "");
@@ -125,47 +117,37 @@ export default function LookupSelect({
       return;
     }
     if (ui === "picker") return;
-    const loadKey = `${ui}|${labelField}|${lookupFetchKey}`;
-    if (remoteLoadedKeyRef.current === loadKey) return;
-    if (remoteInFlightKeyRef.current === loadKey) return;
-    remoteInFlightKeyRef.current = loadKey;
-    setLoading(true);
     let cancelled = false;
+    setLoading(true);
     async function load() {
       try {
-        const q = new URLSearchParams({
-          page: "1",
-          limit: "500",
-          search: "",
-          sortBy: labelField || "id",
-          sortDir: "asc",
-          lov: "1"
+        const data = await fetchLookupLovCached(lovCacheKey, async () => {
+          const q = new URLSearchParams({
+            page: "1",
+            limit: "500",
+            search: "",
+            sortBy: labelField || "id",
+            sortDir: "asc",
+            lov: "1"
+          });
+          appendLookupValueMasterLovParams(q, lookupFetchConfig);
+          appendExtraLovParams(q, lookupFetchConfig);
+          const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
+          const json = await res.json();
+          return Array.isArray(json?.data) ? json.data : [];
         });
-        appendLookupValueMasterLovParams(q, lookupFetchConfig);
-        appendExtraLovParams(q, lookupFetchConfig);
-        const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
-        const json = await res.json();
-        if (!cancelled && Array.isArray(json?.data)) {
-          setOptions(json.data);
-          remoteLoadedKeyRef.current = loadKey;
-        }
+        if (!cancelled) setOptions(data);
       } catch {
         if (!cancelled) setOptions([]);
       } finally {
-        if (remoteInFlightKeyRef.current === loadKey) {
-          remoteInFlightKeyRef.current = "";
-        }
         if (!cancelled) setLoading(false);
       }
     }
     load();
     return () => {
       cancelled = true;
-      if (remoteInFlightKeyRef.current === loadKey) {
-        remoteInFlightKeyRef.current = "";
-      }
     };
-  }, [ui, lookupFetchKey, lookupFetchConfig, labelField, preloadedOptions, disableRemoteFetch]);
+  }, [ui, lovCacheKey, lookupFetchConfig, labelField, preloadedOptions, disableRemoteFetch]);
 
   if (ui === "picker") {
     return (
@@ -230,3 +212,4 @@ export default function LookupSelect({
     </>
   );
 }
+

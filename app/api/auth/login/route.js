@@ -11,6 +11,7 @@ import { getLoopbackDbHostError, getMissingRequiredDbEnvVars } from "../../../..
 import { getDbErrorHint } from "../../../../lib/dbConnectionError";
 import { cookies } from "next/headers";
 
+// Validate email/password, create DB session, set httpOnly session cookie.
 export async function POST(req) {
   try {
     const missingDb = getMissingRequiredDbEnvVars();
@@ -81,3 +82,4 @@ export async function POST(req) {
     );
   }
 }
+

@@ -1,14 +1,19 @@
+// Application API route — health check for operators and deploy scripts.
+
 /**
  * GET /api/health/db — lightweight DB connectivity check for production deploys.
  * Does not expose credentials; returns a short hint on failure.
  */
 import pool, {
   getLoopbackDbHostError,
-  getMissingRequiredDbEnvVars
+  getMissingRequiredDbEnvVars,
+  getResolvedDbHostForDiagnostics
 } from "../../../../lib/db";
 import { getDbErrorHint } from "../../../../lib/dbConnectionError";
 
+// Quick DB ping for deploy scripts and operators (no secrets in response).
 export async function GET() {
+  // Fail fast when required DB_* env vars are not configured.
   const missing = getMissingRequiredDbEnvVars();
   if (missing.length) {
     return Response.json(
@@ -21,11 +26,13 @@ export async function GET() {
     );
   }
 
+  // Block misconfigured hosts that point at localhost from the cloud.
   const loopback = getLoopbackDbHostError();
   if (loopback) {
     return Response.json({ ok: false, hint: loopback }, { status: 503 });
   }
 
+  // Prove the pool can run a simple query against RDS/MySQL.
   try {
     await pool.query("SELECT 1 AS ok");
     return Response.json({ ok: true });
@@ -39,6 +46,7 @@ export async function GET() {
       {
         ok: false,
         code: error?.code ?? null,
+        host: getResolvedDbHostForDiagnostics(),
         hint: getDbErrorHint(error) || "Database connection failed. Check Amplify logs and RDS security group / SSL settings."
       },
       { status: 503 }

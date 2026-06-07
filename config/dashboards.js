@@ -9,9 +9,11 @@
  * - If the logged-in user has any access on that key, the card is visible.
  * - Keep this separate from `config/modules.js` (these are dashboards, not CRUD modules).
  */
+// Each entry is one landing-page card; `key` is for routing, `permissionKey` gates visibility.
 export const dashboards = [
   {
     key: "cases_overview",
+    // User must have any access on this permission row to see the card.
     permissionKey: "dashboard_cases_overview",
     title: "Cases Overview",
     icon: "📊",
@@ -20,7 +22,7 @@ export const dashboards = [
   },
   {
     key: "recovery_snapshot",
-    permissionKey: "dashboard_recovery_snapshot",
+    permissionKey: "dashboard_recovery_snapshot", // same permission model as cases_overview
     title: "Recovery Snapshot",
     icon: "💰",
     description: "Recovered amount trends and current totals.",
@@ -35,4 +37,5 @@ export const dashboards = [
     tone: "info"
   }
 ];
+
 

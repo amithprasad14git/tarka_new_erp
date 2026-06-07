@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `session`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/session.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("crypto", () => ({
   randomUUID: jest.fn(() => "session-uuid-123")
 }));
@@ -33,11 +41,14 @@ const {
   getSessionUser
 } = require("../../lib/session");
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
 describe("session", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("createSession", () => {
     test("session creation inserts DB row and returns generated id", async () => {
       pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
@@ -56,6 +67,7 @@ describe("session", () => {
     });
   });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("getSession", () => {
     test("valid session retrieval", async () => {
       pool.query.mockResolvedValueOnce([[{ id: "sid-1", user_id: 9, expires_at: "2099-01-01 00:00:00" }]]);
@@ -93,6 +105,7 @@ describe("session", () => {
     });
   });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("refreshSessionExpiry", () => {
     test("sliding session refresh updates expiry for active session id", async () => {
       pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
@@ -115,6 +128,7 @@ describe("session", () => {
     });
   });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("deleteSession", () => {
     test("session deletion/logout deletes row by id", async () => {
       pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
@@ -134,6 +148,7 @@ describe("session", () => {
     });
   });
 
+// Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("getSessionUser", () => {
     test("returns user for valid active session and triggers sliding refresh", async () => {
       const user = { id: 7, fullName: "A", email: "a@x.com", role: 2, unit: 5 };
@@ -186,4 +201,5 @@ describe("session", () => {
     });
   });
 });
+
 

@@ -30,6 +30,7 @@ async function getRequestUser() {
   return getSessionUser(sid);
 }
 
+// Full case dossier PDF (parent + child tables); same access as viewing the NCI record.
 export async function GET(req, { params }) {
   try {
     const user = await getRequestUser();
@@ -42,6 +43,7 @@ export async function GET(req, { params }) {
     }
 
     const { data, childTableRows } = result.body;
+    // Resolve bank and RBO names for PDF header from branch hierarchy.
     let bankName = "";
     let rboName = "";
     const branchId = Number(rowValueForField(data, "branch"));
@@ -104,3 +106,4 @@ export async function GET(req, { params }) {
     );
   }
 }
+

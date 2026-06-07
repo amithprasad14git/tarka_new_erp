@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `lookupLovAccess`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/lookupLovAccess.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     lookup_value_master: { table: "lookup_value_master" },
@@ -49,6 +57,7 @@ jest.mock("../../lib/rbac", () => ({
 const { hasModulePermission } = require("../../lib/rbac");
 const { moduleConfigReferencesLookup, canAccessLovViaReferencingModule } = require("../../lib/lookupLovAccess");
 
+// Automated checks for: lookupLovAccess.moduleConfigReferencesLookup.
 describe("lookupLovAccess.moduleConfigReferencesLookup", () => {
   test("returns true when parent fields reference lookup module", () => {
     const moduleConfig = {
@@ -71,7 +80,9 @@ describe("lookupLovAccess.moduleConfigReferencesLookup", () => {
   });
 });
 
+// Automated checks for: lookupLovAccess.canAccessLovViaReferencingModule.
 describe("lookupLovAccess.canAccessLovViaReferencingModule", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -134,4 +145,5 @@ describe("lookupLovAccess.canAccessLovViaReferencingModule", () => {
     ).rejects.toThrow("permission db failed");
   });
 });
+
 

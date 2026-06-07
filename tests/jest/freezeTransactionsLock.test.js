@@ -1,3 +1,11 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `freezeTransactionsLock`.
+ * Run with: npm test
+ */
+
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     financial_year_master: { table: "financial_year_master" }
@@ -22,6 +30,7 @@ const {
   FREEZE_TRANSACTIONS_LOCKED_MESSAGE
 } = require("../../lib/modules/freezeTransactionsLock");
 
+// Checks frozen financial years block saves for restricted roles.
 describe("freezeTransactionsLock", () => {
   test("shouldEnforceFreezeTransactionsForUser is true only for role 2", () => {
     expect(shouldEnforceFreezeTransactionsForUser({ role: 1 })).toBe(false);
@@ -52,3 +61,4 @@ describe("freezeTransactionsLock", () => {
     expect(onBlocked).not.toHaveBeenCalled();
   });
 });
+

@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.nci.branch-copy-pdf.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -37,7 +45,9 @@ const {
 } = require("../../lib/modules/newCaseInwardBranchCopyPdf");
 const { GET } = require("../../app/api/new-case-inward/branch-copy-pdf/[id]/route");
 
+// Checks printable PDF output is built without crashing and includes expected content.
 describe("api/new-case-inward/branch-copy-pdf/[id] route", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-branch-copy" }) });
@@ -82,4 +92,5 @@ describe("api/new-case-inward/branch-copy-pdf/[id] route", () => {
     expect(conn.release).toHaveBeenCalled();
   });
 });
+
 

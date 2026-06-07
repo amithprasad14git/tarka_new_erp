@@ -25,7 +25,7 @@ export default function PaginationBar({
   const start = safeTotal === 0 ? 0 : (safePage - 1) * safeLimit + 1;
   const end = Math.min(safePage * safeLimit, safeTotal);
 
-  /** @returns {(number|null)[]} numbers or null for ellipsis gap */
+  /** Builds page number buttons with ellipsis gaps for long page counts. */
   function visiblePageList() {
     const t = safeTotalPages;
     const c = safePage;
@@ -109,3 +109,4 @@ export default function PaginationBar({
     </div>
   );
 }
+

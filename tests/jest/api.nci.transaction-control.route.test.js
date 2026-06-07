@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.nci.transaction-control.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -27,9 +35,11 @@ const { getSessionUser } = require("../../lib/session");
 const pool = require("../../lib/db").default;
 const { GET } = require("../../app/api/new-case-inward/transaction-control/route");
 
+// Automated checks for: api/new-case-inward/transaction-control route.
 describe("api/new-case-inward/transaction-control route", () => {
   let consoleErrorSpy;
 
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -67,4 +77,5 @@ describe("api/new-case-inward/transaction-control route", () => {
     await expect(res.json()).resolves.toEqual({ error: "Failed to load transaction control settings" });
   });
 });
+
 

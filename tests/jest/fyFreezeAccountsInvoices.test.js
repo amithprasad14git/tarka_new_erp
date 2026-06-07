@@ -1,5 +1,13 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `fyFreezeAccountsInvoices`.
+ * Run with: npm test
+ */
+
 // FY freezeTransactions on accounts + invoice modules (role 2 enforced, admin skipped).
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     financial_year_master: { table: "financial_year_master" },
@@ -50,6 +58,7 @@ const fyFreezeLockedRoute = {
   reply: [[{ freezeTransactions: "Yes" }]]
 };
 
+// Helper used by tests: createConn.
 function createConn(extraRoutes = []) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -68,6 +77,7 @@ function createConn(extraRoutes = []) {
   };
 }
 
+// Checks frozen financial years block saves for restricted roles.
 describe("FY freeze on accounts and invoice modules", () => {
   const role2FrozenCases = [
     {
@@ -189,3 +199,4 @@ describe("FY freeze on accounts and invoice modules", () => {
     expect(conn.query).not.toHaveBeenCalled();
   });
 });
+

@@ -214,7 +214,13 @@
 <a name='L149'></a><a href='#L149'>149</a>
 <a name='L150'></a><a href='#L150'>150</a>
 <a name='L151'></a><a href='#L151'>151</a>
-<a name='L152'></a><a href='#L152'>152</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -223,10 +229,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
@@ -242,8 +248,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">9x</span>
@@ -270,6 +278,7 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -299,6 +308,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -323,6 +333,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -337,6 +348,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -393,9 +405,11 @@ function normalizeFinalInvoiceFlag(raw) {
  * @param {number} caseId
  */
 export async function anyInvoiceFinalYesForCase(conn, caseId) {
+  // True if recovery, SARFAESI, or vehicle invoice marked this case as final.
   const id = Number(caseId);
   if (!Number.isFinite(id) || id &lt;= 0) return false;
 &nbsp;
+  // Any of the three invoice tables may mark the case as "final".
   const unions = INVOICE_MODULE_KEYS.map((key) =&gt; {
     const mod = modules[key];
     <span class="missing-if-branch" title="if path not taken" >I</span>if (!mod?.table) <span class="cstat-no" title="statement not covered" >return null;</span>
@@ -421,6 +435,7 @@ export async function recomputeNciFinalInvoiceForCase(conn, caseId) {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!Number.isFinite(id) || id &lt;= 0) <span class="cstat-no" title="statement not covered" >return;</span>
 &nbsp;
   const nci = escapeSqlTableIdForModuleConfig(modules.new_case_inward);
+  // Denormalized flag on NCI so pickers and reports can filter without joining all invoice tables.
   const flag = (await anyInvoiceFinalYesForCase(conn, id)) ? FINAL_INVOICE_YES : FINAL_INVOICE_NO;
   await conn.query(`UPDATE ${nci} SET finalInvoice = ? WHERE id = ?`, [flag, id]);
 }
@@ -450,6 +465,7 @@ export function appendInvoiceCasePickerExcludeFinalYesFilter({
   whereValues
 }) {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!mysql || !mainTableRef || !whereParts || !whereValues) <span class="cstat-no" title="statement not covered" >return;</span>
+  // New invoices must not be raised on cases already marked final on NCI.
   const col = `${mainTableRef}.${mysql.escapeId("finalInvoice")}`;
   whereParts.push(`(LOWER(TRIM(COALESCE(${col}, ''))) &lt;&gt; 'yes')`);
 }
@@ -474,6 +490,7 @@ export async function <span class="fstat-no" title="function not covered" >syncN
 <span class="cstat-no" title="statement not covered" >    caseIds.push(oldRow.caseNo);</span>
   }
 &nbsp;
+  // After save, merged payload may omit caseNo — load it from the invoice row we just wrote.
 <span class="cstat-no" title="statement not covered" >  if (!caseIds.length &amp;&amp; (ctx.insertId != null || ctx.id != null)) {</span>
     const mod = <span class="cstat-no" title="statement not covered" >modules[moduleKey];</span>
 <span class="cstat-no" title="statement not covered" >    if (mod?.table) {</span>
@@ -497,6 +514,7 @@ export async function <span class="fstat-no" title="function not covered" >syncN
  * @param {boolean} isCreate
  */
 export async function <span class="fstat-no" title="function not covered" >assertCaseEligibleForNewInvoice(</span>conn, caseIdRaw, isCreate = <span class="branch-0 cbranch-no" title="branch not covered" >true)</span> {
+  // Editing an existing invoice is allowed; only block brand-new invoice rows.
 <span class="cstat-no" title="statement not covered" >  if (!isCreate) <span class="cstat-no" title="statement not covered" >return;</span></span>
   const caseId = <span class="cstat-no" title="statement not covered" >Number(caseIdRaw);</span>
 <span class="cstat-no" title="statement not covered" >  if (!Number.isFinite(caseId) || caseId &lt;= 0) <span class="cstat-no" title="statement not covered" >return;</span></span>
@@ -523,7 +541,7 @@ export { normalizeFinalInvoiceFlag };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

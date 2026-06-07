@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `transferCase`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     transfer_case: { table: "transfer_case" },
@@ -67,6 +75,7 @@ const validTransferDbRoutes = [
   }
 ];
 
+// Helper used by tests: createConn.
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -78,6 +87,7 @@ function createConn(routes) {
   };
 }
 
+// Automated checks for: transferCase module.
 describe("transferCase module", () => {
   test("validateTransferCaseBeforeWrite accepts valid payload", async () => {
     const conn = createConn(validTransferDbRoutes);
@@ -197,4 +207,5 @@ describe("transferCase module", () => {
     );
   });
 });
+
 

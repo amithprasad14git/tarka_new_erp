@@ -1,3 +1,5 @@
+// Application API route — Vehicle Invoice PDF download.
+
 /**
  * GET /api/vehicle-invoice/pdf/:id — 3-page Vehicle Invoice PDF download.
  *
@@ -15,12 +17,14 @@ import {
   safeVehicleInvoicePdfFilename
 } from "../../../../../lib/modules/vehicleInvoicePdf";
 
+// Session cookie → logged-in user.
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
 }
 
+// Bank / RBO / branch labels for Vehicle Loan invoice PDF.
 async function loadBranchChainForPdf(branchId) {
   if (!Number.isFinite(branchId) || branchId <= 0) {
     return { bankCode: "", bankName: "", rboName: "", branchDisplay: "", branchPlace: "" };
@@ -61,12 +65,14 @@ async function loadBranchChainForPdf(branchId) {
   };
 }
 
+// Unit code on printed invoice.
 async function loadUnitShortCode(unitId) {
   if (!Number.isFinite(unitId) || unitId <= 0) return "";
   const [rows] = await queryWithRetry(`SELECT unitCode FROM unit_master WHERE id = ? LIMIT 1`, [unitId]);
   return String(rowValueForField(rows?.[0] || {}, "unitCode") ?? "").trim();
 }
 
+// NPA current account details for payment instructions on PDF.
 async function loadCurrentAccountForPdf(caId) {
   if (!Number.isFinite(caId) || caId <= 0) return null;
   const [rows] = await queryWithRetry(
@@ -99,6 +105,7 @@ async function loadCurrentAccountForPdf(caId) {
   };
 }
 
+// Vehicle Invoice PDF download.
 export async function GET(_req, { params }) {
   try {
     const user = await getRequestUser();
@@ -144,6 +151,7 @@ export async function GET(_req, { params }) {
     const caId = Number(rowValueForField(data, "npaCurrentAc"));
     const currentAccount = await loadCurrentAccountForPdf(caId);
 
+    // Render PDF bytes and return as attachment download.
     const buffer = await buildVehicleInvoicePdfBuffer({
       invoice: data,
       charges,

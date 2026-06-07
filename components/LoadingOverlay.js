@@ -7,6 +7,7 @@
  * Blocks interaction and shows a spinner while mutations or fetches run (used by master and CRUD clients).
  */
 export default function LoadingOverlay({ busy, label = "Please wait…" }) {
+  // Full-screen blocker while async save/load runs.
   if (!busy) return null;
 
   return (
@@ -22,3 +23,4 @@ export default function LoadingOverlay({ busy, label = "Please wait…" }) {
     </div>
   );
 }
+

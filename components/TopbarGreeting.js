@@ -33,6 +33,7 @@ function greetingForHour(hour) {
 /** Greeting in the white top header bar (left), next to theme + profile. */
 export default function TopbarGreeting() {
   const { displayName } = useDashboardUser();
+  // Pick morning/afternoon/evening/night from current IST hour.
   const phrase = greetingForHour(clockHourIST());
 
   // Hide the greeting if we cannot derive a display name.
@@ -46,3 +47,4 @@ export default function TopbarGreeting() {
     </div>
   );
 }
+

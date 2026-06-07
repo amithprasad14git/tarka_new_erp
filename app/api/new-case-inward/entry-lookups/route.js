@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/new-case-inward/entry-lookups`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -11,6 +16,7 @@ import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
 
+// Shape SQL rows into { id, _label } objects the NCI form dropdowns expect.
 function sanitizeLookupRows(rows, valueField) {
   return (Array.isArray(rows) ? rows : []).map((row) => ({
     [valueField]: row?.vf,
@@ -23,8 +29,10 @@ function sanitizeLookupRows(rows, valueField) {
  * It returns one payload keyed by field name so entry/edit screens can avoid
  * many per-field LoV API calls while preserving dropdown UX.
  */
+// Preload all NCI lookup dropdowns in one call (faster than many ?lov=1 requests).
 export async function GET() {
   try {
+    // Must be logged in and allowed to open the NCI screen.
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
@@ -44,6 +52,7 @@ export async function GET() {
     const lookupFields = (nciCfg?.fields || []).filter((f) => f.type === "lookup" && f.lookup?.module);
     const payload = {};
 
+    // One query per lookup field defined on new_case_inward in modules.js.
     for (const field of lookupFields) {
       const lookup = field.lookup || {};
       const refCfg = modules[lookup.module];
@@ -108,4 +117,5 @@ export async function GET() {
     return Response.json({ error: "Failed to load New Case Inward lookups" }, { status: 500 });
   }
 }
+
 

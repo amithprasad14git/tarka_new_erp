@@ -1,6 +1,14 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `api.auth.logout.route`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -13,9 +21,11 @@ const { cookies } = require("next/headers");
 const { deleteSession } = require("../../lib/session");
 const { POST } = require("../../app/api/auth/logout/route");
 
+// Automated checks for: api/auth/logout route.
 describe("api/auth/logout route", () => {
   let consoleErrorSpy;
 
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -52,4 +62,5 @@ describe("api/auth/logout route", () => {
     await expect(res.json()).resolves.toEqual({ error: "Logout failed" });
   });
 });
+
 

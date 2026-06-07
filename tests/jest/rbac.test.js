@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `rbac`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/rbac.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("mysql2", () => ({
   escapeId: jest.fn((v) => `\`${String(v)}\``)
 }));
@@ -35,11 +43,14 @@ const pool = require("../../lib/db").default;
 const { normalizeActionScope } = require("../../lib/permissionScope");
 const { hasModulePermission, hasAnyModuleAccess, getScopeForAction } = require("../../lib/rbac");
 
+// Checks who may view, create, edit, or delete records based on their permission row.
 describe("rbac", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+// Checks who may view, create, edit, or delete records based on their permission row.
   describe("hasModulePermission", () => {
     test("admin bypass: always true without DB lookup", async () => {
       await expect(hasModulePermission({ id: 1, role: 1 }, "employee_master", "view")).resolves.toBe(true);
@@ -102,6 +113,7 @@ describe("rbac", () => {
     });
   });
 
+// Automated checks for: hasAnyModuleAccess.
   describe("hasAnyModuleAccess", () => {
     test("admin bypass: always true", async () => {
       await expect(hasAnyModuleAccess({ id: 1, role: 1 }, "employee_master")).resolves.toBe(true);
@@ -129,6 +141,7 @@ describe("rbac", () => {
     });
   });
 
+// Automated checks for: getScopeForAction.
   describe("getScopeForAction", () => {
     test("admin bypass returns all", async () => {
       await expect(getScopeForAction({ id: 1, role: 1 }, "employee_master", "view")).resolves.toBe("all");
@@ -182,4 +195,5 @@ describe("rbac", () => {
     });
   });
 });
+
 

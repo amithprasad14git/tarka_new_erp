@@ -186,7 +186,10 @@
 <a name='L121'></a><a href='#L121'>121</a>
 <a name='L122'></a><a href='#L122'>122</a>
 <a name='L123'></a><a href='#L123'>123</a>
-<a name='L124'></a><a href='#L124'>124</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -214,22 +217,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -243,6 +240,14 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -308,6 +313,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Shared library helper for reusable application logic.
 // Keep module-specific business logic in lib/modules/&lt;module&gt; files.
@@ -337,6 +343,7 @@ export function parseLookupDisplayFieldSpec(spec, fieldNameSet) {
 }
 &nbsp;
 function <span class="fstat-no" title="function not covered" >fieldNameSetForModule(</span>refCfg) {
+  // Build an allowlist of real column names on the referenced module.
 <span class="cstat-no" title="statement not covered" >  return new Set((refCfg?.fields || []).map(<span class="fstat-no" title="function not covered" >(f</span>) =&gt; <span class="cstat-no" title="statement not covered" >f.name)</span>);</span>
 }
 &nbsp;
@@ -358,6 +365,7 @@ export function <span class="fstat-no" title="function not covered" >resolveLook
 <span class="cstat-no" title="statement not covered" >    if (names.has(explicit)) <span class="cstat-no" title="statement not covered" >return [explicit];</span></span>
 <span class="cstat-no" title="statement not covered" >    return [];</span>
   }
+  // Fall back to the referenced module's default display columns.
 <span class="cstat-no" title="statement not covered" >  if (!ref) <span class="cstat-no" title="statement not covered" >return [];</span></span>
   const raw = <span class="cstat-no" title="statement not covered" >String(ref.lookupDisplayField ?? "").trim();</span>
   const parsed = <span class="cstat-no" title="statement not covered" >parseLookupDisplayFieldSpec(raw, names);</span>
@@ -432,6 +440,7 @@ export function <span class="fstat-no" title="function not covered" >getLookupRo
 <span class="cstat-no" title="statement not covered" >  if (explicit) <span class="cstat-no" title="statement not covered" >return explicit;</span></span>
 <span class="cstat-no" title="statement not covered" >  return `${String(field.name)}Label`;</span>
 }
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -439,7 +448,7 @@ export function <span class="fstat-no" title="function not covered" >getLookupRo
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../prettify.js"></script>
         <script>

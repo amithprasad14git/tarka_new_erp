@@ -1,3 +1,5 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +9,7 @@
  * Target: lib/modules/newCaseInward.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     lookup_value_master: { table: "lookup_value_master" },
@@ -72,6 +75,7 @@ const {
   validateNewCaseInwardBeforeWrite
 } = require("../../lib/modules/newCaseInward");
 
+// Helper used by tests: createConn.
 function createConn(routes) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -85,6 +89,7 @@ function createConn(routes) {
   };
 }
 
+// Helper used by tests: baseRoutes.
 function baseRoutes(overrides = {}) {
   const duplicateRows = overrides.duplicateRows || [];
   const txnRows = overrides.txnRows || [];
@@ -155,6 +160,7 @@ function baseRoutes(overrides = {}) {
   ];
 }
 
+// Automated checks for: newCaseInward module.
 describe("newCaseInward module", () => {
   /**
    * Coverage note:
@@ -162,6 +168,7 @@ describe("newCaseInward module", () => {
    * that requires `LOAN_CATEGORY_CASE_NO_CODES` to be empty. Since the map is hardcoded non-empty
    * in production code and not exported for mutation, this path is intentionally not forced in tests.
    */
+// Automated checks for: resolveNewCaseInwardBankRuleByBranch.
   describe("resolveNewCaseInwardBankRuleByBranch", () => {
     test("returns null for non-numeric branch id", async () => {
       const conn = createConn([]);
@@ -185,6 +192,7 @@ describe("newCaseInward module", () => {
     });
   });
 
+// Automated checks for: final-stage helpers.
   describe("final-stage helpers", () => {
     test("isNewCaseInwardFinalStatusById returns true for final statuses", async () => {
       const conn = createConn([
@@ -212,6 +220,7 @@ describe("newCaseInward module", () => {
     });
   });
 
+// Automated checks for: validateNewCaseInwardBeforeWrite.
   describe("validateNewCaseInwardBeforeWrite", () => {
     const validParent = {
       branch: 1,
@@ -660,6 +669,7 @@ describe("newCaseInward module", () => {
     });
   });
 
+// Automated checks for: assignNewCaseInwardCaseNo.
   describe("assignNewCaseInwardCaseNo", () => {
     test("assigns next case number with mapped loan category code", async () => {
       const conn = createConn([
@@ -782,3 +792,4 @@ describe("newCaseInward module", () => {
     });
   });
 });
+

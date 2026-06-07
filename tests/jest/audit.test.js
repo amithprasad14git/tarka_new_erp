@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `audit`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/audit.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
   return {
@@ -35,6 +43,7 @@ const pool = require("../../lib/db").default;
 const { formatInstantAsMysqlDatetimeIST } = require("../../lib/istDateTime");
 const { pickAuditUpdateSnapshots, writeAuditLog, buildAuditRecordLabel } = require("../../lib/audit");
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("pickAuditUpdateSnapshots", () => {
   test("returns only keys that differ", () => {
     const oldRow = { id: 1, a: 1, b: "x", c: 3 };
@@ -57,7 +66,9 @@ describe("pickAuditUpdateSnapshots", () => {
   });
 });
 
+// Checks the system records who changed what and shows it in a readable way.
 describe("audit.writeAuditLog", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     pool.query.mockResolvedValue([{ affectedRows: 1 }]);
@@ -223,4 +234,5 @@ describe("audit.writeAuditLog", () => {
     ).rejects.toThrow("insert audit failed");
   });
 });
+
 

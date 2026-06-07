@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crudPayloadValidation`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +14,7 @@
 
 const { validateCrudPayloadForWrite } = require("../../lib/services/crudPayloadValidation");
 
+// Helper used by tests: makeModuleConfig.
 function makeModuleConfig() {
   return {
     fields: [
@@ -37,7 +45,9 @@ function makeModuleConfig() {
   };
 }
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
 describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("required field validation", () => {
     test("create: rejects when required field is missing", () => {
       const config = makeModuleConfig();
@@ -58,6 +68,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("email validation", () => {
     test("accepts valid email", () => {
       const config = makeModuleConfig();
@@ -82,6 +93,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("numeric validation", () => {
     test("accepts numeric values and numeric strings", () => {
       const config = makeModuleConfig();
@@ -97,6 +109,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("date format and calendar validation", () => {
     test("accepts valid YYYY-MM-DD", () => {
       const config = makeModuleConfig();
@@ -132,6 +145,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
   describe("select and lookup validation", () => {
     test("rejects select value outside allowed options", () => {
       const config = makeModuleConfig();
@@ -178,6 +192,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Automated checks for: null handling and empty-string behavior.
   describe("null handling and empty-string behavior", () => {
     test("create: optional empty values are allowed/ignored for validation", () => {
       const config = makeModuleConfig();
@@ -203,6 +218,7 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 
+// Automated checks for: invalid module config / malformed payload / unknown fields.
   describe("invalid module config / malformed payload / unknown fields", () => {
     test("invalid module config (missing fields) does not crash and does not validate unknown keys", () => {
       const err = validateCrudPayloadForWrite({}, { any: "value" }, "update", ["any"]);
@@ -254,4 +270,5 @@ describe("crudPayloadValidation.validateCrudPayloadForWrite", () => {
     });
   });
 });
+
 

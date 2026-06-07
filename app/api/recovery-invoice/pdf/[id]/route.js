@@ -1,3 +1,5 @@
+// Application API route — Recovery Invoice PDF download.
+
 /**
  * GET /api/recovery-invoice/pdf/:id — 3-page Recovery Invoice PDF download.
  *
@@ -16,12 +18,14 @@ import {
 } from "../../../../../lib/modules/recoveryInvoicePdf";
 import mysql from "mysql2";
 
+// Session cookie → logged-in user (same pattern as other PDF routes).
 async function getRequestUser() {
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
 }
 
+// Bank / RBO / branch labels for the invoice PDF header (via branch_master chain).
 async function loadBranchChainForRecoveryPdf(branchId) {
   if (!Number.isFinite(branchId) || branchId <= 0) {
     return { bankCode: "", bankName: "", rboName: "", branchDisplay: "", branchPlace: "" };
@@ -62,12 +66,14 @@ async function loadBranchChainForRecoveryPdf(branchId) {
   };
 }
 
+// Unit code shown on printed invoices (from unit_master).
 async function loadUnitShortCode(unitId) {
   if (!Number.isFinite(unitId) || unitId <= 0) return "";
   const [rows] = await queryWithRetry(`SELECT unitCode FROM unit_master WHERE id = ? LIMIT 1`, [unitId]);
   return String(rowValueForField(rows?.[0] || {}, "unitCode") ?? "").trim();
 }
 
+// NPA current account block on the invoice (account + IFSC + GST from masters).
 async function loadCurrentAccountForPdf(caId) {
   if (!Number.isFinite(caId) || caId <= 0) return null;
   const [rows] = await queryWithRetry(
@@ -100,12 +106,14 @@ async function loadCurrentAccountForPdf(caId) {
   };
 }
 
+// Build Recovery Invoice PDF; CRUD layer enforces view permission on the invoice row.
 export async function GET(_req, { params }) {
   try {
     const user = await getRequestUser();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
+    // Load invoice parent + recovery_charges child rows.
     const result = await getCrudRecordById(user, "recovery_invoice", id);
     if (result.status !== 200) {
       return Response.json(result.body, { status: result.status });
@@ -150,6 +158,7 @@ export async function GET(_req, { params }) {
     const caId = Number(rowValueForField(data, "npaCurrentAc"));
     const currentAccount = await loadCurrentAccountForPdf(caId);
 
+    // Render fixed-layout PDF bytes (see lib/modules/recoveryInvoicePdf.js).
     const buffer = await buildRecoveryInvoicePdfBuffer({
       invoice: data,
       charges,
@@ -160,6 +169,7 @@ export async function GET(_req, { params }) {
       currentAccount
     });
 
+    // Return as browser download (attachment), not inline display.
     const filename = safeRecoveryInvoicePdfFilename(invoiceNo || id);
     return new Response(buffer, {
       status: 200,

@@ -1,5 +1,13 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crudNumberFilter`.
+ * Run with: npm test
+ */
+
 import { appendNumberColumnFilter, shouldUseExactNumberColumnFilter } from "../../lib/crudNumberFilter";
 
+// Checks list search and column filters build safe SQL and match the right rows.
 describe("crudNumberFilter", () => {
   test("amount fields use partial digit match on stored value", () => {
     const whereParts = [];
@@ -28,3 +36,4 @@ describe("crudNumberFilter", () => {
     expect(shouldUseExactNumberColumnFilter({ type: "number", integerOnly: true })).toBe(true);
   });
 });
+

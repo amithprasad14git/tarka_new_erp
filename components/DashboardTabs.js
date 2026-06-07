@@ -12,7 +12,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { modules } from "../config/modules";
+import { reports } from "../config/reports";
 import MasterModuleClient from "./MasterModuleClient";
+import ReportModuleClient from "./ReportModuleClient";
 import UserPermissionsMatrixClient from "./UserPermissionsMatrixClient";
 import ToastNotice from "./ToastNotice";
 
@@ -110,6 +112,7 @@ const LANDING_SAMPLE_WIDGETS = {
 function UnitTargetDonut({ rows }) {
   const totalTarget = rows.reduce((s, r) => s + Number(r.recoveryTargetLakh || 0), 0);
   const totalAchieved = rows.reduce((s, r) => s + Number(r.achievedLakh || 0), 0);
+  // Donut fill percentage = achieved ÷ target, clamped 0–100%.
   const pct = totalTarget > 0 ? Math.max(0, Math.min(100, (totalAchieved / totalTarget) * 100)) : 0;
   const r = 48;
   const c = 2 * Math.PI * r;
@@ -231,6 +234,7 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
         return prev;
       }
       if (prev.length >= MAX_OPEN_TABS) {
+        // Enforce tab cap: toast and stay on the current module instead of opening a 6th tab.
         setTimeout(() => {
           setToast({
             kind: "error",
@@ -432,8 +436,8 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
       <ToastNotice toast={toast} onClose={() => setToast(null)} />
       <div className="dashboard-tabs-bar" role="tablist" aria-label="Module tabs">
         {openTabs.map((k) => {
-          const label = modules[k]?.label || k;
-          const icon = modules[k]?.icon || "📄";
+          const label = modules[k]?.label || reports[k]?.label || k;
+          const icon = modules[k]?.icon || reports[k]?.icon || "📄";
           const isActive = k === activeKey;
           return (
             <button
@@ -481,6 +485,8 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
             >
               {k === "user_permissions" ? (
                 <UserPermissionsMatrixClient isActive={isActive} />
+              ) : reports[k] ? (
+                <ReportModuleClient reportKey={k} isActive={isActive} />
               ) : (
                 <MasterModuleClient moduleKey={k} isActive={isActive} />
               )}
@@ -491,4 +497,5 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
     </div>
   );
 }
+
 

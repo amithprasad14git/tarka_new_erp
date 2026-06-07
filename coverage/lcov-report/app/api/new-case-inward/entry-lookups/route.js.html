@@ -174,7 +174,23 @@
 <a name='L109'></a><a href='#L109'>109</a>
 <a name='L110'></a><a href='#L110'>110</a>
 <a name='L111'></a><a href='#L111'>111</a>
-<a name='L112'></a><a href='#L112'>112</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -189,6 +205,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -201,6 +218,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -220,6 +238,7 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -241,14 +260,14 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -285,7 +304,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Application route/page/API handler for this feature area.
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * HTTP handler for `/api/new-case-inward/entry-lookups`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+&nbsp;
+// Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/&lt;module&gt; files.
 &nbsp;
 import mysql from "mysql2";
@@ -298,6 +323,7 @@ import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
 &nbsp;
+// Shape SQL rows into { id, _label } objects the NCI form dropdowns expect.
 function sanitizeLookupRows(rows, valueField) {
   return (Array.isArray(rows) ? rows : <span class="branch-1 cbranch-no" title="branch not covered" >[])</span>.map((row) =&gt; ({
     [valueField]: row?.vf,
@@ -310,8 +336,10 @@ function sanitizeLookupRows(rows, valueField) {
  * It returns one payload keyed by field name so entry/edit screens can avoid
  * many per-field LoV API calls while preserving dropdown UX.
  */
+// Preload all NCI lookup dropdowns in one call (faster than many ?lov=1 requests).
 export async function GET() {
   try {
+    // Must be logged in and allowed to open the NCI screen.
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
@@ -331,6 +359,7 @@ export async function GET() {
     const lookupFields = (nciCfg?.fields || <span class="branch-1 cbranch-no" title="branch not covered" >[])</span>.filter((f) =&gt; f.type === "lookup" &amp;&amp; f.lookup?.module);
     const payload = {};
 &nbsp;
+    // One query per lookup field defined on new_case_inward in modules.js.
     for (const field of lookupFields) {
       const lookup = field.lookup || <span class="branch-1 cbranch-no" title="branch not covered" >{};</span>
       const refCfg = modules[lookup.module];
@@ -396,6 +425,7 @@ export async function GET() {
   }
 }
 &nbsp;
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -403,7 +433,7 @@ export async function GET() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-17T15:30:49.384Z
+                at 2026-06-07T15:27:59.370Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

@@ -63,6 +63,7 @@ export default function TopbarIstClock() {
 
     function tick() {
       const now = new Date();
+      // Refresh label every second so the topbar clock stays live.
       setLabel(formatIstTopbarLabel(now));
       setDateTimeAttr(istDateTimeAttr(now));
     }
@@ -95,3 +96,4 @@ export default function TopbarIstClock() {
     </time>
   );
 }
+

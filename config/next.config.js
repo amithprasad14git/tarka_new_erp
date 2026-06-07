@@ -1,10 +1,15 @@
+/**
+ * next.config — central settings read by the app at startup or on each request.
+ */
+
 // Configuration file for project/runtime behavior.
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export", // enables static HTML export
-  // If you use this file as the active config (`next dev -c config/next.config.js`), keep pdfkit external:
+  // Static export: build produces plain HTML/JS files (e.g. for Amplify hosting without a Node server).
+  output: "export",
+  // pdfkit uses native/font assets; keep it out of the bundled server so PDF routes can load it at runtime.
   serverExternalPackages: ["pdfkit"]
 };
 

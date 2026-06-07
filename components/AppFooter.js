@@ -5,6 +5,7 @@
  * Site footer: copyright and tagline (dashboard shell).
  */
 export default function AppFooter() {
+  // Current year for the copyright line (updates automatically each January).
   const year = new Date().getFullYear();
   return (
     <footer className="app-footer" role="contentinfo">
@@ -16,3 +17,4 @@ export default function AppFooter() {
     </footer>
   );
 }
+

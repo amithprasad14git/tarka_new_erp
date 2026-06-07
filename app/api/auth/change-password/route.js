@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/auth/change-password`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -24,6 +29,7 @@ function normalizeText(value) {
  * 4) Compare current password as plain text (project policy).
  * 5) Save new password as plain text.
  */
+// Logged-in user changes password after verifying current password.
 export async function POST(req) {
   try {
     // Session cookie -> logged-in user object.
@@ -79,3 +85,4 @@ export async function POST(req) {
     return Response.json({ error: "Failed to change password." }, { status: 500 });
   }
 }
+

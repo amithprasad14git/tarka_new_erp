@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `db`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/db.js
  */
 
+// Helper used by tests: withEnv.
 function withEnv(tempEnv, fn) {
   const prev = { ...process.env };
   process.env = { ...prev, ...tempEnv };
@@ -15,6 +23,7 @@ function withEnv(tempEnv, fn) {
     });
 }
 
+// Helper used by tests: loadDbModule.
 function loadDbModule({ env = {}, createPoolImpl, fsExistsSync = () => false, fsReadFileSync = () => "" } = {}) {
   jest.resetModules();
   process.env = { ...process.env, ...env };
@@ -38,6 +47,7 @@ function loadDbModule({ env = {}, createPoolImpl, fsExistsSync = () => false, fs
   return { db, mockPool, createPoolMock };
 }
 
+// Automated checks for: lib/db.
 describe("lib/db", () => {
   test("missing required environment variables", async () => {
     await withEnv(
@@ -364,3 +374,4 @@ describe("lib/db", () => {
     );
   });
 });
+

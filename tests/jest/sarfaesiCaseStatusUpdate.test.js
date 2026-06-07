@@ -1,5 +1,13 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `sarfaesiCaseStatusUpdate`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../config/modules", () => ({
   modules: {
     sarfaesi_case_status_update: { table: "sarfaesi_case_status_update" },
@@ -45,6 +53,7 @@ const {
   validateSarfaesiCaseStatusUpdateBeforeWrite
 } = require("../../lib/modules/sarfaesiCaseStatusUpdate");
 
+// Helper used by tests: createConn.
 function createConn(routes = []) {
   return {
     query: jest.fn(async (sql, params = []) => {
@@ -67,6 +76,7 @@ const validChildRows = {
   sarfaesi_case_status_update_details: [{ particulars: 10, remarks: "Done" }]
 };
 
+// Automated checks for: sarfaesiCaseStatusUpdate module.
 describe("sarfaesiCaseStatusUpdate module", () => {
   test("assignSarfaesiCaseStatusUpdateRefNo stamps SRFUP/year/serial", async () => {
     const conn = createConn([
@@ -213,3 +223,4 @@ describe("sarfaesiCaseStatusUpdate module", () => {
     expect(whereParts.some((p) => p.includes("NOT EXISTS"))).toBe(true);
   });
 });
+

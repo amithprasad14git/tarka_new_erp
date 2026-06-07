@@ -1,3 +1,8 @@
+/**
+ * HTTP handler for `/api/user-permissions-matrix`.
+ * Business rules live in lib/modules; this file loads data and returns JSON or files.
+ */
+
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -9,6 +14,7 @@ import { cookies } from "next/headers";
 import pool from "../../../lib/db";
 import { actionScopesFromDbRow, normalizeActionScope } from "../../../lib/permissionScope";
 import { getRbacMatrixModuleEntries, getRbacMatrixModuleKeySet } from "../../../lib/rbacMatrixModules";
+import { isReportKey } from "../../../lib/reportConfig";
 import { getSessionUser } from "../../../lib/session";
 import { hasModulePermission } from "../../../lib/rbac";
 import { escapeSqlTableId } from "../../../lib/sqlModuleTable";
@@ -17,6 +23,7 @@ import { assertUserPermissionsTargetUserIsActive } from "../../../lib/modules/us
 
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
 
+// Read session cookie and return logged-in admin user (or null).
 async function getRequestUser() {
   // Shared session resolver for this route (same pattern as other APIs).
   const cookieStore = await cookies();
@@ -24,6 +31,7 @@ async function getRequestUser() {
   return getSessionUser(sid);
 }
 
+// Read ?userId= from query string; invalid values become null.
 function parseUserId(url) {
   const raw = url.searchParams.get("userId");
   if (raw == null || raw === "") return null;
@@ -31,6 +39,7 @@ function parseUserId(url) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+// Fetch existing permission rows for one user from user_permissions table.
 async function loadPermRowsForUser(userId) {
   const pt = escapeSqlTableId("user_permissions");
   const [rows] = await pool.query(
@@ -42,6 +51,7 @@ async function loadPermRowsForUser(userId) {
   return rows || [];
 }
 
+// Load the full RBAC matrix for one target user (for the permissions admin screen).
 export async function GET(req) {
   try {
     const user = await getRequestUser();
@@ -87,12 +97,13 @@ export async function GET(req) {
 
     // Defaults keep UI deterministic when permission row does not exist for a module key yet.
     const defaults = { view_scope: "all", edit_scope: "all", delete_scope: "all" };
-    const rows = matrixModules.map(({ key, label, group }) => {
+    const rows = matrixModules.map(({ key, label, group, isReport }) => {
       const existing = byModule[key];
       return {
         module: key,
         label,
         group,
+        isReport: Boolean(isReport),
         id: existing?.id ?? null,
         can_view: existing?.can_view ?? false,
         can_create: existing?.can_create ?? false,
@@ -116,6 +127,7 @@ export async function GET(req) {
   }
 }
 
+// Save the full permission matrix for one user (replace matrix-managed module rows).
 export async function POST(req) {
   try {
     const user = await getRequestUser();
@@ -155,16 +167,29 @@ export async function POST(req) {
       if (byKey.has(mod)) {
         return Response.json({ error: `Duplicate module in rows: ${mod}` }, { status: 400 });
       }
-      byKey.set(mod, {
-        module: mod,
-        can_view: Boolean(r?.can_view),
-        can_create: Boolean(r?.can_create),
-        can_edit: Boolean(r?.can_edit),
-        can_delete: Boolean(r?.can_delete),
-        view_scope: normalizeActionScope(r?.view_scope),
-        edit_scope: normalizeActionScope(r?.edit_scope),
-        delete_scope: normalizeActionScope(r?.delete_scope)
-      });
+      if (isReportKey(mod)) {
+        byKey.set(mod, {
+          module: mod,
+          can_view: Boolean(r?.can_view),
+          can_create: false,
+          can_edit: false,
+          can_delete: false,
+          view_scope: "all",
+          edit_scope: "all",
+          delete_scope: "all"
+        });
+      } else {
+        byKey.set(mod, {
+          module: mod,
+          can_view: Boolean(r?.can_view),
+          can_create: Boolean(r?.can_create),
+          can_edit: Boolean(r?.can_edit),
+          can_delete: Boolean(r?.can_delete),
+          view_scope: normalizeActionScope(r?.view_scope),
+          edit_scope: normalizeActionScope(r?.edit_scope),
+          delete_scope: normalizeActionScope(r?.delete_scope)
+        });
+      }
     }
     if (byKey.size !== allowed.size) {
       return Response.json({ error: "rows must include every module key exactly once" }, { status: 400 });
@@ -235,3 +260,4 @@ export async function POST(req) {
     return Response.json({ error: error?.sqlMessage || "Save failed" }, { status: 500 });
   }
 }
+

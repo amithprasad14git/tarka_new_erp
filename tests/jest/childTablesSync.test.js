@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `childTablesSync`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -5,6 +12,7 @@
  * Comprehensive tests for lib/childTablesSync.js
  */
 
+// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("mysql2", () => ({
   escapeId: jest.fn((v) => `\`${String(v)}\``)
 }));
@@ -12,12 +20,14 @@ jest.mock("mysql2", () => ({
 const mysql = require("mysql2");
 const { syncChildTablesInTransaction } = require("../../lib/childTablesSync");
 
+// Helper used by tests: makeConn.
 function makeConn(impl) {
   return {
     query: jest.fn(impl || (async () => [{ affectedRows: 1 }]))
   };
 }
 
+// Helper used by tests: baseModuleConfig.
 function baseModuleConfig() {
   return {
     childTables: [
@@ -35,7 +45,9 @@ function baseModuleConfig() {
   };
 }
 
+// Checks parent records and their child table rows stay in sync on save.
 describe("childTablesSync.syncChildTablesInTransaction", () => {
+  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -252,4 +264,5 @@ describe("childTablesSync.syncChildTablesInTransaction", () => {
     expect(insertCall[1]).toEqual([11, 0, 9]);
   });
 });
+
 

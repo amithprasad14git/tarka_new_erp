@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `crudNormalize`.
+ * Run with: npm test
+ */
+
 // Test file for validating app behavior and regression safety.
 // Keep module-specific business logic in lib/modules/<module> files.
 
@@ -7,6 +14,7 @@
 
 const { normalizeCrudPayload } = require("../../lib/crudNormalize");
 
+// Helper used by tests: moduleConfig.
 function moduleConfig() {
   return {
     fields: [
@@ -24,6 +32,7 @@ function moduleConfig() {
   };
 }
 
+// Checks incoming form data is cleaned and rejected when rules are broken.
 describe("crudNormalize.normalizeCrudPayload", () => {
   test("empty string to null conversion for date and lookup", () => {
     const input = {
@@ -106,4 +115,5 @@ describe("crudNormalize.normalizeCrudPayload", () => {
     });
   });
 });
+
 

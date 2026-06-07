@@ -39,7 +39,7 @@ export default function ThemeToggle() {
   }, []);
 
   function toggle() {
-    // Toggle theme and persist preference.
+    // Flip light/dark and persist so the next visit remembers the choice.
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
     localStorage.setItem("erp-theme", next);
@@ -66,3 +66,4 @@ export default function ThemeToggle() {
     </button>
   );
 }
+
