@@ -15,6 +15,7 @@ import {
   buildNewCaseInwardBranchCopyPdf,
   safeBranchCopyPdfFilename
 } from "../../../../../lib/modules/newCaseInwardBranchCopyPdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 /**
  * Session helper for API routes in this file.
@@ -133,8 +134,7 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (error) {
-    console.error("Branch copy PDF error:", error);
-    return Response.json({ error: "Failed to generate Branch Copy PDF" }, { status: 500 });
+    return jsonApiErrorForAction(error, "downloadPdf", { logLabel: "Branch copy PDF" });
   }
 }
 

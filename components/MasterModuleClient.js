@@ -17,6 +17,14 @@ import { labelWithRequiredMark } from "../lib/formFieldLabel";
 import { formatViewCellValue } from "../lib/formatViewCellValue";
 // Grid rows may use mixed column name casing from MySQL; see lib/gridRowValue.js.
 import { rowValueForField } from "../lib/gridRowValue";
+import {
+  fetchApiJson,
+  formatApiErrorPayload,
+  formatUserFacingError,
+  isUnauthorizedMessage,
+  readJsonResponse
+} from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import {
   downloadNciBranchCopyPdf,
@@ -991,8 +999,8 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   function normalizeToastMessage(kind, message) {
     const text = String(message || "").trim();
     if (kind !== "error") return text;
-    if (text.toLowerCase() === "unauthorized") {
-      return "Session expired. Please login again.";
+    if (isUnauthorizedMessage(text)) {
+      return apiUserMessage("sessionExpired");
     }
     return text;
   }
@@ -1041,16 +1049,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       }
 
       const res = await fetch(`/api/crud/${moduleKey}?${query.toString()}`);
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || `Failed to load ${moduleKey}`);
+      const payload = await fetchApiJson(res, apiUserMessage("loadList"));
 
       setData(Array.isArray(payload?.data) ? payload.data : []);
       setMeta(
         payload?.meta || { page: 1, limit, total: 0, totalPages: 1, sortBy: "id", sortDir: "desc" }
       );
     } catch (e) {
-      showToast("error", e.message || `Failed to load ${moduleKey}`);
+      showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("loadList") }));
     } finally {
       setBusy(false);
     }
@@ -1131,9 +1137,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       // This determines whether Edit/Delete buttons should be visible.
       try {
         const res = await fetch(`/api/permissions/${moduleKey}`);
-        const text = await res.text();
-        const payload = text ? JSON.parse(text) : null;
-        if (!res.ok) throw new Error(payload?.error || "Failed to load permissions");
+        const payload = await fetchApiJson(res, apiUserMessage("loadPermissions"));
         if (!cancelled && payload) {
           setPermissions({
             canView: Boolean(payload.canView),
@@ -1147,8 +1151,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                 : null
           });
         }
-      } catch {
-        // Default: hide edit/delete when permissions can't be loaded.
+      } catch (e) {
+        if (!cancelled) {
+          showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("loadPermissions") }));
+        }
       }
     }
 
@@ -1204,9 +1210,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setBusy(true);
     try {
       const res = await fetch(`/api/crud/${moduleKey}/${selectedId}`);
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Failed to load record");
+      const payload = await fetchApiJson(res, apiUserMessage("loadRecord"));
 
       const parent = payload?.data;
       if (!parent) throw new Error("Invalid response");
@@ -1218,7 +1222,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       setSelectedId(null);
       setViewMode(false);
     } catch (err) {
-      showToast("error", err.message || "Failed to load record");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("loadRecord") }));
     } finally {
       setBusy(false);
     }
@@ -1237,16 +1241,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setBusy(true);
     try {
       const res = await fetch(`/api/crud/${moduleKey}/${selectedId}`, { method: "DELETE" });
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Failed to delete record");
+      await fetchApiJson(res, apiUserMessage("deleteRecord"));
 
       setSelectedId(null);
       await loadRecords();
       setViewMode(true);
       showToast("success", "Record deleted successfully.");
     } catch (err) {
-      showToast("error", err.message || "Failed to delete record");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("deleteRecord") }));
     } finally {
       setBusy(false);
     }
@@ -1312,7 +1314,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadNciCaseDetailsPdf(id, caseNoHint);
     } catch (err) {
-      showToast("error", err.message || "Failed to download PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1330,7 +1332,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadNciBranchCopyPdf(id, caseNoHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download Branch Copy PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1347,7 +1349,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadPublicNoticePdf(id, refHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download Public Notice PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1364,7 +1366,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadRecoveryInvoicePdf(id, refHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download Recovery Invoice PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1381,7 +1383,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadSarfaesiInvoicePdf(id, refHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download SARFAESI Invoice PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1398,7 +1400,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadVehicleInvoicePdf(id, refHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download Vehicle Invoice PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1416,7 +1418,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     try {
       await downloadReturnCasePdf(id, refHint || null);
     } catch (err) {
-      showToast("error", err.message || "Failed to download Return Case PDF");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
       setBusy(false);
     }
@@ -1433,7 +1435,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadPublicNoticePdf(recordId, valueText);
       } catch (err) {
-        showToast("error", err.message || "Failed to download Public Notice PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1447,7 +1449,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadRecoveryInvoicePdf(recordId, valueText);
       } catch (err) {
-        showToast("error", err.message || "Failed to download Recovery Invoice PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1461,7 +1463,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadSarfaesiInvoicePdf(recordId, valueText);
       } catch (err) {
-        showToast("error", err.message || "Failed to download SARFAESI Invoice PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1475,7 +1477,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadVehicleInvoicePdf(recordId, valueText);
       } catch (err) {
-        showToast("error", err.message || "Failed to download Vehicle Invoice PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1490,7 +1492,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadReturnCasePdf(recordId, valueText);
       } catch (err) {
-        showToast("error", err.message || "Failed to download Return Case PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1508,7 +1510,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadNciCaseDetailsPdf(recordId, valueText || null);
       } catch (err) {
-        showToast("error", err.message || "Failed to download PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1526,7 +1528,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       try {
         await downloadNciBranchCopyPdf(recordId, caseNoForFile || null);
       } catch (err) {
-        showToast("error", err.message || "Failed to download Branch Copy PDF");
+        showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
       } finally {
         setBusy(false);
       }
@@ -1608,9 +1610,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         body: JSON.stringify(body)
       });
 
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || `Failed to save record`);
+      const payload = await fetchApiJson(
+        res,
+        apiUserMessage("saveRecord")
+      );
 
       const ackCfg = config.postCreateAck;
       const pAck = payload?.postCreateAck;
@@ -1657,7 +1660,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
       await resetEntryAfterSave({ clearViewFilters: false });
     } catch (err) {
-      showToast("error", err.message || "Failed to save record");
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("saveRecord") }));
     } finally {
       setBusy(false);
     }

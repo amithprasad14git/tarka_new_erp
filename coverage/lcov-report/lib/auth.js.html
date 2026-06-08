@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.44% </span>
+                <span class="strong">95% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/18</span>
+                <span class='fraction'>19/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">85% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>15/18</span>
+                <span class='fraction'>17/20</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -142,9 +142,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -157,32 +157,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Shared library helper for reusable application logic.
 // Keep module-specific business logic in lib/modules/&lt;module&gt; files.
 &nbsp;
 /**
  * =============================================================================
- * AUTH — Checking email and password at login time
+ * AUTH — Checking username and password at login time
  * =============================================================================
- * This file talks to the `users` table: find the row by email, verify password,
- * and ensure the account is **Active** (Yes). It does *not* set cookies; the login
- * API calls createSession after success (see lib/session.js).
+ * This file talks to the `users` table: find the row by username (case-sensitive),
+ * verify password, and ensure the account is **Active** (Yes). It does *not* set
+ * cookies; the login API calls createSession after success (see lib/session.js).
  *
  * Passwords are currently stored as plain text in users.password.
  * =============================================================================
@@ -203,19 +203,20 @@ function isUserLoginActive(user) {
 }
 &nbsp;
 /**
- * Full login check: find user by email, verify password, check active flag.
+ * Full login check: find user by username, verify password, check active flag.
  *
- * Parameters: email and password from the login form (strings).
+ * Parameters: username and password from the login form (strings).
  * Returns: either `{ user: fullRow }` on success, or `{ error: 'invalid_credentials' }`
- * if email/password wrong, or `{ error: 'inactive' }` if password OK but account disabled.
+ * if username/password wrong, or `{ error: 'inactive' }` if password OK but account disabled.
  *
  * The login route can show different messages for inactive vs wrong password.
  */
-export async function authenticateLogin(email, password) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+export async function authenticateLogin(username, password) {
+  const normalizedUsername = String(username || "").trim();
   const plainPassword = String(password || "");
+  if (!normalizedUsername) return { error: "invalid_credentials" };
   const ut = escapeSqlTableId("users");
-  const [rows] = await pool.query(`SELECT * FROM ${ut} WHERE LOWER(email)=?`, [normalizedEmail]);
+  const [rows] = await pool.query(`SELECT * FROM ${ut} WHERE username=?`, [normalizedUsername]);
   if (!rows.length) return { error: "invalid_credentials" };
   const user = rows[0];
   // Project policy: compare plain text to plain text.
@@ -227,7 +228,6 @@ export async function authenticateLogin(email, password) {
   if (!isUserLoginActive(user)) return { error: "inactive" };
   return { user };
 }
-&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -235,7 +235,7 @@ export async function authenticateLogin(email, password) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-07T15:27:59.370Z
+                at 2026-06-08T14:42:13.482Z
             </div>
         <script src="../prettify.js"></script>
         <script>

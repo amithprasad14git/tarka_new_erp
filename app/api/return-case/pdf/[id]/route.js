@@ -25,6 +25,7 @@ import {
   filterSelectedReturnCaseDetails,
   safeReturnCasePdfFilename
 } from "../../../../../lib/modules/returnCasePdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 /** Read session cookie and return the logged-in user (or null). */
 async function getRequestUser() {
@@ -152,7 +153,6 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (e) {
-    console.error("return-case pdf:", e);
-    return Response.json({ error: "Failed to build PDF" }, { status: 500 });
+    return jsonApiErrorForAction(e, "downloadPdf", { logLabel: "return-case pdf" });
   }
 }

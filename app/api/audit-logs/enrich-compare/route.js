@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../lib/session";
 import { hasModulePermission } from "../../../../lib/rbac";
 import { enrichAuditCompareSnapshot } from "../../../../lib/modules/auditLogsEnrich";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 // Replace raw FK ids in audit compare JSON with human-readable lookup labels.
 export async function POST(request) {
@@ -45,7 +46,6 @@ export async function POST(request) {
 
     return Response.json({ oldData: enrichedOld, newData: enrichedNew });
   } catch (e) {
-    console.error("audit-logs/enrich-compare:", e);
-    return Response.json({ error: "Failed to enrich compare data" }, { status: 500 });
+    return jsonApiErrorForAction(e, "enrichAuditCompare", { logLabel: "audit-logs/enrich-compare" });
   }
 }

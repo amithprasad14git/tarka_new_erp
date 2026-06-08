@@ -17,6 +17,7 @@ jest.mock("../../config/modules", () => ({
     accounts_expense_voucher: { table: "accounts_expense_voucher" },
     accounts_loan_ac: { table: "accounts_loan_ac" },
     accounts_suspense_entry: { table: "accounts_suspense_entry" },
+    current_account_opening_balance: { table: "current_account_opening_balance" },
     new_case_inward: { table: "new_case_inward" },
     recovery_invoice: { table: "recovery_invoice" },
     sarfaesi_invoice: { table: "sarfaesi_invoice" },
@@ -47,6 +48,9 @@ const { validateAccountsCurrentAcTransferBeforeWrite } = require("../../lib/modu
 const { validateAccountsExpenseVoucherBeforeWrite } = require("../../lib/modules/accountsExpenseVoucher");
 const { validateAccountsLoanAcBeforeWrite } = require("../../lib/modules/accountsLoanAc");
 const { validateAccountsSuspenseEntryBeforeWrite } = require("../../lib/modules/accountsSuspenseEntry");
+const {
+  validateCurrentAccountOpeningBalanceBeforeWrite
+} = require("../../lib/modules/currentAccountOpeningBalance");
 const { applyRecoveryInvoiceBeforeWrite } = require("../../lib/modules/recoveryInvoice");
 const { applySarfaesiInvoiceBeforeWrite } = require("../../lib/modules/sarfaesiInvoice");
 const { applyVehicleInvoiceBeforeWrite } = require("../../lib/modules/vehicleInvoice");
@@ -135,6 +139,15 @@ describe("FY freeze on accounts and invoice modules", () => {
       code: "ACCOUNTS_SUSPENSE_ENTRY_VALIDATION_FAILED"
     },
     {
+      name: "current_account_opening_balance",
+      run: (conn) =>
+        validateCurrentAccountOpeningBalanceBeforeWrite(conn, {
+          parentData: { effectiveDate: TEST_DATE },
+          user: { role: 2 }
+        }),
+      code: "CURRENT_ACCOUNT_OPENING_BALANCE_VALIDATION_FAILED"
+    },
+    {
       name: "recovery_invoice",
       run: (conn) =>
         applyRecoveryInvoiceBeforeWrite(conn, {
@@ -175,6 +188,17 @@ describe("FY freeze on accounts and invoice modules", () => {
       code,
       message: FREEZE_TRANSACTIONS_LOCKED_MESSAGE
     });
+  });
+
+  test("allows admin for current_account_opening_balance when FY is frozen", async () => {
+    const conn = createConn();
+    await expect(
+      validateCurrentAccountOpeningBalanceBeforeWrite(conn, {
+        parentData: { effectiveDate: TEST_DATE },
+        user: { role: 1 }
+      })
+    ).resolves.toBeUndefined();
+    expect(conn.query).not.toHaveBeenCalled();
   });
 
   test("allows admin for accounts_suspense_entry when FY is frozen", async () => {

@@ -16,6 +16,7 @@ import {
   buildSarfaesiInvoicePdfBuffer,
   safeSarfaesiInvoicePdfFilename
 } from "../../../../../lib/modules/sarfaesiInvoicePdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 // Session cookie → logged-in user.
 async function getRequestUser() {
@@ -173,7 +174,6 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (e) {
-    console.error("sarfaesi-invoice pdf:", e);
-    return Response.json({ error: "Failed to build PDF" }, { status: 500 });
+    return jsonApiErrorForAction(e, "downloadPdf", { logLabel: "sarfaesi-invoice pdf" });
   }
 }

@@ -28,7 +28,7 @@ const groupIcons = {
   Invoice: "🧾",
   "Case Related Reports": "📊",
   "General Reports": "🗂️",
-  "Accounts Reports": "💱",
+  "Accounts Reports": "🪙",
 };
 
 /**

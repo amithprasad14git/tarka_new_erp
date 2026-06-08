@@ -161,7 +161,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 **`report_region_wise_cumulative_report`** — Region Wise Cummulative Report:
 
 - **Config:** `reportLayout.mode: "custom"`, `contentAlign: "center"` (HTML header + table centered in card)
-- **Filters:** mandatory Financial Year; optional unit, bank, AO/ZO, RBO/RO, branch
+- **Filters:** mandatory Financial Year; optional unit, bank, HO/ZO, RBO/RO, branch
 - **SQL:** settled cases (final statuses except Returned) with `caseStatusUpdatedDate` in FY and `amount_recovered > 0`; grouped by RBO + loan category
 - **HTML:** `ReportCustomOutputView` + `RegionWiseCumulativeReport.js`; green header band, blue subtotals, yellow grand total
 - **Excel:** `lib/reports/custom/report_region_wise_cumulative_report/buildCustomWorkbook.js`
@@ -170,7 +170,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 **`report_unit_wise_cumulative_report`** — Unit Wise Cummulative Report:
 
 - **Config:** `reportLayout.mode: "custom"`, `contentAlign: "center"`
-- **Filters:** mandatory Financial Year; optional unit, bank, AO/ZO, RBO/RO, branch; **Data Type** `Month Wise` (default) | `Summary`
+- **Filters:** mandatory Financial Year; optional unit, bank, HO/ZO, RBO/RO, branch; **Data Type** `Month Wise` (default) | `Summary`
 - **SQL:** same settled-case rules as Region Wise; grouped by calendar month + unit (Month Wise) or unit only (Summary)
 - **HTML:** `ReportCustomOutputView` + `UnitWiseCumulativeReport.js` — Month Wise uses `CumulativeBandedReport`; Summary uses flat `UnitWiseSummaryReport`
 - **Excel:** `lib/reports/custom/report_unit_wise_cumulative_report/buildCustomWorkbook.js` (banded or flat by Data Type)
@@ -179,7 +179,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 **`report_sarfaesi_case_report`** — SARFAESI Case Report:
 
 - **Config:** `reportLayout.mode: "custom"`, title `PENDING SARFAESI CASES STATUS`
-- **Filters:** As on Date (required, defaults to today); optional unit, bank, AO/ZO, RBO/RO, branch, received from; report type HTML | Excel
+- **Filters:** As on Date (required, defaults to today); optional unit, bank, HO/ZO, RBO/RO, branch, received from; report type HTML | Excel
 - **SQL:** open SARFAESI loan-category cases with a `sarfaesi_case_status_update` row; `entrustmentDate <= asOnDate`; excludes `FINAL_CASE_STATUSES` (same open-case rule as Pending Cases on Hand)
 - **Layout:** 4 rows per case — yellow primary header/data, blue particulars band starting under Case No; Sl. No. rowspan across data + particulars rows
 - **Particulars columns:** all active `sarfaesi_case_particulars` ordered by `sequence`, then **Amount Recovered** (sum of `new_case_inward_amount_recovered`) and **Remarks** (`caseStatusRemarks`)
@@ -199,20 +199,20 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_new_case_inward_register`
 - **SQL:** `lib/reports/report_new_case_inward_register.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** dates (month defaults), unit, bank, AO/ZO, RBO/RO, branch, loan category/type, NPA status, received from, file maintenance, report type HTML | Excel
+- **Filters:** dates (month defaults), unit, bank, HO/ZO, RBO/RO, branch, loan category/type, NPA status, received from, file maintenance, report type HTML | Excel
 
 ### Branch Register
 
 - **Key:** `report_branch_register`
-- **SQL:** `lib/reports/report_branch_register.js` (from `branch_master` + bank/AO-ZO/RBO joins)
-- **Filters:** bank, AO/ZO, RBO/RO, active (Yes/No or **Select One** = all), report type HTML | Excel
-- **Columns:** SL NO, Bank, AO/ZO, RBO/RO, Branch Code, Branch Name, Place, Active
+- **SQL:** `lib/reports/report_branch_register.js` (from `branch_master` + bank/HO-ZO/RBO joins)
+- **Filters:** bank, HO/ZO, RBO/RO, active (Yes/No or **Select One** = all), report type HTML | Excel
+- **Columns:** SL NO, Bank, HO/ZO, RBO/RO, Branch Code, Branch Name, Place, Active
 
 ### Pending Cases on Hand
 
 - **Key:** `report_pending_cases_on_hand`
 - **SQL:** `lib/reports/report_pending_cases_on_hand.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** As on Date (defaults to **today**), unit, bank, AO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** As on Date (defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
 - **Open cases only:** `caseStatus` blank or lookup label **not** in `FINAL_CASE_STATUSES` from `lib/modules/newCaseInwardCaseStatus.js` (excludes Returned and all other final statuses). Uses **current** case status; `entrustmentDate <= asOnDate`.
 - **Amount Recovered:** sum of **all** `new_case_inward_amount_recovered` rows per case (not capped by As on Date).
 - **Totals row:** sums Closure Balance and Amount Recovered.
@@ -232,7 +232,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_returned_cases`
 - **SQL:** `lib/reports/report_returned_cases.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** From/To Date (month defaults), unit, bank, AO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** From/To Date (month defaults), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
 - **Returned only:** `LOWER(TRIM(caseStatus lookup)) = 'returned'` — must match **Returned** in `FINAL_CASE_STATUSES`; open/ongoing cases excluded
 - **Date range:** `entrustmentDate` between From and To Date
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
@@ -243,7 +243,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_settled_cases`
 - **SQL:** `lib/reports/report_settled_cases.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** From/To Date (month defaults), unit, bank, AO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** From/To Date (month defaults), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
 - **Settled only:** case status in `FINAL_CASE_STATUSES` **except Returned** (`Closed`, `Settled under Compromise`, etc.); open/ongoing and Returned cases excluded
 - **Date range:** `entrustmentDate` between From and To Date
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
@@ -268,7 +268,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Key:** `report_region_wise_cumulative_report`
 - **SQL:** `lib/reports/report_region_wise_cumulative_report.js`
 - **Layout:** custom (not table pipeline) — see § Custom-layout reports
-- **Filters:** Financial Year (required), unit, bank, AO/ZO, RBO/RO, branch, report type HTML | Excel
+- **Filters:** Financial Year (required), unit, bank, HO/ZO, RBO/RO, branch, report type HTML | Excel
 - **Metrics per RBO region × loan category:** case count, cash recovered (2 decimals), NPA reduced = `closureBalance` (2 decimals)
 - **FY scope:** `caseStatusUpdatedDate` between FY start/end; settled statuses only (excludes Returned)
 
@@ -277,7 +277,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Key:** `report_unit_wise_cumulative_report`
 - **SQL:** `lib/reports/report_unit_wise_cumulative_report.js`
 - **Layout:** custom — see § Custom-layout reports
-- **Filters:** Financial Year (required), unit, bank, AO/ZO, RBO/RO, branch, **Data Type** (Month Wise | Summary), report type HTML | Excel
+- **Filters:** Financial Year (required), unit, bank, HO/ZO, RBO/RO, branch, **Data Type** (Month Wise | Summary), report type HTML | Excel
 - **Month Wise:** 5-column banded table — month rowspan × unit rows (`unitCode - personIncharge`); metrics: case count, cash recovered, NPA reduced = `closureBalance`
 - **Summary:** 4-column flat table — one row per unit (`unitCode - personIncharge`); columns: NO. OF CASES, AMOUNT RECOVERED, NPA REDUCED
 - **FY scope:** `caseStatusUpdatedDate` between FY start/end; settled statuses only (excludes Returned); per-case `amount_recovered > 0`
@@ -287,7 +287,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Key:** `report_sarfaesi_case_report`
 - **SQL:** `lib/reports/report_sarfaesi_case_report.js`
 - **Layout:** custom — see § Custom-layout reports
-- **Filters:** As on Date (required, defaults to **today**), unit, bank, AO/ZO, RBO/RO, branch, received from, report type HTML | Excel
+- **Filters:** As on Date (required, defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, report type HTML | Excel
 - **Scope:** SARFAESI loan category only; must have `sarfaesi_case_status_update`; open cases only (`FINAL_CASE_STATUSES` excluded); `entrustmentDate <= asOnDate`
 - **Particulars:** horizontal columns from active `sarfaesi_case_particulars` (sequence order); values from `sarfaesi_case_status_update_details`
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
@@ -324,7 +324,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **SQL:** `lib/reports/report_invoices_received_ledger.js`
 - **Layout:** standard table pipeline (`ReportOutputView` + `buildReportWorkbook`)
 - **Group:** Accounts Reports
-- **Filters:** Month on **received date** (default current month), optional Unit, NPA Current AC, Bank, AO/ZO, RBO/RO, Branch; report type HTML | Excel
+- **Filters:** Month on **received date** (default current month), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; report type HTML | Excel
 - **Source:** `invoices_received` joined to linked recovery/SARFAESI/vehicle invoice, `new_case_inward`, and bank hierarchy
 - **Role 2:** results scoped to session unit via case join
 - **Columns:** Invoice Date, Invoice No, Received Date, Ref No, Case No, Borrower, Unit, Bank, Branch, NPA Current AC, Billed Amount, TDS Less %, TDS Amount, Received Amount, Round Off (money columns totaled in footer)
@@ -336,7 +336,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **SQL:** `lib/reports/report_invoice_ledger.js`
 - **Layout:** standard table pipeline (`ReportOutputView` + `buildReportWorkbook`)
 - **Group:** Accounts Reports
-- **Filters:** Month (default current month), optional Unit, NPA Current AC, Bank, AO/ZO, RBO/RO, Branch; **Data Type** (Show Active Invoices | Show Pending Invoices | Show Cancelled Invoices); report type HTML | Excel
+- **Filters:** Month (default current month), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; **Data Type** (Show Active Invoices | Show Pending Invoices | Show Cancelled Invoices); report type HTML | Excel
 - **Source:** `recovery_invoice` UNION ALL `sarfaesi_invoice` UNION ALL `vehicle_invoice`, each joined to `new_case_inward` and bank hierarchy; month bounds on invoice `date`
 - **Data Type Active:** `cancelledInvoice = No`
 - **Data Type Cancelled:** `cancelledInvoice = Yes`

@@ -11,6 +11,7 @@ import pool from "../../../../lib/db";
 import { modules } from "../../../../config/modules";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 /**
  * Returns New Case Inward transaction-control rows for UI date-picker limits.
@@ -44,8 +45,7 @@ export async function GET() {
 
     return Response.json({ data: Array.isArray(rows) ? rows : [] });
   } catch (error) {
-    console.error("NCI transaction control API error:", error);
-    return Response.json({ error: "Failed to load transaction control settings" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadTransactionControl", { logLabel: "NCI transaction control API" });
   }
 }
 

@@ -16,17 +16,16 @@ import UserMenu from "./UserMenu";
 
 /**
  * Expands in the topbar; micro lane fills remaining width (flex: 1).
- * @param {{ userEmail: string }} props
+ * @param {{ userUsername: string, userFullName?: string }} props
  */
-export default function DashboardTopbar({ userEmail }) {
+export default function DashboardTopbar({ userUsername, userFullName = "" }) {
   return (
     // Right-side cluster: sparkle lane, clock, theme, account menu.
     <div className="dashboard-topbar-actions">
       <TopbarMicroFloatLane />
       <TopbarIstClock />
       <ThemeToggle />
-      <UserMenu email={userEmail} />
+      <UserMenu username={userUsername} fullName={userFullName} />
     </div>
   );
 }
-

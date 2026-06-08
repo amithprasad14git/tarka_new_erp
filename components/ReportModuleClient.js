@@ -17,6 +17,14 @@ import ToastNotice from "./ToastNotice";
 import ReportOutputView from "./ReportOutputView";
 import ReportCustomOutputView from "./ReportCustomOutputView";
 import ReportOutputSkeleton from "./ReportOutputSkeleton";
+import {
+  formatApiErrorPayload,
+  formatUserFacingError,
+  isUnauthorizedMessage,
+  readApiErrorMessage,
+  readJsonResponse
+} from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 /**
  * @param {{ reportKey: string, isActive?: boolean }} props
  */
@@ -55,8 +63,8 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
 
   function showToastMessage(kind, message) {
     const text = String(message || "").trim();
-    if (kind === "error" && text.toLowerCase() === "unauthorized") {
-      setToast({ kind: "error", message: "Session expired. Please login again." });
+    if (kind === "error" && isUnauthorizedMessage(text)) {
+      setToast({ kind: "error", message: apiUserMessage("sessionExpired") });
       return;
     }
     setToast({ kind, message: text });
@@ -170,15 +178,7 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
       const res = await fetch(`/api/reports/${encodeURIComponent(reportKey)}/run?${q}`);
       if (format === "EXCEL") {
         if (!res.ok) {
-          const errText = await res.text();
-          let errMsg = "Failed to export report";
-          try {
-            const j = JSON.parse(errText);
-            if (j?.error) errMsg = j.error;
-          } catch {
-            /* binary */
-          }
-          throw new Error(errMsg);
+          throw new Error(await readApiErrorMessage(res, apiUserMessage("exportReport")));
         }
         const blob = await res.blob();
         const disp = res.headers.get("Content-Disposition") || "";
@@ -195,13 +195,14 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
         return;
       }
 
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Failed to run report");
+      const payload = await readJsonResponse(res);
+      if (!res.ok) {
+        throw new Error(formatApiErrorPayload(payload, apiUserMessage("runReport")));
+      }
       setHtmlResult(payload);
       setFiltersExpanded(false);
     } catch (err) {
-      showToastMessage("error", err.message || "Failed to run report");
+      showToastMessage("error", formatUserFacingError(err, { fallback: apiUserMessage("runReport") }));
     } finally {
       setBusy(false);
       setHtmlLoading(false);

@@ -13,6 +13,8 @@ import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { normalizeLookupUi } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
 import { buildLookupLovCacheKey, fetchLookupLovCached } from "../lib/lookupLovCache";
+import { formatUserFacingError, readApiErrorMessage } from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 import LookupPicker from "./LookupPicker";
 
 function appendExtraLovParams(query, lookup) {
@@ -75,6 +77,7 @@ export default function LookupSelect({
 
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [value, setValue] = useState(() =>
     initialValue != null && initialValue !== "" ? String(initialValue) : ""
   );
@@ -119,6 +122,7 @@ export default function LookupSelect({
     if (ui === "picker") return;
     let cancelled = false;
     setLoading(true);
+    setLoadError("");
     async function load() {
       try {
         const data = await fetchLookupLovCached(lovCacheKey, async () => {
@@ -133,12 +137,18 @@ export default function LookupSelect({
           appendLookupValueMasterLovParams(q, lookupFetchConfig);
           appendExtraLovParams(q, lookupFetchConfig);
           const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
+          if (!res.ok) {
+            throw new Error(await readApiErrorMessage(res, apiUserMessage("loadLookup")));
+          }
           const json = await res.json();
           return Array.isArray(json?.data) ? json.data : [];
         });
         if (!cancelled) setOptions(data);
-      } catch {
-        if (!cancelled) setOptions([]);
+      } catch (e) {
+        if (!cancelled) {
+          setOptions([]);
+          setLoadError(formatUserFacingError(e, { fallback: apiUserMessage("loadLookup") }));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -173,9 +183,11 @@ export default function LookupSelect({
   // instead of looking like a broken dropdown.
   const emptyMessage = loading
     ? "Loading…"
-    : displayOptions.length === 0
-      ? "No matching records"
-      : "Select…";
+    : loadError
+      ? "Options unavailable"
+      : displayOptions.length === 0
+        ? "No matching records"
+        : "Select…";
 
   // Disabled controls are omitted from form submission; use a hidden input when the value is locked.
   const locked = Boolean(disabledProp);
@@ -209,6 +221,11 @@ export default function LookupSelect({
         );
       })}
     </select>
+    {loadError ? (
+      <span className="muted lookup-load-error" role="alert">
+        {loadError}
+      </span>
+    ) : null}
     </>
   );
 }

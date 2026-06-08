@@ -16,6 +16,7 @@ import {
   buildVehicleInvoicePdfBuffer,
   safeVehicleInvoicePdfFilename
 } from "../../../../../lib/modules/vehicleInvoicePdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 // Session cookie → logged-in user.
 async function getRequestUser() {
@@ -170,7 +171,6 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (e) {
-    console.error("vehicle-invoice pdf:", e);
-    return Response.json({ error: "Failed to build PDF" }, { status: 500 });
+    return jsonApiErrorForAction(e, "downloadPdf", { logLabel: "vehicle-invoice pdf" });
   }
 }

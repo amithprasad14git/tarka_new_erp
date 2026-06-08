@@ -34,6 +34,7 @@ import { appendGlobalSearchClause, appendLookupFkFilter } from "../../../../lib/
 import { escapeSqlLikePattern } from "../../../../lib/sqlLikeEscape";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
 import { createCrudRecord } from "../../../../lib/services/crud.service";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 import { canAccessLovViaReferencingModule } from "../../../../lib/lookupLovAccess";
 import { applyRole2FinalStageEditLock } from "../../../../lib/modules/newCaseInward";
 import { FINAL_CASE_STATUSES } from "../../../../lib/modules/newCaseInwardCaseStatus";
@@ -493,8 +494,7 @@ export async function GET(req, { params }) {
       }
     });
   } catch (error) {
-    console.error("CRUD GET error:", error);
-    return Response.json({ error: "Failed to load records" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadList", { logLabel: "CRUD GET" });
   }
 }
 
@@ -517,8 +517,7 @@ export async function POST(req, { params }) {
     const result = await createCrudRecord(user, module, raw);
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-    console.error("CRUD POST error:", error);
-    return Response.json({ error: "Failed to create record" }, { status: 500 });
+    return jsonApiErrorForAction(error, "saveRecord", { logLabel: "CRUD POST" });
   }
 }
 

@@ -11,6 +11,7 @@ import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
 import { buildPublicNoticePdfBuffer, safePublicNoticePdfFilename } from "../../../../../lib/modules/publicNoticePdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 import mysql from "mysql2";
 
 // Session cookie → logged-in user.
@@ -157,8 +158,7 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (e) {
-    console.error("public-notice pdf:", e);
-    return Response.json({ error: "Failed to build PDF" }, { status: 500 });
+    return jsonApiErrorForAction(e, "downloadPdf", { logLabel: "public-notice pdf" });
   }
 }
 

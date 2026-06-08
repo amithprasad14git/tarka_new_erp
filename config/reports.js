@@ -33,7 +33,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -144,7 +144,7 @@ export const reports = {
       { key: "unitLabel", label: "UNIT", align: "left", widthExcel: 8, widthHtml: "5rem", hideWhenFilterSet: "unit" },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
       { key: "bankLabel", label: "BANK", align: "center", widthExcel: 10, widthHtml: "4rem", hideWhenFilterSet: "bank" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
@@ -191,7 +191,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -235,7 +235,7 @@ export const reports = {
     columns: [
       { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
       { key: "bankLabel", label: "BANK", align: "left", widthExcel: 18, widthHtml: "8rem", hideWhenFilterSet: "bank" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchCode", label: "BRANCH CODE", align: "center", widthExcel: 12, widthHtml: "6rem" },
       { key: "branchName", label: "BRANCH NAME", align: "left", widthExcel: 28, widthHtml: "11rem" },
@@ -270,7 +270,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -379,7 +379,7 @@ export const reports = {
         widthHtml: "6rem"
       },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       {
@@ -452,7 +452,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -577,7 +577,7 @@ export const reports = {
         widthHtml: "6rem"
       },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       {
@@ -650,7 +650,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -759,7 +759,7 @@ export const reports = {
         widthHtml: "6rem"
       },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       {
@@ -833,7 +833,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -942,7 +942,7 @@ export const reports = {
         widthHtml: "6rem"
       },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       {
@@ -1024,7 +1024,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -1133,7 +1133,7 @@ export const reports = {
         widthHtml: "6rem"
       },
       { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "hoZoLabel", label: "AO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
+      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       {
@@ -1221,7 +1221,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -1299,7 +1299,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -1382,7 +1382,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -2361,7 +2361,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {
@@ -2509,7 +2509,7 @@ export const reports = {
       {
         name: "ho_zo",
         type: "lookup",
-        label: "AO/ZO",
+        label: "HO/ZO",
         lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
       },
       {

@@ -16,6 +16,7 @@ import {
   buildRecoveryInvoicePdfBuffer,
   safeRecoveryInvoicePdfFilename
 } from "../../../../../lib/modules/recoveryInvoicePdf";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 import mysql from "mysql2";
 
 // Session cookie → logged-in user (same pattern as other PDF routes).
@@ -179,7 +180,6 @@ export async function GET(_req, { params }) {
       }
     });
   } catch (e) {
-    console.error("recovery-invoice pdf:", e);
-    return Response.json({ error: "Failed to build PDF" }, { status: 500 });
+    return jsonApiErrorForAction(e, "downloadPdf", { logLabel: "recovery-invoice pdf" });
   }
 }

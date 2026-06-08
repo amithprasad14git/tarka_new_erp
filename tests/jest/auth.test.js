@@ -5,14 +5,6 @@
  * Run with: npm test
  */
 
-// Test file for validating app behavior and regression safety.
-// Keep module-specific business logic in lib/modules/<module> files.
-
-/**
- * Comprehensive tests for lib/auth.js
- */
-
-// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
   return {
@@ -29,32 +21,44 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 const pool = require("../../lib/db").default;
 const { authenticateLogin } = require("../../lib/auth");
 
-// Checks sign-in rules: good password, wrong password, inactive account, and safe handling of bad input.
 describe("auth.authenticateLogin", () => {
-  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("successful login", async () => {
-    const user = { id: 1, email: "user@example.com", password: "secret", active: "Yes" };
+  test("successful login with case-sensitive username", async () => {
+    const user = { id: 1, username: "John.Doe", password: "secret", active: "Yes" };
     pool.query.mockResolvedValueOnce([[user]]);
 
-    await expect(authenticateLogin("User@Example.com", "secret")).resolves.toEqual({ user });
-    expect(pool.query).toHaveBeenCalledWith("SELECT * FROM `users` WHERE LOWER(email)=?", ["user@example.com"]);
+    await expect(authenticateLogin("John.Doe", "secret")).resolves.toEqual({ user });
+    expect(pool.query).toHaveBeenCalledWith("SELECT * FROM `users` WHERE username=?", ["John.Doe"]);
+  });
+
+  test("trims username before lookup", async () => {
+    const user = { id: 1, username: "john", password: "secret", active: "Yes" };
+    pool.query.mockResolvedValueOnce([[user]]);
+
+    await expect(authenticateLogin("  john  ", "secret")).resolves.toEqual({ user });
+    expect(pool.query).toHaveBeenCalledWith("SELECT * FROM `users` WHERE username=?", ["john"]);
+  });
+
+  test("username lookup is case-sensitive", async () => {
+    pool.query.mockResolvedValueOnce([[]]);
+    await expect(authenticateLogin("john", "secret")).resolves.toEqual({ error: "invalid_credentials" });
+    expect(pool.query).toHaveBeenCalledWith("SELECT * FROM `users` WHERE username=?", ["john"]);
   });
 
   test("invalid password", async () => {
     pool.query.mockResolvedValueOnce([[{ id: 1, password: "secret", active: "Yes" }]]);
 
-    await expect(authenticateLogin("user@example.com", "wrong")).resolves.toEqual({
+    await expect(authenticateLogin("john", "wrong")).resolves.toEqual({
       error: "invalid_credentials"
     });
   });
 
   test("unknown user", async () => {
     pool.query.mockResolvedValueOnce([[]]);
-    await expect(authenticateLogin("missing@example.com", "secret")).resolves.toEqual({
+    await expect(authenticateLogin("missing.user", "secret")).resolves.toEqual({
       error: "invalid_credentials"
     });
   });
@@ -62,31 +66,30 @@ describe("auth.authenticateLogin", () => {
   test("inactive user", async () => {
     pool.query.mockResolvedValueOnce([[{ id: 1, password: "secret", active: "No" }]]);
 
-    await expect(authenticateLogin("user@example.com", "secret")).resolves.toEqual({ error: "inactive" });
+    await expect(authenticateLogin("john", "secret")).resolves.toEqual({ error: "inactive" });
   });
 
-  test("missing email", async () => {
-    pool.query.mockResolvedValueOnce([[]]);
+  test("missing username skips database lookup", async () => {
     await expect(authenticateLogin("", "secret")).resolves.toEqual({ error: "invalid_credentials" });
-    expect(pool.query).toHaveBeenCalledWith("SELECT * FROM `users` WHERE LOWER(email)=?", [""]);
+    expect(pool.query).not.toHaveBeenCalled();
   });
 
   test("missing password", async () => {
     pool.query.mockResolvedValueOnce([[{ id: 1, password: "secret", active: "Yes" }]]);
 
-    await expect(authenticateLogin("user@example.com", "")).resolves.toEqual({
+    await expect(authenticateLogin("john", "")).resolves.toEqual({
       error: "invalid_credentials"
     });
   });
 
   test("database query failure is propagated", async () => {
     pool.query.mockRejectedValueOnce(new Error("db unavailable"));
-    await expect(authenticateLogin("user@example.com", "secret")).rejects.toThrow("db unavailable");
+    await expect(authenticateLogin("john", "secret")).rejects.toThrow("db unavailable");
   });
 
   test("malformed user record (null row) throws", async () => {
     pool.query.mockResolvedValueOnce([[null]]);
-    await expect(authenticateLogin("user@example.com", "secret")).rejects.toThrow();
+    await expect(authenticateLogin("john", "secret")).rejects.toThrow();
   });
 
   test("SQL injection-safe parameter handling", async () => {
@@ -98,10 +101,8 @@ describe("auth.authenticateLogin", () => {
     });
 
     const [sql, params] = pool.query.mock.calls[0];
-    expect(sql).toBe("SELECT * FROM `users` WHERE LOWER(email)=?");
-    expect(params).toEqual([payload.trim().toLowerCase()]);
+    expect(sql).toBe("SELECT * FROM `users` WHERE username=?");
+    expect(params).toEqual([payload.trim()]);
     expect(sql).not.toContain(payload);
   });
 });
-
-

@@ -15,6 +15,7 @@ import { buildLookupLabelSqlExpression } from "../../../../lib/lookupLabelFieldS
 import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 // Shape SQL rows into { id, _label } objects the NCI form dropdowns expect.
 function sanitizeLookupRows(rows, valueField) {
@@ -113,8 +114,7 @@ export async function GET() {
 
     return Response.json({ data: payload });
   } catch (error) {
-    console.error("NCI entry lookups API error:", error);
-    return Response.json({ error: "Failed to load New Case Inward lookups" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadNciLookups", { logLabel: "NCI entry lookups API" });
   }
 }
 

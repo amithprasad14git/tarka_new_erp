@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">74.19% </span>
+                <span class="strong">82.14% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>23/31</span>
+                <span class='fraction'>23/28</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.77% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>21/27</span>
+                <span class='fraction'>21/24</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -157,9 +157,8 @@
 <a name='L92'></a><a href='#L92'>92</a>
 <a name='L93'></a><a href='#L93'>93</a>
 <a name='L94'></a><a href='#L94'>94</a>
-<a name='L95'></a><a href='#L95'>95</a>
-<a name='L96'></a><a href='#L96'>96</a>
-<a name='L97'></a><a href='#L97'>97</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L95'></a><a href='#L95'>95</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -210,7 +209,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -232,7 +230,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -250,7 +247,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -284,6 +280,7 @@
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
 import { deleteCrudRecord, getCrudRecordById, updateCrudRecord } from "../../../../../lib/services/crud.service";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 &nbsp;
 /** Same as the list route: cookie → session id → user object or null. */
 async function getRequestUser() {
@@ -305,8 +302,7 @@ export async function GET(req, { params }) {
     const result = await getCrudRecordById(user, module, id);
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("CRUD GET by id error:", error);</span>
-<span class="cstat-no" title="statement not covered" >    return Response.json({ error: "Failed to load record" }, { status: 500 });</span>
+<span class="cstat-no" title="statement not covered" >    return jsonApiErrorForAction(error, "loadRecord", { logLabel: "CRUD GET by id" });</span>
   }
 }
 &nbsp;
@@ -327,8 +323,7 @@ export async function PUT(req, { params }) {
     const result = await updateCrudRecord(user, module, id, () =&gt; req.json());
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("CRUD PUT error:", error);</span>
-<span class="cstat-no" title="statement not covered" >    return Response.json({ error: "Failed to update record" }, { status: 500 });</span>
+<span class="cstat-no" title="statement not covered" >    return jsonApiErrorForAction(error, "saveRecord", { logLabel: "CRUD PUT" });</span>
   }
 }
 &nbsp;
@@ -346,8 +341,7 @@ export async function DELETE(req, { params }) {
     const result = await deleteCrudRecord(user, module, id);
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error("CRUD DELETE error:", error);</span>
-<span class="cstat-no" title="statement not covered" >    return Response.json({ error: "Failed to delete record" }, { status: 500 });</span>
+<span class="cstat-no" title="statement not covered" >    return jsonApiErrorForAction(error, "deleteRecord", { logLabel: "CRUD DELETE" });</span>
   }
 }
 &nbsp;
@@ -358,7 +352,7 @@ export async function DELETE(req, { params }) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-07T15:27:59.370Z
+                at 2026-06-08T14:42:13.482Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

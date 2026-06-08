@@ -114,7 +114,7 @@ export default function TopbarWeather() {
           <span className="topbar-weather-loading muted">Loading Weather...</span>
         )}
         {status === "error" && (
-          <span className="topbar-weather-fallback">☁️ Weather Unavailable</span>
+          <span className="topbar-weather-fallback muted">Weather unavailable</span>
         )}
         {status === "ready" && data && (
           <>

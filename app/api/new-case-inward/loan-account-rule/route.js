@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { resolveNewCaseInwardBankRuleByBranch } from "../../../../lib/modules/newCaseInward";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 /** Returns bank-specific Loan Account No length rule by selected Branch. */
 // Tell the NCI form how many digits Loan Account No must have for the selected branch’s bank.
@@ -37,8 +38,7 @@ export async function GET(req) {
       conn.release();
     }
   } catch (error) {
-    console.error("Loan account rule API error:", error);
-    return Response.json({ error: "Failed to load loan account rule" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadLoanAccountRule", { logLabel: "Loan account rule API" });
   }
 }
 

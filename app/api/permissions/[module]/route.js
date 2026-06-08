@@ -8,6 +8,7 @@
 import { modules } from "../../../../config/modules";
 import { getSessionUser } from "../../../../lib/session";
 import { hasModulePermission } from "../../../../lib/rbac";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 import { cookies } from "next/headers";
 
 // Tell the UI which buttons to show (view/create/edit/delete) for one module.
@@ -48,8 +49,7 @@ export async function GET(req, { params }) {
       unit: user.unit != null && String(user.unit).trim() !== "" ? user.unit : null
     });
   } catch (error) {
-    console.error("RBAC permissions error:", error);
-    return Response.json({ error: "Failed to load permissions" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadPermissions", { logLabel: "RBAC permissions" });
   }
 }
 

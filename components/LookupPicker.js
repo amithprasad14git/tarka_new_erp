@@ -11,6 +11,8 @@ import { useEffect, useMemo, useState } from "react";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { getPickerColumns } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+import { formatUserFacingError, readApiErrorMessage } from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 
 function appendExtraLovParams(query, lookup) {
   // Inject optional dependent filters (e.g., users by selected unit) into picker API calls.
@@ -82,6 +84,7 @@ export default function LookupPicker({
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ totalPages: 1 });
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     const nextId = initialValue != null && initialValue !== "" ? String(initialValue) : "";
@@ -136,6 +139,7 @@ export default function LookupPicker({
     // Load paged picker rows whenever modal opens or search/page changes.
     async function load() {
       setLoading(true);
+      setLoadError("");
       try {
         const q = new URLSearchParams({
           page: String(page),
@@ -148,14 +152,18 @@ export default function LookupPicker({
         appendLookupValueMasterLovParams(q, lookupFetchConfig);
         appendExtraLovParams(q, lookupFetchConfig);
         const res = await fetch(`/api/crud/${lookupFetchConfig.module}?${q.toString()}`);
+        if (!res.ok) {
+          throw new Error(await readApiErrorMessage(res, apiUserMessage("loadLookup")));
+        }
         const json = await res.json();
         if (cancelled) return;
         setRows(Array.isArray(json?.data) ? json.data : []);
         setMeta(json?.meta || { totalPages: 1, page: 1 });
-      } catch {
+      } catch (e) {
         if (!cancelled) {
           setRows([]);
           setMeta({ totalPages: 1 });
+          setLoadError(formatUserFacingError(e, { fallback: apiUserMessage("loadLookup") }));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -237,6 +245,7 @@ export default function LookupPicker({
             setSearchInput("");
             setSubmittedSearch("");
             setPage(1);
+            setLoadError("");
           }}
           title={disabled ? undefined : "Open lookup search"}
           aria-haspopup="dialog"
@@ -283,6 +292,10 @@ export default function LookupPicker({
             <div className="lookup-picker-table-wrap">
               {loading ? (
                 <p className="lookup-picker-loading">Loading…</p>
+              ) : loadError ? (
+                <p className="lookup-picker-load-error muted" role="alert">
+                  {loadError}
+                </p>
               ) : (
                 <table className="data-table data-table-compact lookup-picker-table">
                   <thead>

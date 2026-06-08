@@ -4,26 +4,39 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * Top-right avatar dropdown: shows email and triggers POST `/api/auth/logout` before navigating away.
+ * Top-right avatar dropdown: shows username and triggers POST `/api/auth/logout` before navigating away.
  */
 import { useEffect, useRef, useState } from "react";
+import {
+  formatApiErrorPayload,
+  formatUserFacingError,
+  readJsonResponse
+} from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 
-function initialsFromEmail(email) {
-  // Convert email into 1-2 initials for a compact avatar.
-  if (!email) return "?";
-  const local = email.split("@")[0] || email;
-  const parts = local.replace(/[^a-zA-Z0-9]/g, " ").trim().split(/\s+/);
+function initialsFromIdentity(fullName, username) {
+  const name = String(fullName || "").trim();
+  if (name) {
+    const parts = name.replace(/[^a-zA-Z0-9]/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase().slice(0, 2);
+    }
+    return parts[0]?.slice(0, 2).toUpperCase() || "?";
+  }
+  const user = String(username || "").trim();
+  if (!user) return "?";
+  const parts = user.replace(/[^a-zA-Z0-9]/g, " ").trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return (parts[0][0] + parts[1][0]).toUpperCase().slice(0, 2);
   }
-  return local.slice(0, 2).toUpperCase();
+  return user.slice(0, 2).toUpperCase();
 }
 
 /**
- * Avatar opens a popover with email and logout (Flux-style header).
- * @param {{ email: string }} props
+ * Avatar opens a popover with username and logout (Flux-style header).
+ * @param {{ username: string, fullName?: string }} props
  */
-export default function UserMenu({ email }) {
+export default function UserMenu({ username, fullName = "" }) {
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   // Inline change-password card state inside the user popover.
@@ -84,20 +97,26 @@ export default function UserMenu({ email }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(passwordForm)
       });
-      const payload = await res.json();
-      if (!res.ok) throw new Error(payload?.error || "Failed to change password.");
+      const payload = await readJsonResponse(res);
+      if (!res.ok) {
+        throw new Error(formatApiErrorPayload(payload, apiUserMessage("changePassword")));
+      }
       // Success path: show toast-like message and close form.
       setPasswordMessage({ kind: "success", text: payload?.message || "Password changed successfully." });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setShowChangePassword(false);
     } catch (err) {
-      setPasswordMessage({ kind: "error", text: err.message || "Failed to change password." });
+      setPasswordMessage({
+        kind: "error",
+        text: formatUserFacingError(err, { fallback: apiUserMessage("changePassword") })
+      });
     } finally {
       setChangingPassword(false);
     }
   }
 
-  const initials = initialsFromEmail(email);
+  const initials = initialsFromIdentity(fullName, username);
+  const signedInAs = String(username || "").trim();
 
   return (
     <div className="user-menu-wrap" ref={wrapRef}>
@@ -121,8 +140,8 @@ export default function UserMenu({ email }) {
             </span>
             <div className="user-menu-text">
               <div className="user-menu-label">Signed in as</div>
-              <div className="user-menu-email" title={email}>
-                {email}
+              <div className="user-menu-email" title={signedInAs}>
+                {signedInAs || "—"}
               </div>
             </div>
           </div>

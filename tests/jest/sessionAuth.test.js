@@ -24,6 +24,9 @@ jest.mock("../../lib/sqlModuleTable", () => ({
   escapeSqlTableId: jest.fn((name) => `\`${String(name)}\``)
 }));
 
+const SESSION_USER_SQL =
+  "SELECT u.id, u.fullName, u.username, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1";
+
 const pool = require("../../lib/db").default;
 const { getSessionUser, getSession, refreshSessionExpiry } = require("../../lib/session");
 
@@ -35,7 +38,7 @@ describe("session auth behavior (getSessionUser focused)", () => {
   });
 
   test("valid session retrieval returns user and refreshes sliding expiry", async () => {
-    const user = { id: 7, fullName: "Demo", email: "demo@example.com", role: 2, unit: 5 };
+    const user = { id: 7, fullName: "Demo", username: "demo.user", email: "demo@example.com", role: 2, unit: 5 };
     pool.query
       .mockResolvedValueOnce([[user]]) // join sessions->users
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // refresh update
@@ -68,10 +71,7 @@ describe("session auth behavior (getSessionUser focused)", () => {
     const malformed = "' OR 1=1 --";
     pool.query.mockResolvedValueOnce([[]]);
     await expect(getSessionUser(malformed)).resolves.toBeNull();
-    expect(pool.query).toHaveBeenCalledWith(
-      "SELECT u.id, u.fullName, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1",
-      [malformed]
-    );
+    expect(pool.query).toHaveBeenCalledWith(SESSION_USER_SQL, [malformed]);
   });
 
   test("inactive user handling returns null (filtered by SQL active=yes)", async () => {
@@ -86,7 +86,7 @@ describe("session auth behavior (getSessionUser focused)", () => {
 
   test("database query failure in sliding refresh is propagated after valid user", async () => {
     pool.query
-      .mockResolvedValueOnce([[{ id: 7, fullName: "Demo", email: "demo@example.com", role: 2, unit: 5 }]])
+      .mockResolvedValueOnce([[{ id: 7, fullName: "Demo", username: "demo.user", email: "demo@example.com", role: 2, unit: 5 }]])
       .mockRejectedValueOnce(new Error("refresh failed"));
     await expect(getSessionUser("sid-refresh")).rejects.toThrow("refresh failed");
   });

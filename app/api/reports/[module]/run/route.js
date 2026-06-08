@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
 import { isReportKey } from "../../../../../lib/reportConfig";
 import { runReportForUser } from "../../../../../lib/reports/report.service";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 async function getRequestUser() {
   const cookieStore = await cookies();
@@ -86,7 +87,8 @@ export async function GET(req, { params }) {
 
     return Response.json(result.body);
   } catch (e) {
-    console.error("report run:", e);
-    return Response.json({ error: "Failed to run report" }, { status: 500 });
+    const format = new URL(req.url).searchParams.get("format");
+    const key = String(format || "").toLowerCase() === "excel" ? "exportReport" : "runReport";
+    return jsonApiErrorForAction(e, key, { logLabel: "report run" });
   }
 }

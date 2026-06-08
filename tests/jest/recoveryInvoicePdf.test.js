@@ -5,7 +5,11 @@
  * Run with: npm test
  */
 
-const { buildRecoveryInvoicePdfBuffer, countRecoveryInvoicePdfPages } = require("../../lib/modules/recoveryInvoicePdf");
+const {
+  buildRecoveryInvoicePdfBuffer,
+  countRecoveryInvoicePdfPages,
+  RECOVERY_INVOICE_RCM_NOTE
+} = require("../../lib/modules/recoveryInvoicePdf");
 
 const minimalPayload = {
   invoice: { date: "2026-05-16", invoiceNo: "INV/2627/0008" },
@@ -50,6 +54,12 @@ describe("recoveryInvoicePdf", () => {
   test("document has exactly 3 pages (one per copy)", async () => {
     const pages = await countRecoveryInvoicePdfPages(minimalPayload);
     expect(pages).toBe(3);
+  });
+
+  test("RCM note includes full notification date (not clipped at 'dated')", () => {
+    expect(RECOVERY_INVOICE_RCM_NOTE).toContain("28/06/2017");
+    expect(RECOVERY_INVOICE_RCM_NOTE).toContain("Central Tax (Rate) dated");
+    expect(RECOVERY_INVOICE_RCM_NOTE).toMatch(/Central Tax \(Rate\) dated 28\/06\/2017/);
   });
 });
 

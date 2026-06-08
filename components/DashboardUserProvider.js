@@ -10,6 +10,7 @@ import { createContext, useContext, useMemo } from "react";
 
 const DashboardUserContext = createContext({
   fullName: "",
+  username: "",
   email: "",
   displayName: "",
   unitId: null
@@ -34,18 +35,21 @@ export function displayNameFromEmail(email) {
 
 /**
  * Supplies logged-in user to dashboard client pages (greeting, etc.).
- * @param {{ children: import("react").ReactNode, fullName?: string, email: string, unitId?: number }} props
+ * @param {{ children: import("react").ReactNode, fullName?: string, username?: string, email?: string, unitId?: number }} props
  */
-export function DashboardUserProvider({ children, fullName = "", email, unitId = null }) {
+export function DashboardUserProvider({ children, fullName = "", username = "", email = "", unitId = null }) {
   const normalizedFullName = String(fullName || "").trim();
+  const normalizedUsername = String(username || "").trim();
   const value = useMemo(
     () => ({
       fullName: normalizedFullName,
+      username: normalizedUsername,
       email: email || "",
-      displayName: normalizedFullName || displayNameFromEmail(email || ""),
+      displayName:
+        normalizedFullName || displayNameFromEmail(email || "") || normalizedUsername,
       unitId: unitId != null && Number.isFinite(Number(unitId)) ? Number(unitId) : null
     }),
-    [normalizedFullName, email, unitId]
+    [normalizedFullName, normalizedUsername, email, unitId]
   );
 
   return (

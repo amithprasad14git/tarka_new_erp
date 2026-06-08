@@ -71,10 +71,15 @@ describe("api/new-case-inward/transaction-control route", () => {
 
   test("returns 500 when query fails", async () => {
     getSessionUser.mockResolvedValue({ id: 10 });
-    pool.query.mockRejectedValueOnce(new Error("db down"));
+    pool.query.mockRejectedValueOnce(
+      Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
+    );
     const res = await GET();
     expect(res.status).toBe(500);
-    await expect(res.json()).resolves.toEqual({ error: "Failed to load transaction control settings" });
+    await expect(res.json()).resolves.toEqual({
+      error: "We could not load transaction control settings. The server could not connect to the database. Please contact your administrator.",
+      hint: expect.stringContaining("connection refused")
+    });
   });
 });
 

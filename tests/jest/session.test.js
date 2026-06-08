@@ -41,6 +41,9 @@ const {
   getSessionUser
 } = require("../../lib/session");
 
+const SESSION_USER_SQL =
+  "SELECT u.id, u.fullName, u.username, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1";
+
 // Checks whether a logged-in cookie still works, expires, or is rejected.
 describe("session", () => {
   // Reset mocks and default stubs before each example runs.
@@ -151,17 +154,13 @@ describe("session", () => {
 // Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("getSessionUser", () => {
     test("returns user for valid active session and triggers sliding refresh", async () => {
-      const user = { id: 7, fullName: "A", email: "a@x.com", role: 2, unit: 5 };
+      const user = { id: 7, fullName: "A", username: "a.user", email: "a@x.com", role: 2, unit: 5 };
       pool.query
         .mockResolvedValueOnce([[user]]) // join query
         .mockResolvedValueOnce([{ affectedRows: 1 }]); // refresh query
 
       await expect(getSessionUser("sid-1")).resolves.toEqual(user);
-      expect(pool.query).toHaveBeenNthCalledWith(
-        1,
-        "SELECT u.id, u.fullName, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1",
-        ["sid-1"]
-      );
+      expect(pool.query).toHaveBeenNthCalledWith(1, SESSION_USER_SQL, ["sid-1"]);
       expect(pool.query).toHaveBeenNthCalledWith(
         2,
         "UPDATE `sessions` SET expires_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id=? AND expires_at > NOW()",
@@ -189,10 +188,7 @@ describe("session", () => {
       const malformed = "sid'; --";
       pool.query.mockResolvedValueOnce([[]]);
       await expect(getSessionUser(malformed)).resolves.toBeNull();
-      expect(pool.query).toHaveBeenCalledWith(
-        "SELECT u.id, u.fullName, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1",
-        [malformed]
-      );
+      expect(pool.query).toHaveBeenCalledWith(SESSION_USER_SQL, [malformed]);
     });
 
     test("database failure handling: getSessionUser propagates DB error", async () => {

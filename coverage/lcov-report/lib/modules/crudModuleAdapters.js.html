@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.11% </span>
+                <span class="strong">10.34% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/54</span>
+                <span class='fraction'>6/58</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">8.33% </span>
+                <span class="strong">7.69% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/24</span>
+                <span class='fraction'>2/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.11% </span>
+                <span class="strong">10.2% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/45</span>
+                <span class='fraction'>5/49</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.53% </span>
+                <span class="strong">10.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/52</span>
+                <span class='fraction'>6/56</span>
             </div>
         
             
@@ -363,7 +363,25 @@
 <a name='L298'></a><a href='#L298'>298</a>
 <a name='L299'></a><a href='#L299'>299</a>
 <a name='L300'></a><a href='#L300'>300</a>
-<a name='L301'></a><a href='#L301'>301</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -651,6 +669,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -698,6 +730,8 @@ import { applyAccountsExpenseVoucherBeforeWrite } from "./accountsExpenseVoucher
 import { applyAccountsLoanAcBeforeWrite } from "./accountsLoanAc";
 import { applyAccountsSuspenseEntryBeforeWrite } from "./accountsSuspenseEntry";
 import { applyUserPermissionsBeforeWrite } from "./userPermissions";
+import { applyUsersBeforeWrite } from "./users";
+import { applyCurrentAccountOpeningBalanceBeforeWrite } from "./currentAccountOpeningBalance";
 import {
   afterRecoveryInvoiceWrite,
   applyRecoveryInvoiceBeforeWrite
@@ -948,6 +982,20 @@ const ADAPTERS = {
         recordId: id != null ? Number(id) : null
       })
   },
+  current_account_opening_balance: {
+    requiresUpdateTransaction: true,
+    beforeCreateWrite: <span class="fstat-no" title="function not covered" >as</span>ync ({ conn, user, merged }) =&gt;
+<span class="cstat-no" title="statement not covered" >      applyCurrentAccountOpeningBalanceBeforeWrite(conn, { oldRow: null, merged, user }),</span>
+    beforeUpdateWrite: <span class="fstat-no" title="function not covered" >as</span>ync ({ conn, user, oldRow, merged }) =&gt;
+<span class="cstat-no" title="statement not covered" >      applyCurrentAccountOpeningBalanceBeforeWrite(conn, { oldRow, merged, user })</span>
+  },
+  users: {
+    requiresUpdateTransaction: true,
+    beforeCreateWrite: <span class="fstat-no" title="function not covered" >as</span>ync ({ conn, merged }) =&gt;
+<span class="cstat-no" title="statement not covered" >      applyUsersBeforeWrite(conn, { merged, oldRow: null, recordId: null }),</span>
+    beforeUpdateWrite: <span class="fstat-no" title="function not covered" >as</span>ync ({ conn, oldRow, merged, id }) =&gt;
+<span class="cstat-no" title="statement not covered" >      applyUsersBeforeWrite(conn, { merged, oldRow, recordId: id != null ? Number(id) : null })</span>
+  },
   // Only active users may appear on user_id LoV (config); this enforces the same rule on save.
   user_permissions: {
     requiresUpdateTransaction: true,
@@ -970,7 +1018,7 @@ export function getCrudModuleAdapter(moduleKey) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-07T15:27:59.370Z
+                at 2026-06-08T14:42:13.482Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

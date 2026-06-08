@@ -102,10 +102,17 @@ const { GET, POST } = require("../../app/api/crud/[module]/route");
 
 // Checks the HTTP API handler returns the right status codes and messages.
 describe("api/crud/[module] route", () => {
+  let consoleErrorSpy;
+
   // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-crud" }) });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   test("GET returns 401 when session missing", async () => {
@@ -181,6 +188,21 @@ describe("api/crud/[module] route", () => {
     expect(createCrudRecord).toHaveBeenCalledWith({ id: 1 }, "sample_module", { name: "X" });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true, id: 10 });
+  });
+
+  test("GET returns layman error with hint when query fails", async () => {
+    getSessionUser.mockResolvedValue({ id: 1, role: 1 });
+    hasModulePermission.mockResolvedValue(true);
+    pool.query.mockRejectedValueOnce(
+      Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
+    );
+    const req = { url: "http://localhost/api/crud/sample_module?page=1&limit=20" };
+    const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
+    expect(res.status).toBe(500);
+    await expect(res.json()).resolves.toEqual({
+      error: expect.stringContaining("could not load the list"),
+      hint: expect.stringContaining("connection refused")
+    });
   });
 });
 

@@ -27,6 +27,7 @@
 import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../../lib/session";
 import { deleteCrudRecord, getCrudRecordById, updateCrudRecord } from "../../../../../lib/services/crud.service";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 /** Same as the list route: cookie → session id → user object or null. */
 async function getRequestUser() {
@@ -48,8 +49,7 @@ export async function GET(req, { params }) {
     const result = await getCrudRecordById(user, module, id);
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-    console.error("CRUD GET by id error:", error);
-    return Response.json({ error: "Failed to load record" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadRecord", { logLabel: "CRUD GET by id" });
   }
 }
 
@@ -70,8 +70,7 @@ export async function PUT(req, { params }) {
     const result = await updateCrudRecord(user, module, id, () => req.json());
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-    console.error("CRUD PUT error:", error);
-    return Response.json({ error: "Failed to update record" }, { status: 500 });
+    return jsonApiErrorForAction(error, "saveRecord", { logLabel: "CRUD PUT" });
   }
 }
 
@@ -89,8 +88,7 @@ export async function DELETE(req, { params }) {
     const result = await deleteCrudRecord(user, module, id);
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-    console.error("CRUD DELETE error:", error);
-    return Response.json({ error: "Failed to delete record" }, { status: 500 });
+    return jsonApiErrorForAction(error, "deleteRecord", { logLabel: "CRUD DELETE" });
   }
 }
 

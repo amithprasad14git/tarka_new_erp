@@ -15,11 +15,13 @@ import pool from "../../../lib/db";
 import { actionScopesFromDbRow, normalizeActionScope } from "../../../lib/permissionScope";
 import { getRbacMatrixModuleEntries, getRbacMatrixModuleKeySet } from "../../../lib/rbacMatrixModules";
 import { isReportKey } from "../../../lib/reportConfig";
+import { isDashboardPermissionKey } from "../../../lib/dashboardConfig";
 import { getSessionUser } from "../../../lib/session";
 import { hasModulePermission } from "../../../lib/rbac";
 import { escapeSqlTableId } from "../../../lib/sqlModuleTable";
 import { formatInstantAsMysqlDatetimeIST } from "../../../lib/istDateTime";
 import { assertUserPermissionsTargetUserIsActive } from "../../../lib/modules/userPermissions";
+import { jsonApiErrorForAction } from "../../../lib/apiErrorResponse";
 
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
 
@@ -97,13 +99,14 @@ export async function GET(req) {
 
     // Defaults keep UI deterministic when permission row does not exist for a module key yet.
     const defaults = { view_scope: "all", edit_scope: "all", delete_scope: "all" };
-    const rows = matrixModules.map(({ key, label, group, isReport }) => {
+    const rows = matrixModules.map(({ key, label, group, isReport, isDashboard }) => {
       const existing = byModule[key];
       return {
         module: key,
         label,
         group,
         isReport: Boolean(isReport),
+        isDashboard: Boolean(isDashboard),
         id: existing?.id ?? null,
         can_view: existing?.can_view ?? false,
         can_create: existing?.can_create ?? false,
@@ -122,8 +125,7 @@ export async function GET(req) {
       strayDbRows: (permRows || []).filter((r) => !keySet.has(String(r.module))).length
     });
   } catch (error) {
-    console.error("user-permissions-matrix GET:", error);
-    return Response.json({ error: "Failed to load matrix" }, { status: 500 });
+    return jsonApiErrorForAction(error, "loadMatrix", { logLabel: "user-permissions-matrix GET" });
   }
 }
 
@@ -167,7 +169,7 @@ export async function POST(req) {
       if (byKey.has(mod)) {
         return Response.json({ error: `Duplicate module in rows: ${mod}` }, { status: 400 });
       }
-      if (isReportKey(mod)) {
+      if (isReportKey(mod) || isDashboardPermissionKey(mod)) {
         byKey.set(mod, {
           module: mod,
           can_view: Boolean(r?.can_view),
@@ -253,11 +255,10 @@ export async function POST(req) {
 
     return Response.json({ ok: true, userId });
   } catch (error) {
-    console.error("user-permissions-matrix POST:", error);
-    if (error && error.code === "ER_NO_SUCH_TABLE") {
-      return Response.json({ error: "Database table missing" }, { status: 500 });
+    if (error?.code === "USER_PERMISSIONS_VALIDATION_FAILED") {
+      return Response.json({ error: error.message }, { status: 400 });
     }
-    return Response.json({ error: error?.sqlMessage || "Save failed" }, { status: 500 });
+    return jsonApiErrorForAction(error, "savePermissions", { logLabel: "user-permissions-matrix POST" });
   }
 }
 

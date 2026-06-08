@@ -57,7 +57,7 @@
  * - `true` — column appears in the "View saved data" table (and gets a header filter).
  * - `false` — hidden from the view table only; still on the entry form if listed in `fields`.
  *
- * `users`: login identity (id PK, fullName, email, password, role, unit, active) plus the same four
+ * `users`: login identity (id PK, username, fullName, optional email, password, role, unit, active) plus the same four
  * row-audit columns as every other table. Only `active = Yes` (case-insensitive) may log in;
  * `getSessionUser` drops sessions for inactive users.
  *
@@ -121,7 +121,8 @@
  * | users | — | Login: active=Yes only (lib/auth.js). Row scope on `users` table is special. |
  * | user_permissions | userPermissions.js | User must exist and be active. |
  * | audit_logs | — | Read-only; no manual create/edit via CRUD. |
- * | company_master, employee_master, unit_master, financial_year_master, party_master, bank_master, current_account_*, ho_zo_master, branch_master, lookup_* , case_return_reasons, sarfaesi_case_particulars, new_case_inward_transaction_control | — | Config `required` / types only. |
+ * | company_master, employee_master, unit_master, financial_year_master, party_master, bank_master, current_account_master, ho_zo_master, branch_master, lookup_* , case_return_reasons, sarfaesi_case_particulars, new_case_inward_transaction_control | — | Config `required` / types only. |
+ * | current_account_opening_balance | currentAccountOpeningBalance.js | FY freeze (role 2) on effectiveDate. |
  * | new_case_inward | newCaseInward.js | Case No auto-gen; loan account rules; duplicate loan ac; final-stage edit lock; case status + recovered amount rules; transaction-control backdates; FY freeze on case status date (non-admin). Child: recovered lines. |
  * | transfer_case | transferCase.js | Date = today; case/from/to/assignee rules; updates case owner; ref TRF/…; FY freeze (role 2). |
  * | public_notice | publicNotice.js | Date not future; FY freeze (role 2); case required; child max 3 rows; ref PN/… |
@@ -193,10 +194,12 @@ export const modules = {
     table: "users",
     lookupDisplayField: "fullName",
     searchField: "fullName",
+    lookupSearchFields: ["fullName", "username", "email"],
     // Admin UI for accounts; authentication is gated by `active` in lib/auth.js and lib/session.js.
     fields: [
+      { name: "username", type: "text", label: "Username", required: true, showInView: true },
       { name: "fullName", type: "text", label: "Full Name", showInView: true },
-      { name: "email", type: "email", label: "Email", showInView: true },
+      { name: "email", type: "email", label: "Email", required: false, showInView: true },
       { name: "password", type: "password", label: "Password", showInView: true },
       { name: "role", type: "number", label: "Role", showInView: true },
       {

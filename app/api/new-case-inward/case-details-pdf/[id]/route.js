@@ -22,6 +22,8 @@ import {
   safeCaseDetailsPdfFilename
 } from "../../../../../lib/modules/newCaseInwardCaseDetailsPdf";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
+import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
+import { apiUserMessage } from "../../../../../lib/apiUserMessages";
 
 async function getRequestUser() {
   // Reuse session cookie handling used by other APIs.
@@ -92,18 +94,15 @@ export async function GET(req, { params }) {
       }
     });
   } catch (error) {
-    console.error("Case details PDF error:", error);
     const msg = String(error?.message || error || "");
     const missingMod =
       msg.includes("Cannot find module") ||
       msg.includes("MODULE_NOT_FOUND") ||
       error?.code === "MODULE_NOT_FOUND";
-    return Response.json(
-      {
-        error: missingMod ? "PDF library not installed. Run npm install in the project folder." : "Failed to generate PDF"
-      },
-      { status: 500 }
-    );
+    if (missingMod) {
+      return Response.json({ error: apiUserMessage("pdfLibraryMissing") }, { status: 500 });
+    }
+    return jsonApiErrorForAction(error, "downloadPdf", { logLabel: "Case details PDF" });
   }
 }
 

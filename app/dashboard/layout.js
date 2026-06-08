@@ -12,6 +12,7 @@ import { reports } from "../../config/reports";
 import { dashboards } from "../../config/dashboards";
 import { getSessionUser } from "../../lib/session";
 import { hasAnyModuleAccess } from "../../lib/rbac";
+import { canAccessDashboardByPermissionKey } from "../../lib/dashboards/dashboardAccess";
 import DashboardSidebar from "../../components/DashboardSidebar";
 import DashboardTopbar from "../../components/DashboardTopbar";
 import TopbarGreeting from "../../components/TopbarGreeting";
@@ -67,13 +68,14 @@ export default async function DashboardLayout({ children }) {
   for (const d of dashboards) {
     const permissionKey = String(d.permissionKey || d.key || "").trim();
     if (!permissionKey) continue;
-    const canSee = await hasAnyModuleAccess(user, permissionKey);
+    const canSee = await canAccessDashboardByPermissionKey(user, permissionKey);
     if (canSee) visibleDashboards.push(d);
   }
 
   return (
     <DashboardUserProvider
       fullName={user.fullName}
+      username={user.username}
       email={user.email}
       unitId={user.unit != null ? Number(user.unit) : null}
     >
@@ -86,7 +88,7 @@ export default async function DashboardLayout({ children }) {
               <TopbarGreeting />
               <TopbarWeather />
             </div>
-            <DashboardTopbar userEmail={user.email} />
+            <DashboardTopbar userUsername={user.username} userFullName={user.fullName} />
           </header>
           <div className="flux-main-scroll-region">
             <div className="flux-content">

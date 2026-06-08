@@ -9,6 +9,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import LoadingOverlay from "./LoadingOverlay";
 import ToastNotice from "./ToastNotice";
+import {
+  fetchApiJson,
+  formatUserFacingError
+} from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 
 const COL_LABELS = {
   can_view: "View",
@@ -105,9 +110,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
     (async () => {
       try {
         const res = await fetch("/api/permissions/user_permissions");
-        const text = await res.text();
-        const payload = text ? JSON.parse(text) : null;
-        if (!res.ok) throw new Error(payload?.error || "Failed to load permissions");
+        const payload = await fetchApiJson(res, apiUserMessage("loadPermissions"));
         if (!cancelled && payload) {
           setPermissions({
             canView: Boolean(payload.canView),
@@ -137,13 +140,11 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
         f_active: "Yes"
       });
       const res = await fetch(`/api/crud/users?${q}`);
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Failed to load users");
+      const payload = await fetchApiJson(res, apiUserMessage("loadUsers"));
       const list = Array.isArray(payload?.data) ? payload.data : [];
       setUsers(list);
     } catch (e) {
-      showToast("error", e.message || "Failed to load users");
+      showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("loadUsers") }));
     } finally {
       setBusy(false);
     }
@@ -160,14 +161,12 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
     try {
       // One row per module with view/create/edit/delete flags and scopes.
       const res = await fetch(`/api/user-permissions-matrix?userId=${encodeURIComponent(uid)}`);
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Failed to load matrix");
+      const payload = await fetchApiJson(res, apiUserMessage("loadMatrix"));
       setMatrixRows(Array.isArray(payload?.rows) ? payload.rows : []);
       setStrayDbRows(Number(payload?.strayDbRows) || 0);
       setDirty(false);
     } catch (e) {
-      showToast("error", e.message || "Failed to load matrix");
+      showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("loadMatrix") }));
       setMatrixRows([]);
     } finally {
       setBusy(false);
@@ -277,7 +276,7 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
           </tr>
         );
       }
-      if (row.isReport) {
+      if (row.isReport || row.isDashboard) {
         nodes.push(
           <tr key={row.module}>
             <td className="perm-matrix-module">
@@ -293,9 +292,9 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
                   type="checkbox"
                   checked={Boolean(row.can_view)}
                   onChange={(e) => updateCell(row.module, "can_view", e.target.checked)}
-                  aria-label={`View report: ${row.label}`}
+                  aria-label={`View ${row.isDashboard ? "dashboard" : "report"}: ${row.label}`}
                 />
-                <span> View (report)</span>
+                <span> View ({row.isDashboard ? "dashboard" : "report"})</span>
               </label>
             </td>
           </tr>
@@ -347,14 +346,12 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: Number(userId), rows })
       });
-      const text = await res.text();
-      const payload = text ? JSON.parse(text) : null;
-      if (!res.ok) throw new Error(payload?.error || "Save failed");
+      await fetchApiJson(res, apiUserMessage("savePermissions"));
       showToast("success", "Permissions saved.");
       setDirty(false);
       await loadMatrix(userId);
     } catch (e) {
-      showToast("error", e.message || "Save failed");
+      showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("savePermissions") }));
     } finally {
       setBusy(false);
     }

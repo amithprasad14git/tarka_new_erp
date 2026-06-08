@@ -16,6 +16,8 @@ import { rowValueForField } from "../lib/gridRowValue";
 import { getYmdISTFromInstant } from "../lib/istDateTime";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
+import { formatUserFacingError, readApiErrorMessage } from "../lib/fetchClientError";
+import { apiUserMessage } from "../lib/apiUserMessages";
 import { toYyyyMmDdForSqlDateField } from "../lib/sqlDateFieldValue";
 import InrNumberInput from "./InrNumberInput";
 
@@ -290,10 +292,14 @@ export default function ModuleChildTablesPanel({
           });
           appendLookupValueMasterLovParams(q, lookup);
           const res = await fetch(`/api/crud/${lookup.module}?${q.toString()}`);
+          if (!res.ok) {
+            throw new Error(await readApiErrorMessage(res, apiUserMessage("loadLookup")));
+          }
           const json = await res.json();
           next[key] = Array.isArray(json?.data) ? json.data : [];
-        } catch {
+        } catch (e) {
           next[key] = [];
+          notify("error", formatUserFacingError(e, { fallback: apiUserMessage("loadLookup") }));
         }
       }
       if (!cancelled) setLookupOptionsByField(next);

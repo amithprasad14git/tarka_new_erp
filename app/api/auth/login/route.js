@@ -2,13 +2,14 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * POST /api/auth/login — JSON `{ email, password }` → `authenticateLogin` (active must be Yes) → `createSession` → cookie.
+ * POST /api/auth/login — JSON `{ username, password }` → `authenticateLogin` (active must be Yes) → `createSession` → cookie.
  * Session id lives in the cookie; user mapping and expiry are in DB (`sessions` table). Cookie is httpOnly to reduce XSS risk.
  */
 import { authenticateLogin } from "../../../../lib/auth";
 import { createSession } from "../../../../lib/session";
 import { getLoopbackDbHostError, getMissingRequiredDbEnvVars } from "../../../../lib/db";
-import { getDbErrorHint } from "../../../../lib/dbConnectionError";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { apiUserMessage } from "../../../../lib/apiUserMessages";
 import { cookies } from "next/headers";
 
 // Validate email/password, create DB session, set httpOnly session cookie.
@@ -19,8 +20,7 @@ export async function POST(req) {
       console.error("Login: missing database env vars:", missingDb.join(", "));
       return Response.json(
         {
-          error:
-            "Server is missing database configuration. Set DB_HOST, DB_USER, DB_PASS, and DB_NAME in Amplify environment variables.",
+          error: apiUserMessage("loginConfig")
         },
         { status: 503 }
       );
@@ -32,9 +32,9 @@ export async function POST(req) {
       return Response.json({ error: loopbackErr }, { status: 503 });
     }
 
-    // Expect JSON body: { email, password }
-    const { email, password } = await req.json();
-    const result = await authenticateLogin(email, password);
+    // Expect JSON body: { username, password }
+    const { username, password } = await req.json();
+    const result = await authenticateLogin(username, password);
 
     if ("error" in result) {
       if (result.error === "inactive") {
@@ -43,8 +43,8 @@ export async function POST(req) {
           { status: 403 }
         );
       }
-      // invalid_credentials — same message whether email unknown or password wrong.
-      return Response.json({ error: "Invalid Email or Password" }, { status: 401 });
+      // invalid_credentials — same message whether username unknown or password wrong.
+      return Response.json({ error: "Invalid Username or Password" }, { status: 401 });
     }
 
     const { user } = result;
@@ -64,22 +64,7 @@ export async function POST(req) {
 
     return Response.json({ ok: true });
   } catch (error) {
-    console.error("Login API error:", {
-      message: error?.message ?? String(error),
-      code: error?.code,
-      errno: error?.errno,
-      sqlState: error?.sqlState,
-      sqlMessage: error?.sqlMessage,
-      stack: error?.stack,
-    });
-    const hint = getDbErrorHint(error);
-    return Response.json(
-      {
-        error: "Login failed on Server. Check DB Connection.",
-        ...(hint ? { hint } : {})
-      },
-      { status: 500 }
-    );
+    return jsonApiErrorForAction(error, "loginFailed", { logLabel: "Login API" });
   }
 }
 

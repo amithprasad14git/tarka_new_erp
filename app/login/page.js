@@ -11,6 +11,12 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import {
+  formatApiErrorPayload,
+  formatUserFacingError,
+  readJsonResponse
+} from "../../lib/fetchClientError";
+import { apiUserMessage } from "../../lib/apiUserMessages";
 import styles from "./login.module.css";
 
 const COMPANY_LOGO_SRC = "/images/npa_full_transparent_bg.png";
@@ -40,7 +46,7 @@ const CAROUSEL_INTERVAL_MS = 6000;
 // Sign-in screen: carousel plus form that sets the httpOnly session cookie on success.
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,26 +73,24 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Ask the auth API to validate email/password and issue a session.
+      // Ask the auth API to validate username/password and issue a session.
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      const data = await readJsonResponse(res);
 
       if (!res.ok) {
-        // Show server message (wrong password, inactive user, DB down, etc.).
-        const msg = [data.error, data.hint].filter(Boolean).join(" ");
-        setError(msg || "Login failed");
+        setError(formatApiErrorPayload(data, apiUserMessage("loginFailed")));
         return;
       }
 
       // Cookie is httpOnly — browser sends it on dashboard requests automatically.
       router.push("/dashboard");
     } catch (err) {
-      setError("Unable to connect to server");
+      setError(formatUserFacingError(err, { fallback: apiUserMessage("networkUnreachable") }));
     } finally {
       setLoading(false);
     }
@@ -160,18 +164,18 @@ export default function Login() {
 
             <div className="form-field form-field-outline">
               <div className="form-field-outline-box">
-                <label className="form-field-outline-label" htmlFor="login-email">
-                  Email ID
+                <label className="form-field-outline-label" htmlFor="login-username">
+                  Username
                 </label>
                 <div className="form-field-outline-control">
                   <input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
+                    id="login-username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter Username"
                     required
-                    autoComplete="email"
+                    autoComplete="username"
                   />
                 </div>
               </div>

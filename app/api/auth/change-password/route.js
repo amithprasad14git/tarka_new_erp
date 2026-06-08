@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableId } from "../../../../lib/sqlModuleTable";
+import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 /**
  * Helper used for "same text" comparison in validations.
@@ -81,8 +82,7 @@ export async function POST(req) {
 
     return Response.json({ ok: true, message: "Password changed successfully." });
   } catch (error) {
-    console.error("Change password API error:", error);
-    return Response.json({ error: "Failed to change password." }, { status: 500 });
+    return jsonApiErrorForAction(error, "changePassword", { logLabel: "Change password API" });
   }
 }
 
