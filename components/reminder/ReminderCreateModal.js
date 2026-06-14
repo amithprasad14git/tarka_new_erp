@@ -130,7 +130,7 @@ export default function ReminderCreateModal({ open, onClose, onCreated }) {
                     <div className="form-field-outline-control">
                       <textarea
                         id={notesId}
-                        rows={3}
+                        rows={2}
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Add context or details…"

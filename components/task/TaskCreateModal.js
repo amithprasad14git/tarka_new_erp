@@ -117,7 +117,6 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
             {error ? <p className="task-form-error">{error}</p> : null}
 
             <section className="task-form-section">
-              <span className="task-form-section-label">Details</span>
               <div className="form-field form-field-outline">
                 <div className="form-field-outline-box">
                   <label className="form-field-outline-label" htmlFor={taskTitleId}>
@@ -144,7 +143,8 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
                   <div className="form-field-outline-control">
                     <textarea
                       id={descriptionId}
-                      rows={3}
+                      className="task-create-description-input"
+                      rows={2}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Add details, context, or links…"
@@ -155,7 +155,6 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
             </section>
 
             <section className="task-form-section">
-              <span className="task-form-section-label">People</span>
               <div className="task-field-row task-field-row--people">
                 <div className="form-field form-field-outline">
                   <div className="form-field-outline-box">
@@ -206,7 +205,6 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
             </section>
 
             <section className="task-form-section">
-              <span className="task-form-section-label">Schedule</span>
               <div className="task-field-row task-field-row--schedule">
                 <div className="form-field form-field-outline">
                   <div className="form-field-outline-box">

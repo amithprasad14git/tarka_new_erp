@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ReminderRecurrenceBadge } from "./ReminderStatusBadge";
 import {
-  VIEW_ALL_STATUS,
   formatReminderDate,
   isDueOverdue
 } from "./reminderUtils";
@@ -68,7 +67,6 @@ function ReminderCard({ reminder, onOpen }) {
 }
 
 export default function ReminderDashboardList({
-  statusFilter = "Pending",
   dueDateFilter = null,
   refreshKey = 0,
   onOpenReminder
@@ -76,21 +74,13 @@ export default function ReminderDashboardList({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [reminders, setReminders] = useState([]);
-  const [localStatus, setLocalStatus] = useState(statusFilter);
-
-  useEffect(() => {
-    setLocalStatus(statusFilter);
-  }, [statusFilter]);
 
   const loadReminders = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const q = new URLSearchParams();
-      if (localStatus && localStatus !== VIEW_ALL_STATUS) {
-        q.set("status", localStatus);
-      }
-      if (dueDateFilter && localStatus !== VIEW_ALL_STATUS) {
+      const q = new URLSearchParams({ status: "Pending" });
+      if (dueDateFilter) {
         q.set("dueDate", dueDateFilter);
       }
       const res = await fetch(`/api/reminder?${q.toString()}`, { cache: "no-store" });
@@ -105,19 +95,18 @@ export default function ReminderDashboardList({
     } finally {
       setLoading(false);
     }
-  }, [localStatus, dueDateFilter]);
+  }, [dueDateFilter]);
 
   useEffect(() => {
     loadReminders();
   }, [loadReminders, refreshKey]);
 
   const emptyLabel = useMemo(() => {
-    if (dueDateFilter && localStatus !== VIEW_ALL_STATUS) {
-      return `No reminders due ${formatReminderDate(dueDateFilter)}`;
+    if (dueDateFilter) {
+      return `No pending reminders due ${formatReminderDate(dueDateFilter)}`;
     }
-    if (localStatus === VIEW_ALL_STATUS) return "No reminders";
-    return `No ${localStatus.toLowerCase()} reminders`;
-  }, [dueDateFilter, localStatus]);
+    return "No pending reminders";
+  }, [dueDateFilter]);
 
   return (
     <div className="reminder-dash-list reminder-dash-list--compact">

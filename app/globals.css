@@ -2498,9 +2498,16 @@ body {
 }
 
 @media (max-width: 980px) {
-  .dashboard-widget-grid {
+  .dashboard-widget-grid,
+  .dashboard-widget-grid--landing {
     grid-template-columns: 1fr;
   }
+
+  .dashboard-widget-grid--landing .dashboard-widget-card:first-child,
+  .dashboard-widget-grid--landing .dashboard-widget-slot:first-child {
+    grid-column: span 1;
+  }
+
   .dashboard-unit-split {
     grid-template-columns: 1fr;
   }

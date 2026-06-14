@@ -7,7 +7,6 @@ import ReminderDueCalendarPanel from "./ReminderDueCalendarPanel";
 import ReminderListModal from "./ReminderListModal";
 import ReminderCreateModal from "./ReminderCreateModal";
 import ReminderDetailPanel from "./ReminderDetailPanel";
-import ReminderStatusPills from "./ReminderStatusPills";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import { formatDashboardUpdatedAt } from "../../lib/formatDashboardUpdatedAt";
 
@@ -31,7 +30,6 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
   const [detailId, setDetailId] = useState(null);
   const [listRefreshKey, setListRefreshKey] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [listStatus, setListStatus] = useState("Pending");
 
   const syncFromData = useCallback((payload) => {
     if (!payload) return;
@@ -127,10 +125,8 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
             <div className="reminder-dash-panel">
               <div className="reminder-dash-panel-header">
                 <DashboardSectionHeader title="Reminders" />
-                <ReminderStatusPills value={listStatus} onChange={setListStatus} showAllOption />
               </div>
               <ReminderDashboardList
-                statusFilter={listStatus}
                 dueDateFilter={selectedDate}
                 refreshKey={listRefreshKey}
                 onOpenReminder={(r) => setDetailId(r.id)}

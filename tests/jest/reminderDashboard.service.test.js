@@ -158,6 +158,36 @@ describe("reminderDashboard.service", () => {
       expect(perms.isAdmin).toBe(true);
       expect(perms.canEditDetails).toBe(true);
     });
+
+    test("completed reminder locked for owner", () => {
+      const perms = reminderPermissionsForUser(
+        { id: 5, role: 2 },
+        { createdBy: 5, status: "Completed" }
+      );
+      expect(perms).toEqual(
+        expect.objectContaining({
+          canEditDetails: false,
+          canUpdateStatus: false,
+          isOwner: true,
+          isCompletedLocked: true
+        })
+      );
+    });
+
+    test("completed reminder editable for admin", () => {
+      const perms = reminderPermissionsForUser(
+        { id: 1, role: 1 },
+        { createdBy: 5, status: "Completed" }
+      );
+      expect(perms).toEqual(
+        expect.objectContaining({
+          canEditDetails: true,
+          canUpdateStatus: true,
+          isAdmin: true,
+          isCompletedLocked: false
+        })
+      );
+    });
   });
 
   describe("buildDueCalendarGrid", () => {

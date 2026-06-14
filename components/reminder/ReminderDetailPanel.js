@@ -12,8 +12,17 @@ import {
   minDueDateToday,
   overdueDaysSeverity
 } from "./reminderUtils";
+import { labelWithRequiredMark } from "../../lib/formFieldLabel";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import ReminderModalPortal from "./ReminderModalPortal";
+
+function permissionBannerText(permissions) {
+  if (!permissions) return null;
+  if (permissions.isCompletedLocked) {
+    return "This reminder is completed. Only an administrator can make changes.";
+  }
+  return null;
+}
 
 function dueDateValue(raw) {
   if (!raw) return "";
@@ -42,7 +51,9 @@ function resetFormFromReminder(data, setters) {
 }
 
 export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdated }) {
+  const dialogTitleId = useId();
   const titleId = useId();
+  const notesId = useId();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -110,11 +121,15 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
     };
   }, [open, reminderId, loadReminder, reloadFormFromReminder]);
 
+  const isCompletedLocked = Boolean(permissions?.isCompletedLocked);
   const canEditDetails = Boolean(permissions?.canEditDetails);
   const canUpdateStatus = Boolean(permissions?.canUpdateStatus);
 
-  const fieldsEditable = canEditDetails;
-  const statusEditable = canUpdateStatus;
+  const fieldsEditable = canEditDetails && !isCompletedLocked;
+  const statusEditable = canUpdateStatus && !isCompletedLocked;
+
+  const bannerText = permissionBannerText(permissions);
+  const showPermissionBanner = Boolean(bannerText);
 
   const hasDetailChanges = useMemo(() => {
     if (!reminder || !canEditDetails) return false;
@@ -204,12 +219,12 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
 
   return (
     <ReminderModalPortal>
-      <div className="reminder-modal-backdrop" role="presentation" onClick={() => onClose?.()}>
+      <div className="reminder-modal-backdrop" role="presentation">
         <div
           className="reminder-modal reminder-modal--detail-enterprise"
           role="dialog"
           aria-modal="true"
-          aria-labelledby={titleId}
+          aria-labelledby={dialogTitleId}
           onClick={(e) => e.stopPropagation()}
         >
           {loading ? (
@@ -217,124 +232,165 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
               <p className="reminder-empty-state">Loading reminder…</p>
             </div>
           ) : (
-            <form className="reminder-detail-form" onSubmit={handleSave}>
-              <div className="reminder-detail-toolbar">
-                <div className="reminder-detail-toolbar-actions">
-                  <button
-                    type="button"
-                    className="reminder-detail-toolbar-btn reminder-detail-toolbar-btn--close"
-                    onClick={() => onClose?.()}
-                    aria-label="Close"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
+            <form className="reminder-detail-form master-entry-form" onSubmit={handleSave}>
+              <header className="reminder-detail-modal-header">
+                <h2 id={dialogTitleId} className="reminder-detail-modal-title">
+                  Reminder Details
+                </h2>
+                <button
+                  type="button"
+                  className="reminder-detail-modal-close"
+                  onClick={() => onClose?.()}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </header>
 
               {error ? <p className="reminder-form-error reminder-form-error--detail">{error}</p> : null}
               {successMsg ? <p className="reminder-form-success reminder-form-error--detail">{successMsg}</p> : null}
 
               <div className="reminder-detail-body">
-                <div className="reminder-detail-main">
-                  <section className="reminder-detail-details">
+                <section className="reminder-detail-details">
+                  <div className="reminder-detail-details-card">
                     {fieldsEditable ? (
-                      <input
-                        id={titleId}
-                        type="text"
-                        className="reminder-detail-title-input"
-                        value={reminderTitle}
-                        onChange={(e) => setReminderTitle(e.target.value)}
-                        placeholder="Reminder title…"
-                        aria-label="Title"
-                        required
-                      />
+                      <>
+                        <div className="form-field form-field-outline">
+                          <div className="form-field-outline-box">
+                            <label className="form-field-outline-label" htmlFor={titleId}>
+                              {labelWithRequiredMark("Title", true)}
+                            </label>
+                            <div className="form-field-outline-control">
+                              <input
+                                id={titleId}
+                                type="text"
+                                value={reminderTitle}
+                                onChange={(e) => setReminderTitle(e.target.value)}
+                                placeholder="What do you need to follow up on?"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="form-field form-field-outline">
+                          <div className="form-field-outline-box">
+                            <label className="form-field-outline-label" htmlFor={notesId}>
+                              Notes
+                            </label>
+                            <div className="form-field-outline-control">
+                              <textarea
+                                id={notesId}
+                                rows={2}
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Add context or details…"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <h2 id={titleId} className="reminder-detail-title">
-                        {reminder?.reminderTitle || "Reminder"}
-                      </h2>
-                    )}
+                      <>
+                        <h2 id={titleId} className="reminder-detail-title">
+                          {reminder?.reminderTitle || "Reminder"}
+                        </h2>
 
-                    {fieldsEditable ? (
-                      <textarea
-                        className="reminder-textarea reminder-detail-description-input"
-                        rows={2}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add notes…"
-                        aria-label="Notes"
-                      />
-                    ) : reminder?.notes ? (
-                      <p className="reminder-detail-description reminder-detail-description--prose">{reminder.notes}</p>
-                    ) : (
-                      <p className="reminder-empty-inline reminder-detail-description-empty">No notes provided.</p>
+                        {reminder?.notes ? (
+                          <p className="reminder-detail-description reminder-detail-description--prose">{reminder.notes}</p>
+                        ) : (
+                          <p className="reminder-empty-inline reminder-detail-description-empty">No notes provided.</p>
+                        )}
+                      </>
                     )}
-                  </section>
-
-                  <section className="reminder-detail-activity">
-                    <h3 className="reminder-detail-section-title">Activity</h3>
-                    <ReminderActivityList rows={activity} />
-                  </section>
-                </div>
+                  </div>
+                </section>
 
                 <aside className="reminder-detail-meta-panel">
-                  <div className="reminder-detail-property">
-                    <h3 className="reminder-detail-property-label">Status</h3>
-                    <div className="reminder-detail-property-value">
-                      {statusEditable ? (
-                        <ReminderStatusPills value={status} onChange={setStatus} />
-                      ) : (
-                        <ReminderStatusBadge status={reminder?.status} />
-                      )}
-                    </div>
-                  </div>
+                  <div className="reminder-detail-meta-card">
+                    <div className="reminder-detail-meta-group">
+                      <div className="reminder-detail-property">
+                        <h3 className="reminder-detail-property-label">Status</h3>
+                        <div className="reminder-detail-property-value">
+                          {statusEditable ? (
+                            <ReminderStatusPills value={status} onChange={setStatus} />
+                          ) : (
+                            <ReminderStatusBadge status={reminder?.status} />
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="reminder-detail-property">
-                    <h3 className="reminder-detail-property-label">Due date</h3>
-                    <div className="reminder-detail-property-value">
-                      {fieldsEditable ? (
-                        <input
-                          type="date"
-                          className="reminder-input"
-                          value={dueDate}
-                          min={minDueDateToday()}
-                          onChange={(e) => setDueDate(e.target.value)}
-                        />
-                      ) : (
-                        <p className="reminder-detail-meta-value">
-                          {reminder?.dueDate ? formatReminderDate(reminder.dueDate) : "—"}
-                        </p>
-                      )}
+                      <div className="reminder-detail-property">
+                        <h3 className="reminder-detail-property-label">Recurrence</h3>
+                        <div className="reminder-detail-property-value">
+                          {fieldsEditable ? (
+                            <ReminderRecurrencePicker value={recurrenceType} onChange={setRecurrenceType} />
+                          ) : (
+                            <p className="reminder-detail-meta-value">{reminder?.recurrenceType || "None"}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="reminder-detail-property">
-                    <h3 className="reminder-detail-property-label">Recurrence</h3>
-                    <div className="reminder-detail-property-value">
-                      {fieldsEditable ? (
-                        <ReminderRecurrencePicker value={recurrenceType} onChange={setRecurrenceType} />
-                      ) : (
-                        <p className="reminder-detail-meta-value">{reminder?.recurrenceType || "None"}</p>
-                      )}
-                    </div>
-                  </div>
+                    <div className="reminder-detail-meta-group">
+                      <div className="reminder-detail-property">
+                        <h3 className="reminder-detail-property-label">Due date</h3>
+                        <div className="reminder-detail-property-value">
+                          {fieldsEditable ? (
+                            <input
+                              type="date"
+                              className="reminder-input"
+                              value={dueDate}
+                              min={minDueDateToday()}
+                              onChange={(e) => setDueDate(e.target.value)}
+                            />
+                          ) : (
+                            <p className="reminder-detail-meta-value">
+                              {reminder?.dueDate ? formatReminderDate(reminder.dueDate) : "—"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="reminder-detail-property">
-                    <h3 className="reminder-detail-property-label">Days past due</h3>
-                    <div className="reminder-detail-property-value">
-                      <DaysPastDueDisplay dueDate={effectiveDueDate} status={reminder?.status} />
+                      <div className="reminder-detail-property">
+                        <h3 className="reminder-detail-property-label">Days past due</h3>
+                        <div className="reminder-detail-property-value">
+                          <DaysPastDueDisplay dueDate={effectiveDueDate} status={reminder?.status} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </aside>
+
+                <div className="reminder-detail-feed">
+                  <div className="reminder-detail-feed-card">
+                    <h3 className="reminder-detail-section-title">Activity</h3>
+                    <ReminderActivityList rows={activity} />
+                  </div>
+                </div>
               </div>
 
-              {hasSaveableChanges ? (
+              {(showPermissionBanner || hasSaveableChanges) ? (
                 <footer className="reminder-detail-footer">
-                  <button type="button" className="master-btn master-btn-outline" onClick={handleCancelEdit} disabled={saving}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="master-btn master-btn-primary" disabled={saving}>
-                    {saving ? "Saving…" : "Save changes"}
-                  </button>
+                  <div className="reminder-detail-footer-start">
+                    {showPermissionBanner ? (
+                      <div className="reminder-permission-hint reminder-permission-hint--footer" role="status">
+                        <span className="reminder-permission-hint-icon" aria-hidden="true">
+                          🔒
+                        </span>
+                        <p className="reminder-permission-hint-text">{bannerText}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                  {hasSaveableChanges ? (
+                    <div className="reminder-detail-footer-actions">
+                      <button type="button" className="master-btn master-btn-outline" onClick={handleCancelEdit} disabled={saving}>
+                        Cancel
+                      </button>
+                      <button type="submit" className="master-btn master-btn-primary" disabled={saving}>
+                        {saving ? "Saving…" : "Save changes"}
+                      </button>
+                    </div>
+                  ) : null}
                 </footer>
               ) : null}
             </form>

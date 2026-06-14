@@ -64,6 +64,7 @@ function resetFormFromTask(data, setters) {
 }
 
 export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
+  const dialogTitleId = useId();
   const titleId = useId();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -315,12 +316,12 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
 
   return (
     <TaskModalPortal>
-      <div className="task-modal-backdrop" role="presentation" onClick={() => onClose?.()}>
+      <div className="task-modal-backdrop" role="presentation">
         <div
           className="task-modal task-modal--detail-enterprise"
           role="dialog"
           aria-modal="true"
-          aria-labelledby={titleId}
+          aria-labelledby={dialogTitleId}
           onClick={(e) => e.stopPropagation()}
         >
           {loading ? (
@@ -329,33 +330,25 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
             </div>
           ) : (
             <form className="task-detail-form" onSubmit={handleSave}>
-              <div className="task-detail-toolbar">
-                <div className="task-detail-toolbar-actions">
-                  {canEnterEditMode && !isEditing ? (
-                    <button
-                      type="button"
-                      className="task-detail-toolbar-btn task-detail-toolbar-btn--edit"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      Edit
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="task-detail-toolbar-btn task-detail-toolbar-btn--close"
-                    onClick={() => onClose?.()}
-                    aria-label="Close"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
+              <header className="task-detail-modal-header">
+                <h2 id={dialogTitleId} className="task-detail-modal-title">
+                  Task Details
+                </h2>
+                <button
+                  type="button"
+                  className="task-detail-modal-close"
+                  onClick={() => onClose?.()}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </header>
 
               {error ? <p className="task-form-error task-form-error--detail">{error}</p> : null}
 
               <div className="task-detail-body">
-                <div className="task-detail-main">
-                  <section className="task-detail-details">
+                <section className="task-detail-details">
+                  <div className="task-detail-details-card">
                     {fieldsEditable ? (
                       <input
                         id={titleId}
@@ -376,7 +369,7 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                     {fieldsEditable ? (
                       <textarea
                         className="task-textarea task-detail-description-input"
-                        rows={4}
+                        rows={2}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Add details, context, or links…"
@@ -387,8 +380,127 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                     ) : (
                       <p className="task-empty-inline task-detail-description-empty">No description provided.</p>
                     )}
-                  </section>
+                  </div>
+                </section>
 
+                <aside className="task-detail-meta-panel">
+                  <div className="task-detail-meta-card">
+                    <div className="task-detail-meta-group">
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Status</h3>
+                        <div className="task-detail-property-value">
+                          {statusEditable ? (
+                            <TaskStatusPills value={status} onChange={setStatus} />
+                          ) : (
+                            <TaskStatusBadge status={task?.status} />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Priority</h3>
+                        <div className="task-detail-property-value">
+                          <TaskPriorityPicker
+                            value={priority}
+                            onChange={setPriority}
+                            readOnly={!fieldsEditable}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="task-detail-meta-group">
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Due date</h3>
+                        <div className="task-detail-property-value">
+                          {fieldsEditable ? (
+                            <input
+                              type="date"
+                              className="task-input"
+                              value={dueDate}
+                              min={minDueDateToday()}
+                              onChange={(e) => setDueDate(e.target.value)}
+                            />
+                          ) : (
+                            <p className="task-detail-meta-value">
+                              {task?.dueDate ? formatTaskDate(task.dueDate) : "—"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Days past due</h3>
+                        <div className="task-detail-property-value">
+                          <DaysPastDueDisplay dueDate={effectiveDueDate} status={effectiveStatus} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="task-detail-meta-group">
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Assignee</h3>
+                        <div className="task-detail-property-value">
+                          <div className="task-detail-person">
+                            <TaskAvatar name={task?.assigneeLabel} size="sm" />
+                            <span>{task?.assigneeLabel || "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Follow-up person</h3>
+                        <div className="task-detail-property-value">
+                          {fieldsEditable ? (
+                            <LookupSelect
+                              name="followUpPerson"
+                              id="task-detail-follow-up"
+                              fieldLabel="Follow-up person"
+                              lookup={{
+                                module: "users",
+                                valueField: "id",
+                                labelField: "fullName",
+                                extraLovParams: { f_active: "Yes" }
+                              }}
+                              initialValue={followUpPerson}
+                              onValueChange={(v) => setFollowUpPerson(v)}
+                            />
+                          ) : task?.followUpPersonLabel ? (
+                            <div className="task-detail-person">
+                              <TaskAvatar name={task.followUpPersonLabel} size="sm" />
+                              <span>{task.followUpPersonLabel}</span>
+                            </div>
+                          ) : (
+                            <p className="task-detail-meta-value">—</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="task-detail-meta-group">
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Assigned by</h3>
+                        <div className="task-detail-property-value">
+                          <div className="task-detail-person">
+                            <TaskAvatar name={task?.createdByLabel} size="sm" />
+                            <span>{task?.createdByLabel || "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="task-detail-property">
+                        <h3 className="task-detail-property-label">Created</h3>
+                        <div className="task-detail-property-value">
+                          <p className="task-detail-meta-value">
+                            {task?.createdDate ? formatTaskDate(String(task.createdDate).slice(0, 10)) : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+
+                <div className="task-detail-feed">
                   <TaskDetailFeedTabs
                     key={taskId}
                     activity={activity}
@@ -401,113 +513,6 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                     postingComment={postingComment}
                   />
                 </div>
-
-                <aside className="task-detail-meta-panel">
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Status</h3>
-                    <div className="task-detail-property-value">
-                      {statusEditable ? (
-                        <TaskStatusPills value={status} onChange={setStatus} />
-                      ) : (
-                        <TaskStatusBadge status={task?.status} />
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Priority</h3>
-                    <div className="task-detail-property-value">
-                      <TaskPriorityPicker
-                        value={priority}
-                        onChange={setPriority}
-                        readOnly={!fieldsEditable}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Due date</h3>
-                    <div className="task-detail-property-value">
-                      {fieldsEditable ? (
-                        <input
-                          type="date"
-                          className="task-input"
-                          value={dueDate}
-                          min={minDueDateToday()}
-                          onChange={(e) => setDueDate(e.target.value)}
-                        />
-                      ) : (
-                        <p className="task-detail-meta-value">
-                          {task?.dueDate ? formatTaskDate(task.dueDate) : "—"}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Days past due</h3>
-                    <div className="task-detail-property-value">
-                      <DaysPastDueDisplay dueDate={effectiveDueDate} status={effectiveStatus} />
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Assignee</h3>
-                    <div className="task-detail-property-value">
-                      <div className="task-detail-person">
-                        <TaskAvatar name={task?.assigneeLabel} size="sm" />
-                        <span>{task?.assigneeLabel || "—"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Follow-up person</h3>
-                    <div className="task-detail-property-value">
-                      {fieldsEditable ? (
-                        <LookupSelect
-                          name="followUpPerson"
-                          id="task-detail-follow-up"
-                          fieldLabel="Follow-up person"
-                          lookup={{
-                            module: "users",
-                            valueField: "id",
-                            labelField: "fullName",
-                            extraLovParams: { f_active: "Yes" }
-                          }}
-                          initialValue={followUpPerson}
-                          onValueChange={(v) => setFollowUpPerson(v)}
-                        />
-                      ) : task?.followUpPersonLabel ? (
-                        <div className="task-detail-person">
-                          <TaskAvatar name={task.followUpPersonLabel} size="sm" />
-                          <span>{task.followUpPersonLabel}</span>
-                        </div>
-                      ) : (
-                        <p className="task-detail-meta-value">—</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Assigned by</h3>
-                    <div className="task-detail-property-value">
-                      <div className="task-detail-person">
-                        <TaskAvatar name={task?.createdByLabel} size="sm" />
-                        <span>{task?.createdByLabel || "—"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="task-detail-property">
-                    <h3 className="task-detail-property-label">Created</h3>
-                    <div className="task-detail-property-value">
-                      <p className="task-detail-meta-value">
-                        {task?.createdDate ? formatTaskDate(String(task.createdDate).slice(0, 10)) : "—"}
-                      </p>
-                    </div>
-                  </div>
-                </aside>
               </div>
 
               <footer className="task-detail-footer">
@@ -559,9 +564,20 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                       </button>
                     </>
                   ) : (
-                    <button type="button" className="master-btn master-btn-outline" onClick={() => onClose?.()}>
-                      Close
-                    </button>
+                    <>
+                      {canEnterEditMode && !isEditing ? (
+                        <button
+                          type="button"
+                          className="master-btn master-btn-outline"
+                          onClick={() => setIsEditing(true)}
+                        >
+                          Edit
+                        </button>
+                      ) : null}
+                      <button type="button" className="master-btn master-btn-outline" onClick={() => onClose?.()}>
+                        Close
+                      </button>
+                    </>
                   )}
                 </div>
               </footer>
