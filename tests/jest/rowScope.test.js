@@ -102,6 +102,19 @@ describe("rowScope", () => {
       expect(whereValues).toEqual([9]);
     });
 
+    test("own scope with rowScopeOwnAlsoMatchFields includes assignee OR createdBy", () => {
+      const taskCfg = {
+        table: "task_master",
+        fields: [{ name: "id" }, { name: "createdBy" }, { name: "assignee" }],
+        rowScopeOwnAlsoMatchFields: ["assignee"]
+      };
+      const whereParts = [];
+      const whereValues = [];
+      appendRowScopeFilter(taskCfg, { id: 9, role: 2 }, "own", whereParts, whereValues);
+      expect(whereParts).toEqual(["(`createdBy` = ? OR `assignee` = ?)"]);
+      expect(whereValues).toEqual([9, 9]);
+    });
+
     test("own scope on users table allows id or createdBy", () => {
       const whereParts = [];
       const whereValues = [];
@@ -146,6 +159,20 @@ describe("rowScope", () => {
     test("own scope allows own row and denies ownership mismatch", async () => {
       await expect(rowMatchesScope(moduleCfg, { id: 7, role: 2 }, "own", { createdBy: 7 })).resolves.toBe(true);
       await expect(rowMatchesScope(moduleCfg, { id: 7, role: 2 }, "own", { createdBy: 8 })).resolves.toBe(false);
+    });
+
+    test("own scope task_master allows assignee even when not creator", async () => {
+      const taskCfg = {
+        table: "task_master",
+        fields: [{ name: "id" }, { name: "createdBy" }, { name: "assignee" }],
+        rowScopeOwnAlsoMatchFields: ["assignee"]
+      };
+      await expect(
+        rowMatchesScope(taskCfg, { id: 7, role: 2 }, "own", { createdBy: 10, assignee: 7 })
+      ).resolves.toBe(true);
+      await expect(
+        rowMatchesScope(taskCfg, { id: 7, role: 2 }, "own", { createdBy: 10, assignee: 11 })
+      ).resolves.toBe(false);
     });
 
     test("own scope users table allows own id even if createdBy differs", async () => {

@@ -21,6 +21,8 @@ import { DashboardUserProvider } from "../../components/DashboardUserProvider";
 import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
 import AppFooter from "../../components/AppFooter";
+import "../../components/task/task.css";
+import "../../components/reminder/reminder.css";
 
 // Protected workspace shell: sidebar menu, tabs, idle logout, RBAC-filtered modules.
 export default async function DashboardLayout({ children }) {

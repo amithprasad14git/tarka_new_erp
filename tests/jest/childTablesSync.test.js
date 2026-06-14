@@ -263,6 +263,67 @@ describe("childTablesSync.syncChildTablesInTransaction", () => {
     const insertCall = conn.query.mock.calls.find(([sql]) => sql.startsWith("INSERT INTO"));
     expect(insertCall[1]).toEqual([11, 0, 9]);
   });
+
+  test("serverOnly syncMode skips delete and insert", async () => {
+    const conn = makeConn();
+    await expect(
+      syncChildTablesInTransaction(
+        conn,
+        {
+          childTables: [
+            {
+              key: "status_history",
+              table: "task_status_history",
+              parentFkField: "taskId",
+              syncMode: "serverOnly",
+              fields: [
+                { name: "fromStatus", type: "text" },
+                { name: "toStatus", type: "text", required: true }
+              ]
+            }
+          ]
+        },
+        55,
+        { status_history: [{ toStatus: "Done" }] }
+      )
+    ).resolves.toBeUndefined();
+    expect(conn.query).not.toHaveBeenCalled();
+  });
+
+  test("append syncMode inserts only new rows without persisted id", async () => {
+    const conn = makeConn();
+    await expect(
+      syncChildTablesInTransaction(
+        conn,
+        {
+          childTables: [
+            {
+              key: "comments",
+              table: "task_comments",
+              parentFkField: "taskId",
+              syncMode: "append",
+              fields: [
+                { name: "commentText", type: "text", required: true },
+                { name: "commentedBy", type: "lookup" },
+                { name: "commentedAt", type: "datetime" }
+              ]
+            }
+          ]
+        },
+        77,
+        {
+          comments: [
+            { id: 1, commentText: "existing" },
+            { commentText: "new note", commentedBy: 3, commentedAt: "2026-06-13 12:00:00" }
+          ]
+        }
+      )
+    ).resolves.toBeUndefined();
+
+    expect(conn.query).toHaveBeenCalledTimes(1);
+    expect(conn.query.mock.calls[0][0]).toContain("INSERT INTO `task_comments`");
+    expect(conn.query.mock.calls[0][1]).toEqual([77, "new note", 3, "2026-06-13 12:00:00"]);
+  });
 });
 
 

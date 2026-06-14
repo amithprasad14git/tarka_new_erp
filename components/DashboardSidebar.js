@@ -25,7 +25,7 @@ const groupIcons = {
   Lookups: "🛠️",
   Banks: "🏛️",
   Cases: "📚",
-  Invoice: "🧾",
+  Tasks: "✅",
   "Case Related Reports": "📊",
   "General Reports": "🗂️",
   "Accounts Reports": "🪙",

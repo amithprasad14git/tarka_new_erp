@@ -1,0 +1,34 @@
+"use client";
+
+const PRIORITIES = ["Low", "Medium", "High"];
+
+export default function TaskPriorityPicker({ value, onChange, readOnly = false }) {
+  const current = String(value || "Medium");
+
+  return (
+    <div
+      className={`task-priority-pills${readOnly ? " task-priority-pills--readonly" : ""}`}
+      role={readOnly ? "group" : "radiogroup"}
+      aria-label="Priority"
+    >
+      {PRIORITIES.map((p) => {
+        const slug = p.toLowerCase();
+        const active = current === p;
+        return (
+          <button
+            key={p}
+            type="button"
+            role={readOnly ? undefined : "radio"}
+            aria-checked={readOnly ? undefined : active}
+            className={`task-priority-pill task-priority-pill--${slug}${active ? " is-active" : ""}`}
+            disabled={readOnly}
+            tabIndex={readOnly ? -1 : active ? 0 : -1}
+            onClick={() => !readOnly && onChange?.(p)}
+          >
+            {p}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

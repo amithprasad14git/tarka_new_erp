@@ -137,7 +137,8 @@
  * | recovery_invoice | recoveryInvoice.js | FY freeze (role 2); invoice no.; final-invoice flag on case; client submit checks. |
  * | sarfaesi_invoice | sarfaesiInvoice.js | FY freeze (role 2); SARFAESI case picker; invoice no.; cancellation rules. |
  * | vehicle_invoice | vehicleInvoice.js | FY freeze (role 2); vehicle case rules; invoice no.; cancellation rules. |
- * | rbo_master | rboMaster.js | When RBO active flag changes, can sync linked branches. |
+ *   | rbo_master | rboMaster.js | When RBO active flag changes, can sync linked branches. |
+ * | task_master | task.js | Assignee must be active user; status history server-written; comments append-only. |
  *
  * Full narrative for operators and developers: README.md § “Module-by-module validations”.
  * =============================================================================
@@ -2381,6 +2382,239 @@ export const modules = {
 
 
 
+
+  // ---------------------------------------------------------------------------
+  // TASK MASTER — tasks with status history and comments (dashboard widget + admin CRUD)
+  // Server: lib/modules/task.js (assignee validation, status history, append comments).
+  // Dashboard UI: components/task/* via /api/task (permission dashboard_my_tasks).
+  // ---------------------------------------------------------------------------
+  task_master: {
+    label: "Task Management",
+    icon: "✅",
+    group: "Tasks",
+    table: "task_master",
+    lookupDisplayField: "taskTitle",
+    rowScopeOwnAlsoMatchFields: ["assignee"],
+    fields: [
+      { name: "taskTitle", type: "text", label: "Task Title", required: true, showInView: true },
+      { name: "description", type: "text", rows: 3, label: "Description", showInView: false },
+      {
+        name: "assignee",
+        type: "lookup",
+        label: "Assignee",
+        required: true,
+        showInView: true,
+        lookup: {
+          module: "users",
+          valueField: "id",
+          labelField: "fullName",
+          extraLovParams: { f_active: "Yes" }
+        }
+      },
+      {
+        name: "followUpPerson",
+        type: "lookup",
+        label: "Follow-up Person",
+        showInView: true,
+        lookup: {
+          module: "users",
+          valueField: "id",
+          labelField: "fullName",
+          extraLovParams: { f_active: "Yes" }
+        }
+      },
+      { name: "dueDate", type: "date", label: "Due Date", showInView: true },
+      {
+        name: "priority",
+        type: "select",
+        label: "Priority",
+        showInView: true,
+        options: [
+          { label: "Low", value: "Low" },
+          { label: "Medium", value: "Medium" },
+          { label: "High", value: "High" }
+        ],
+        default: "Medium"
+      },
+      {
+        name: "status",
+        type: "select",
+        label: "Status",
+        showInView: true,
+        options: [
+          { label: "Pending", value: "Pending" },
+          { label: "In Progress", value: "In Progress" },
+          { label: "Completed", value: "Completed" },
+          { label: "Cancelled", value: "Cancelled" }
+        ],
+        default: "Pending"
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "status_history",
+        table: "task_status_history",
+        parentFkField: "taskId",
+        label: "Status History",
+        syncMode: "serverOnly",
+        fields: [
+          { name: "fromStatus", type: "text", label: "From", readOnly: true, columnWidth: "10rem" },
+          { name: "toStatus", type: "text", label: "To", readOnly: true, columnWidth: "10rem" },
+          {
+            name: "changedBy",
+            type: "lookup",
+            label: "Changed By",
+            readOnly: true,
+            lookup: { module: "users", valueField: "id", labelField: "fullName" },
+            columnWidth: "12rem"
+          },
+          { name: "changedAt", type: "text", label: "Changed At", readOnly: true, columnWidth: "14rem" }
+        ]
+      },
+      {
+        key: "activity_log",
+        table: "task_activity_log",
+        parentFkField: "taskId",
+        label: "Activity Log",
+        syncMode: "serverOnly",
+        fields: [
+          { name: "fieldName", type: "text", label: "Field", readOnly: true, columnWidth: "10rem" },
+          { name: "fromValue", type: "text", label: "From", readOnly: true, columnWidth: "12rem" },
+          { name: "toValue", type: "text", label: "To", readOnly: true, columnWidth: "12rem" },
+          {
+            name: "changedBy",
+            type: "lookup",
+            label: "Changed By",
+            readOnly: true,
+            lookup: { module: "users", valueField: "id", labelField: "fullName" },
+            columnWidth: "12rem"
+          },
+          { name: "changedAt", type: "text", label: "Changed At", readOnly: true, columnWidth: "14rem" }
+        ]
+      },
+      {
+        key: "comments",
+        table: "task_comments",
+        parentFkField: "taskId",
+        label: "Comments",
+        syncMode: "append",
+        fields: [
+          {
+            name: "commentText",
+            type: "text",
+            rows: 3,
+            label: "Comment",
+            required: true,
+            columnWidth: "28rem"
+          },
+          {
+            name: "commentedBy",
+            type: "lookup",
+            label: "Commented By",
+            readOnly: true,
+            excludeFromForm: true,
+            lookup: { module: "users", valueField: "id", labelField: "fullName" },
+            columnWidth: "12rem"
+          },
+          {
+            name: "commentedAt",
+            type: "text",
+            label: "Commented At",
+            readOnly: true,
+            excludeFromForm: true,
+            columnWidth: "14rem"
+          }
+        ]
+      }
+    ]
+  },
+
+  // ---------------------------------------------------------------------------
+  // REMINDER MASTER — self-reminders with activity log (dashboard widget + admin CRUD)
+  // Server: lib/modules/reminder.js (ownership, recurrence spawn).
+  // Dashboard UI: components/reminder/* via /api/reminder (permission dashboard_my_reminders).
+  // ---------------------------------------------------------------------------
+  reminder_master: {
+    label: "Reminder Management",
+    icon: "🔔",
+    group: "Tasks",
+    table: "reminder_master",
+    lookupDisplayField: "reminderTitle",
+    fields: [
+      { name: "reminderTitle", type: "text", label: "Reminder Title", required: true, showInView: true },
+      { name: "notes", type: "text", rows: 3, label: "Notes", showInView: false },
+      { name: "dueDate", type: "date", label: "Due Date", showInView: true },
+      {
+        name: "recurrenceType",
+        type: "select",
+        label: "Recurrence",
+        showInView: true,
+        options: [
+          { label: "None", value: "None" },
+          { label: "Daily", value: "Daily" },
+          { label: "Weekly", value: "Weekly" },
+          { label: "Monthly", value: "Monthly" },
+          { label: "Yearly", value: "Yearly" }
+        ],
+        default: "None"
+      },
+      {
+        name: "status",
+        type: "select",
+        label: "Status",
+        showInView: true,
+        options: [
+          { label: "Pending", value: "Pending" },
+          { label: "Completed", value: "Completed" },
+          { label: "Cancelled", value: "Cancelled" }
+        ],
+        default: "Pending"
+      },
+      {
+        name: "seriesRootId",
+        type: "lookup",
+        label: "Series Root",
+        showInView: false,
+        readOnly: true,
+        excludeFromForm: true,
+        lookup: { module: "reminder_master", valueField: "id", labelField: "reminderTitle" }
+      },
+      {
+        name: "spawnedFromId",
+        type: "lookup",
+        label: "Spawned From",
+        showInView: false,
+        readOnly: true,
+        excludeFromForm: true,
+        lookup: { module: "reminder_master", valueField: "id", labelField: "reminderTitle" }
+      },
+      ...STANDARD_ROW_AUDIT_FIELDS
+    ],
+    childTables: [
+      {
+        key: "activity_log",
+        table: "reminder_activity_log",
+        parentFkField: "reminderId",
+        label: "Activity Log",
+        syncMode: "serverOnly",
+        fields: [
+          { name: "fieldName", type: "text", label: "Field", readOnly: true, columnWidth: "10rem" },
+          { name: "fromValue", type: "text", label: "From", readOnly: true, columnWidth: "12rem" },
+          { name: "toValue", type: "text", label: "To", readOnly: true, columnWidth: "12rem" },
+          {
+            name: "changedBy",
+            type: "lookup",
+            label: "Changed By",
+            readOnly: true,
+            lookup: { module: "users", valueField: "id", labelField: "fullName" },
+            columnWidth: "12rem"
+          },
+          { name: "changedAt", type: "text", label: "Changed At", readOnly: true, columnWidth: "14rem" }
+        ]
+      }
+    ]
+  }
 
 };
 

@@ -20,5 +20,23 @@ export const dashboards = [
     landingWidget: true,
     /** Role 2+ users with an assigned unit see this without an explicit matrix row. */
     autoGrantForAssignedUnit: true
+  },
+  {
+    key: "my_tasks",
+    permissionKey: "dashboard_my_tasks",
+    title: "My Tasks",
+    icon: "✅",
+    description: "Create, view, and update tasks assigned to you.",
+    tone: "brand",
+    landingWidget: true
+  },
+  {
+    key: "my_reminders",
+    permissionKey: "dashboard_my_reminders",
+    title: "My Reminders",
+    icon: "🔔",
+    description: "Create, view, and manage your personal reminders.",
+    tone: "brand",
+    landingWidget: true
   }
 ];

@@ -3,8 +3,12 @@
 // Generic dashboard fetch + client-side cache wrapper for landing widgets.
 
 import { useCallback, useEffect, useRef } from "react";
-import { readApiErrorMessage, readJsonResponse } from "../../lib/fetchClientError";
+import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
+import MyTasksWidget from "../task/MyTasksWidget";
+import MyRemindersWidget from "../reminder/MyRemindersWidget";
 import UnitWiseRecoveryTargetWidget from "./unit_wise_recovery_target/UnitWiseRecoveryTargetWidget";
+import "../task/task.css";
+import "../reminder/reminder.css";
 
 /**
  * @typedef {{ data?: object | null, lastFetchedAt?: number | null, loading?: boolean, error?: string | null }} DashboardCacheEntry
@@ -44,7 +48,7 @@ export default function DashboardWidgetLoader({
         });
         const body = await readJsonResponse(res);
         if (!res.ok) {
-          const msg = readApiErrorMessage(body) || "Failed to load dashboard";
+          const msg = formatApiErrorPayload(body, "Failed to load dashboard");
           onCacheUpdate(dashboardKey, {
             data: current.data ?? null,
             lastFetchedAt: current.lastFetchedAt ?? null,
@@ -102,6 +106,28 @@ export default function DashboardWidgetLoader({
   if (dashboardKey === "unit_wise_recovery_target") {
     return (
       <UnitWiseRecoveryTargetWidget
+        data={data}
+        loading={loading}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={() => fetchDashboard(true)}
+      />
+    );
+  }
+
+  if (dashboardKey === "my_tasks") {
+    return (
+      <MyTasksWidget
+        data={data}
+        loading={loading}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={() => fetchDashboard(true)}
+      />
+    );
+  }
+
+  if (dashboardKey === "my_reminders") {
+    return (
+      <MyRemindersWidget
         data={data}
         loading={loading}
         lastFetchedAt={lastFetchedAt}

@@ -1,192 +1,119 @@
-/* Login: full-page background carousel + absolutely positioned card (desktop). Inputs mirror DynamicForm outlined fields (globals.css). */
+/* Login: floating split card — hero (left) + sign-in form (right) on #f8fafc canvas. */
+
+.shell,
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
+}
 
 .shell {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-
-/* Full-page background carousel */
-.carouselWrap {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  background: #0f172a;
-}
-
-.carouselTop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 3;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: clamp(16px, 3vw, 40px) clamp(20px, 4vw, 48px);
-  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #f8fafc;
 }
 
-.brandLogoDev {
-  display: block;
-  height: clamp(56px, 10vmin, 112px);
-  width: auto;
-  max-width: min(320px, 48vw);
-  object-fit: contain;
-  object-position: left top;
-  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.35));
+.loginCard {
+  position: relative;
+  display: flex;
+  max-width: 1800px;
+  width: calc(100vw - 64px);
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
+  margin: 32px auto;
+  border-radius: 36px;
+  overflow: hidden;
+  background: #020817;
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.12),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+  flex-shrink: 0;
 }
 
-.slides {
-  position: absolute;
-  inset: 0;
+.leftPanel {
+  width: 58%;
+  flex: 0 0 58%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #020817;
 }
 
-.slide {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.75s ease;
-  pointer-events: none;
-}
-
-.slideActive {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.slidePhoto {
-  position: absolute;
-  inset: 0;
+.heroImageWrap {
+  position: relative;
   width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #020817;
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
   object-fit: cover;
-  object-position: center;
+  object-position: center center;
 }
 
-.slideTint {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(15, 23, 42, 0.5) 0%,
-    rgba(15, 23, 42, 0.28) 50%,
-    rgba(15, 23, 42, 0.58) 100%
-  );
-  pointer-events: none;
-}
-
-.slideInner {
-  position: absolute;
-  inset: 0;
+.rightPanel {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: clamp(120px, 22vh, 200px) clamp(28px, 5vw, 48px) clamp(72px, 12vh, 120px);
-  z-index: 1;
-  pointer-events: none;
+  align-items: center;
+  padding: 32px 48px 32px 80px;
+  background: #ffffff;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 56px 0 0 56px;
+  box-shadow: -16px 0 48px rgba(15, 23, 42, 0.12);
+  -webkit-overflow-scrolling: touch;
 }
 
-.tagline {
-  margin: 0;
-  max-width: 460px;
-  font-size: clamp(1.1rem, 2.5vw, 1.65rem);
-  font-weight: 600;
-  line-height: 1.35;
-  color: #f8fafc;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-}
-
-.dots {
-  position: absolute;
-  bottom: clamp(20px, 4vw, 36px);
-  left: clamp(28px, 5vw, 48px);
-  z-index: 3;
+.rightPanelInner {
   display: flex;
-  gap: 8px;
-}
-
-.dot {
-  width: 28px;
-  height: 4px;
-  border: none;
-  border-radius: 2px;
-  padding: 0;
-  background: rgba(255, 255, 255, 0.35);
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.dot:hover {
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.dotActive {
-  background: var(--brand);
-  transform: scaleY(1.2);
-}
-
-/*
- * “Hero” = the full-page background photos + carousel (UI jargon, not a new product feature).
- * Desktop: card is absolutely positioned so its left edge starts at min(65vw, space for card max + margins).
- */
-.formOverlay {
-  --login-card-max: 520px;
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
   width: 100%;
+  max-width: 430px;
+  margin: auto;
+  min-height: min-content;
+  gap: 24px;
+}
+
+.tarkaBrand {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.tarkaLogo {
+  display: block;
+  width: 220px;
   max-width: 100%;
-  box-sizing: border-box;
-  padding: clamp(24px, 5vw, 48px);
-  pointer-events: none;
-}
-
-.formCard {
-  pointer-events: auto;
-  margin-inline: auto;
-  box-sizing: border-box;
-  width: min(var(--login-card-max), 100%);
-  max-width: var(--login-card-max);
-  padding: clamp(32px, 5vw, 48px);
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 16px;
-  box-shadow:
-    0 4px 6px rgba(15, 23, 42, 0.04),
-    0 22px 50px rgba(15, 23, 42, 0.18),
-    0 0 0 1px rgba(15, 23, 42, 0.04);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-@media (min-width: 681px) {
-  .formOverlay {
-    --login-frame-pad: clamp(16px, 5vw, 48px);
-    --login-inline-end: clamp(16px, 4vw, 48px);
-    --login-card-left: min(
-      65vw,
-      calc(100vw - var(--login-card-max) - var(--login-inline-end) - 2 * var(--login-frame-pad))
-    );
-  }
-
-  .formCard {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-inline: 0;
-    left: max(var(--login-frame-pad), var(--login-card-left));
-    right: var(--login-inline-end);
-    width: auto;
-    max-width: var(--login-card-max);
-  }
+  height: auto;
+  object-fit: contain;
 }
 
 .formInner {
@@ -194,172 +121,296 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex-shrink: 0;
 }
 
-.loginHead {
+.formInner :global(.form-field-outline) {
+  gap: 6px;
+}
+
+.formInner :global(.form-field-outline-box) {
+  border: 2px solid color-mix(in srgb, #ff6b00 56%, #dbe4f0);
+  background: #ffffff;
+}
+
+.formInner :global(.form-field-outline-box:hover),
+.formInner :global(.form-field-outline-box:hover:not(:focus-within)) {
+  border-color: color-mix(in srgb, #ff6b00 56%, #dbe4f0);
+}
+
+.formInner :global(.form-field-outline-box:focus-within) {
+  border-color: #ff6b00;
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.12);
+}
+
+.formInner :global(.form-field-outline-box:focus-within .form-field-outline-label) {
+  color: #ff6b00;
+}
+
+.formInner :global(.form-field-outline-label) {
+  background: #ffffff;
+}
+
+.signInHeader {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 0;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 4px;
+  text-align: center;
 }
 
-.companyLogo {
-  display: block;
-  height: clamp(56px, 10vw, 88px);
-  width: auto;
-  max-width: min(340px, 100%);
-  object-fit: contain;
-  object-position: left center;
+.signInTitle {
   margin: 0;
-}
-
-/* Outlined field labels: true black on login (overrides master-entry + muted label) */
-.formCard :global(.form-field-outline-label) {
-  color: #000000;
-}
-
-.formCard :global(.form-field-outline-box:focus-within .form-field-outline-label) {
-  color: #000000;
-}
-
-.title {
-  margin: 0;
-  font-size: clamp(1.35rem, 2.6vw, 1.65rem);
+  font-size: 42px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #000000;
-  line-height: 1.2;
+  color: #0f172a;
+  line-height: 1.1;
+  text-align: center;
 }
 
-.subtitle {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-/* Password + reveal: keep single outlined box like other master fields */
-.outlinePwControl {
-  overflow: visible;
-}
-
-.outlinePwRow {
+.passwordOutlineControl {
   display: flex;
-  align-items: stretch;
-  gap: 0;
-  min-width: 0;
+  align-items: center;
+  gap: 4px;
 }
 
-.outlinePwRow > input {
+.passwordOutlineControl :global(input) {
   flex: 1;
   min-width: 0;
 }
 
-.outlinePwReveal {
+.passwordReveal {
   flex-shrink: 0;
-  align-self: stretch;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  width: 36px;
+  height: 36px;
   margin: 0;
   padding: 0;
   border: none;
-  border-radius: 0;
-  border-left: 1px solid var(--line);
+  border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: #64748b;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
-.outlinePwReveal:hover {
-  background: color-mix(in srgb, var(--muted) 8%, transparent);
-  color: var(--text);
+.passwordReveal:hover {
+  background: rgba(100, 116, 139, 0.08);
+  color: #334155;
 }
 
 .loginSubmit {
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  width: 100%;
+  height: 60px;
+  min-height: 60px;
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff5e14, #ff7a00);
+  color: #ffffff;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loginSubmit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(255, 107, 0, 0.25);
 }
 
 .loginSubmit:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .loginError {
-  margin: -6px 0 0 !important;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--danger);
+  text-align: center;
 }
 
-@media (max-width: 680px) {
-  .carouselTop {
-    padding: max(10px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 14px))
-      max(8px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 14px));
-    justify-content: flex-start;
-    align-items: flex-start;
+.trustIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  margin-bottom: 0;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.trustDivider {
+  flex: 1;
+  min-width: 12px;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.trustContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.trustIcon {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.trustText {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #64748b;
+  text-align: center;
+}
+
+.loginFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 0;
+  padding-top: 8px;
+  flex-shrink: 0;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+}
+
+.loginFooterText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+@media (max-height: 820px) {
+  .rightPanel {
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
 
-  .brandLogoDev {
-    height: clamp(36px, 9vmin, 64px);
-    max-width: min(280px, calc(100% - 28px));
-    object-fit: contain;
-    object-position: left center;
+  .tarkaBrand {
+    margin-bottom: 20px;
   }
 
-  /* Less padding above quote + room above carousel dots (safe areas on notched phones) */
-  .slideInner {
-    padding: clamp(48px, 12vh, 100px) max(16px, env(safe-area-inset-right, 16px))
-      max(80px, calc(72px + env(safe-area-inset-bottom, 0px))) max(16px, env(safe-area-inset-left, 16px));
+  .formInner {
+    gap: 16px;
   }
 
-  .dots {
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    left: max(16px, env(safe-area-inset-left, 16px));
+  .signInTitle {
+    font-size: 34px;
   }
 
-  .tagline {
-    max-width: 100%;
-    font-size: clamp(0.95rem, 4.2vw, 1.25rem);
+  .trustIndicator {
+    margin-top: 16px;
   }
 
-  /* Vertically center the sign-in card; cancel desktop “pinned top” feel on phones */
-  .formOverlay {
-    display: flex;
+  .rightPanelInner {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .loginCard {
     flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: max(12px, env(safe-area-inset-top, 12px)) max(16px, env(safe-area-inset-right, 16px))
-      max(20px, env(safe-area-inset-bottom, 20px)) max(16px, env(safe-area-inset-left, 16px));
-    box-sizing: border-box;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    width: calc(100vw - 64px);
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+    background: #ffffff;
   }
 
-  .formCard {
-    position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    transform: none;
+  .leftPanel {
+    display: none;
+  }
+
+  .rightPanel {
     width: 100%;
-    max-width: min(560px, 100%);
-    margin-inline: auto;
-    margin-block: 0;
-    padding: clamp(22px, 5vw, 36px);
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    padding: 32px;
+    border-radius: 0;
+    box-shadow: none;
+    align-items: center;
+    overflow-y: auto;
   }
 
-  .companyLogo {
-    max-width: 100%;
-    height: clamp(48px, 12vw, 72px);
-    object-position: left center;
+  .rightPanelInner {
+    margin: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .trustDivider {
+    display: none;
+  }
+
+  .trustIndicator {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .loginCard {
+    width: calc(100vw - 32px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
+    margin: 16px auto;
+    border-radius: 24px;
+  }
+
+  .rightPanel {
+    height: 100%;
+    min-height: 0;
+    padding: max(24px, env(safe-area-inset-top, 24px)) max(24px, env(safe-area-inset-right, 24px))
+      max(24px, env(safe-area-inset-bottom, 24px)) max(24px, env(safe-area-inset-left, 24px));
+    overflow-y: auto;
+  }
+
+  .tarkaBrand {
+    margin-bottom: 20px;
+  }
+
+  .tarkaLogo {
+    width: min(220px, 100%);
+  }
+
+  .signInTitle {
+    font-size: 32px;
+  }
+
+  .trustIndicator {
+    margin-top: 16px;
+  }
+
+  .rightPanelInner {
+    gap: 20px;
   }
 }
