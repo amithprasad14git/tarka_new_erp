@@ -1,8 +1,9 @@
-// Application API route — dashboard KPI data (runtime aggregation).
+// Application API route — dashboard KPI data for landing widgets.
 
 /**
  * GET /api/dashboard/<key>
- * Session auth + dashboard permission; returns JSON payload for landing widgets.
+ * Returns JSON for one landing widget (recovery, invoices, regional performance, tasks, etc.).
+ * Requires login + dashboard permission. See docs/DASHBOARDS.md
  */
 
 import { cookies } from "next/headers";
@@ -11,6 +12,7 @@ import { loadDashboardForUser } from "../../../../lib/dashboards/dashboard.servi
 import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
 async function getRequestUser() {
+  // Resolve session cookie to logged-in user (same as other protected API routes).
   const cookieStore = await cookies();
   const sid = cookieStore.get("session")?.value;
   return getSessionUser(sid);
@@ -22,6 +24,7 @@ export async function GET(_req, { params }) {
     const { key: dashboardKey } = await params;
     const result = await loadDashboardForUser(user, dashboardKey);
 
+    // Map service status codes to HTTP responses for the browser loader.
     if (result.status === 401) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

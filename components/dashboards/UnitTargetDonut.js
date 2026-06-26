@@ -1,6 +1,12 @@
 "use client";
 
-// Shared dashboard donut — recovery target vs achieved totals.
+// Shared dashboard chart — recovery target vs achieved ring (Unit Wise Recovery Target panel 1).
+
+/**
+ * SVG donut showing achieved % of unit recovery target for the active FY.
+ * Uses totals from API when provided; otherwise sums rows array.
+ * Parent: UnitWiseRecoveryTargetWidget.js
+ */
 
 /**
  * @param {{ rows: Array<{ recoveryTarget?: number, amountRecovered?: number }>, totals?: { recoveryTarget?: number, amountRecovered?: number, achievedPct?: number } }} props
@@ -21,6 +27,7 @@ export default function UnitTargetDonut({ rows = [], totals = null }) {
         ? Math.max(0, Math.min(100, (totalAchieved / totalTarget) * 100))
         : 0;
 
+  // Stroke dasharray draws the filled arc; remainder is the track gap.
   const r = 48;
   const c = 2 * Math.PI * r;
   const dash = (pct / 100) * c;
@@ -39,7 +46,7 @@ export default function UnitTargetDonut({ rows = [], totals = null }) {
       </svg>
       <div className="dashboard-donut-center">
         <strong>{pct.toFixed(1)}%</strong>
-        <span>achieved</span>
+        <span>Achieved</span>
       </div>
     </div>
   );

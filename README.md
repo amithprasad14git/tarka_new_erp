@@ -34,6 +34,9 @@ Scripts (`package.json`):
 ## 3) High-Level Folder Guide
 
 - `config/reports.js` - report definitions (filters, columns, layout); not in `modules.js`
+- `config/dashboards.js` - landing dashboard widgets (titles, permission keys, layout flags)
+- `lib/dashboards/` - one folder per dashboard (`run.js` + optional SQL aggregation)
+- [docs/DASHBOARDS.md](docs/DASHBOARDS.md) - **dashboard landing widgets** (permissions, data rules, file map)
 - `lib/reports/` - one `.js` file per report (SQL + `runReport`) + shared report services
 - [docs/REPORTS.md](docs/REPORTS.md) - **frozen v1** HTML/Excel report styling and pipeline (do not change per report)
 - [docs/REPORTS-FILES.md](docs/REPORTS-FILES.md) - index of all report-related source files
@@ -43,7 +46,7 @@ Scripts (`package.json`):
 - `lib/modules/` - **per-module business rules** (server `*.js` and client `*Client.js`)
 - `lib/modules/crudModuleAdapters.js` - wires custom modules into save/delete pipeline
 - `lib/` - shared server logic (RBAC, CRUD services, sessions, enrichment)
-- `docs/` - extra guides (accounts modules, **[reports (frozen styling)](docs/REPORTS.md)**, [printable PDFs](docs/invoices-pdf.md), [Return Case letter](docs/return-case-pdf.md), [code comments](docs/CODE-COMMENTS.md))
+- `docs/` - extra guides (accounts modules, **[reports (frozen styling)](docs/REPORTS.md)**, **[dashboards](docs/DASHBOARDS.md)**, [printable PDFs](docs/invoices-pdf.md), [Return Case letter](docs/return-case-pdf.md), [code comments](docs/CODE-COMMENTS.md))
 
 ---
 
@@ -54,13 +57,15 @@ Every **source file** under `app/`, `components/`, `lib/`, `config/`, `scripts/`
 | Area | What the header should explain |
 |------|--------------------------------|
 | API routes | Which URL, login required?, JSON vs PDF download |
+| Landing dashboards | Which widget, API key, runner folder — see [docs/DASHBOARDS.md](docs/DASHBOARDS.md) |
 | `lib/modules/*.js` | Save rules and side effects |
 | `lib/modules/*Client.js` | Browser-only UI (Print, pickers, preload) |
 | `lib/modules/*Pdf.js` | Printable layout; link to `docs/*-pdf.md` |
 | Components | Shared UI only — no module business rules |
 | Tests | Which module or route is being checked |
 
-Full convention (file headers **and** inline function comments): **[docs/CODE-COMMENTS.md](docs/CODE-COMMENTS.md)**.
+Full convention (file headers **and** inline function comments): **[docs/CODE-COMMENTS.md](docs/CODE-COMMENTS.md)**.  
+Dashboard widgets: **[docs/DASHBOARDS.md](docs/DASHBOARDS.md)**.
 
 ---
 
@@ -119,6 +124,28 @@ Key files:
 - `lib/rbac.js`
 - `lib/rowScope.js`
 - `app/api/permissions/[module]/route.js`
+
+---
+
+## 5A) Landing dashboards (plain English)
+
+After login, the **Dashboard home** (`/dashboard`) can show summary **widgets** — recovery targets, invoice collections, regional performance, tasks, reminders, and branch search. Each widget loads live numbers from the database when the page opens.
+
+Layman guide (what each widget shows, permissions, how to add one):
+
+- **[docs/DASHBOARDS.md](docs/DASHBOARDS.md)**
+
+Quick facts:
+
+| Topic | Where |
+|-------|--------|
+| Widget list and permission keys | `config/dashboards.js` |
+| Who may see a widget | `lib/dashboards/dashboardAccess.js` + User Permissions matrix |
+| Load data API | `GET /api/dashboard/<key>` |
+| Browser fetch + cache | `components/dashboards/DashboardWidgetLoader.js` |
+| Landing grid layout | `components/DashboardTabs.js` |
+
+**Unit Wise Recovery Target** is the only dashboard with `autoGrantForAssignedUnit`: unit operators see it when they have an assigned unit, even without an explicit matrix row. All other dashboards need an explicit **Dashboards** permission.
 
 ---
 
@@ -400,6 +427,8 @@ Automated tests for voucher stamping live in `tests/jest/accountsLoanAc.test.js`
 - `GET|POST /api/crud/:module` - list/create
 - `GET|PUT|DELETE /api/crud/:module/:id` - one-record operations
 - `GET|POST /api/user-permissions-matrix` - permission matrix UI backend
+- `GET /api/dashboard/<key>` - landing widget KPI JSON (session + dashboard permission); see [docs/DASHBOARDS.md](docs/DASHBOARDS.md)
+- `GET /api/dashboard/search-bank-branch/search?q=` - branch search for Search Bank & Branch widget
 - `GET /api/reports/:reportKey/run?format=html|excel&...` - run report (filters as query params); see [docs/REPORTS.md](docs/REPORTS.md)
 - `GET /api/new-case-inward/loan-account-rule?branchId=` - branch->bank loan rule resolver
 - `GET /api/new-case-inward/case-details-pdf/:id` - download New Case Inward case details PDF

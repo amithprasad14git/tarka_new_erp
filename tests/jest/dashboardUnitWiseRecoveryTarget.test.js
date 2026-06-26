@@ -1,5 +1,10 @@
 // Test file — Unit Wise Recovery Target dashboard (FY, SQL, scoping, permissions).
 
+/**
+ * Verifies recovery target registration, SQL uses recoveredDate in FY, and unit scoping.
+ * Guide: docs/DASHBOARDS.md
+ */
+
 jest.mock("mysql2", () => ({
   escapeId: jest.fn((v) => `\`${String(v)}\``)
 }));

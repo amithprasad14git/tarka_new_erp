@@ -1,12 +1,23 @@
 "use client";
 
-// Generic dashboard fetch + client-side cache wrapper for landing widgets.
+// Dashboard widget loader — fetches /api/dashboard/<key> and renders the matching widget.
+
+/**
+ * Shared fetch + cache wrapper for all landing dashboard widgets on /dashboard.
+ * - Loads data once per session tab; Refresh bypasses cache.
+ * - Shows skeleton while loading, retry button on hard failure.
+ * - Dispatches to the correct widget component by dashboardKey.
+ * Guide: docs/DASHBOARDS.md
+ */
 
 import { useCallback, useEffect, useRef } from "react";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import MyTasksWidget from "../task/MyTasksWidget";
 import MyRemindersWidget from "../reminder/MyRemindersWidget";
 import UnitWiseRecoveryTargetWidget from "./unit_wise_recovery_target/UnitWiseRecoveryTargetWidget";
+import SearchBankBranchWidget from "./search_bank_branch/SearchBankBranchWidget";
+import InvoiceCollectionsWidget from "./invoice_collections/InvoiceCollectionsWidget";
+import RegionalPerformanceWidget from "./regional_performance/RegionalPerformanceWidget";
 import "../task/task.css";
 import "../reminder/reminder.css";
 
@@ -15,6 +26,7 @@ import "../reminder/reminder.css";
  */
 
 /**
+ * Fetches widget JSON from API; caches until Refresh. Maps dashboardKey → React widget.
  * @param {{
  *   dashboardKey: string,
  *   title?: string,
@@ -32,8 +44,10 @@ export default function DashboardWidgetLoader({
 
   const fetchDashboard = useCallback(
     async (force = false) => {
+      // --- Fetch /api/dashboard/<key> and update parent cache ---
       const current = cacheRef.current;
       if (current.loading) return;
+      // Skip refetch unless user clicked Refresh (force=true).
       if (!force && current.data) return;
 
       onCacheUpdate(dashboardKey, {
@@ -103,9 +117,43 @@ export default function DashboardWidgetLoader({
     );
   }
 
+  // Route each config key to its widget UI (add new dashboards here + registry).
   if (dashboardKey === "unit_wise_recovery_target") {
     return (
       <UnitWiseRecoveryTargetWidget
+        data={data}
+        loading={loading}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={() => fetchDashboard(true)}
+      />
+    );
+  }
+
+  if (dashboardKey === "search_bank_branch") {
+    return (
+      <SearchBankBranchWidget
+        data={data}
+        loading={loading}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={() => fetchDashboard(true)}
+      />
+    );
+  }
+
+  if (dashboardKey === "invoice_collections") {
+    return (
+      <InvoiceCollectionsWidget
+        data={data}
+        loading={loading}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={() => fetchDashboard(true)}
+      />
+    );
+  }
+
+  if (dashboardKey === "regional_performance") {
+    return (
+      <RegionalPerformanceWidget
         data={data}
         loading={loading}
         lastFetchedAt={lastFetchedAt}

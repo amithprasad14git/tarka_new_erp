@@ -85,6 +85,8 @@ const {
   taskPermissionsForUser,
   normalizeBucket,
   appendBucketFilter,
+  appendTaskAlertsScope,
+  loadTaskAlerts,
   loadTaskDashboardSummary,
   listTasksForDashboard,
   getStatusCountsForBucket,
@@ -269,6 +271,90 @@ describe("taskDashboard.service", () => {
       expect(overdue?.tone).toBe("overdue");
       expect(today?.tone).toBe("today");
       expect(upcoming?.tone).toBe("upcoming");
+    });
+  });
+
+  describe("appendTaskAlertsScope", () => {
+    test("combines assigned-to-me and assigned-by-me buckets for regular user", () => {
+      const whereParts = [];
+      const whereValues = [];
+      appendTaskAlertsScope({ id: 7, role: 2 }, whereParts, whereValues);
+      expect(whereParts.join(" ")).toContain("`assignee` = ? OR `followUpPerson` = ?");
+      expect(whereParts.join(" ")).toContain("`createdBy` = ? AND `assignee` <> ?");
+      expect(whereValues).toEqual([7, 7, 7, 7]);
+    });
+  });
+
+  describe("loadTaskAlerts", () => {
+    test("returns summed counts and open due/overdue items across both buckets", async () => {
+      pool.query
+        .mockResolvedValueOnce([
+          [
+            {
+              totalTasks: 3,
+              completedTasks: 0,
+              workInProgress: 1,
+              pendingTasks: 2,
+              cancelledTasks: 0,
+              overdueTasks: 2,
+              dueToday: 1,
+              dueThisWeek: 0,
+              highPriorityOpen: 0,
+              finishedLastWeek: 0
+            }
+          ]
+        ])
+        .mockResolvedValueOnce([
+          [
+            {
+              totalTasks: 1,
+              completedTasks: 0,
+              workInProgress: 0,
+              pendingTasks: 1,
+              cancelledTasks: 0,
+              overdueTasks: 1,
+              dueToday: 0,
+              dueThisWeek: 0,
+              highPriorityOpen: 0,
+              finishedLastWeek: 0
+            }
+          ]
+        ])
+        .mockResolvedValueOnce([
+          [
+            {
+              id: 1,
+              taskTitle: "Overdue",
+              dueDate: "2026-06-01",
+              status: "In Progress"
+            },
+            {
+              id: 2,
+              taskTitle: "Today",
+              dueDate: "2026-06-13",
+              status: "Pending"
+            }
+          ]
+        ]);
+
+      const alerts = await loadTaskAlerts({ id: 7, role: 2 });
+
+      expect(alerts).toEqual({
+        overdueCount: 3,
+        dueTodayCount: 1,
+        alertCount: 4,
+        items: [
+          expect.objectContaining({ id: 1, taskTitle: "Overdue", isOverdue: true, status: "In Progress" }),
+          expect.objectContaining({ id: 2, taskTitle: "Today", isOverdue: false, status: "Pending" })
+        ]
+      });
+
+      const [itemsSql, itemsValues] = pool.query.mock.calls[2];
+      expect(itemsSql).toContain("`status` NOT IN ('Completed', 'Cancelled')");
+      expect(itemsSql).toContain("DATE(`dueDate`) <= CURDATE()");
+      expect(itemsSql).toContain("`assignee` = ? OR `followUpPerson` = ?");
+      expect(itemsSql).toContain("`createdBy` = ? AND `assignee` <> ?");
+      expect(itemsValues).toEqual([7, 7, 7, 7, 10]);
     });
   });
 

@@ -45,6 +45,12 @@ Example (`lib/modules/returnCase.js`):
 | `components/Report*.js` | `// Report UI — …` (after `"use client";`) |
 | `components/reports/*.js` | `// Custom report table body — …` |
 | `app/api/reports/**/route.js` | `// Application API route — run report (HTML JSON or Excel download).` |
+| `config/dashboards.js` | `// Configuration — landing dashboard widgets (titles, permission keys).` |
+| `lib/dashboards/**/run.js` | `// Dashboard — <name> (server loader for landing widget).` |
+| `lib/dashboards/**/*.js` | `// Dashboard — …` (SQL aggregation or shared FY/unit scope). |
+| `components/dashboards/**` | `// Dashboard widget UI — …` (after `"use client";`) |
+| `app/api/dashboard/**/route.js` | `// Application API route — dashboard KPI JSON for landing widgets.` |
+| `tests/jest/dashboard*.test.js` | `// Test file — dashboard config, SQL, and permission checks.` |
 | `tests/jest/*.test.js` | `// Test file — automated checks so changes do not break existing behaviour.` |
 
 ---
@@ -111,6 +117,7 @@ export async function GET(_req, { params }) {
 | Pickers, Print, preload child rows | `lib/modules/<module>Client.js` |
 | PDF layout | `lib/modules/<module>Pdf.js` |
 | Generic UI (forms, tables) | `components/` — **no** module business rules |
+| Landing dashboard widgets | `config/dashboards.js`, `lib/dashboards/`, `components/dashboards/` — [DASHBOARDS.md](DASHBOARDS.md) |
 
 Report styling and pipeline rules: [docs/REPORTS.md](REPORTS.md).
 

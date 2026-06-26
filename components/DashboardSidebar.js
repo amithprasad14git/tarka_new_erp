@@ -25,10 +25,10 @@ const groupIcons = {
   Lookups: "🛠️",
   Banks: "🏛️",
   Cases: "📚",
-  Tasks: "✅",
+  "Tasks & Reminders": "✅",
   "Case Related Reports": "📊",
   "General Reports": "🗂️",
-  "Accounts Reports": "🪙",
+  "Accounts Reports": "📑",
 };
 
 /**

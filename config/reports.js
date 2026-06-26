@@ -131,7 +131,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -139,16 +139,16 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "unitLabel", label: "UNIT", align: "left", widthExcel: 8, widthHtml: "5rem", hideWhenFilterSet: "unit" },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "bankLabel", label: "BANK", align: "center", widthExcel: 10, widthHtml: "4rem", hideWhenFilterSet: "bank" },
+      { key: "unitLabel", label: "UNIT", align: "left", widthExcel: 8, widthHtml: "6rem", hideWhenFilterSet: "unit" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
+      { key: "bankLabel", label: "BANK", align: "center", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "bank" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -158,7 +158,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "closureBalance",
@@ -167,7 +167,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "7rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -233,14 +233,14 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "bankLabel", label: "BANK", align: "left", widthExcel: 18, widthHtml: "8rem", hideWhenFilterSet: "bank" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "bankLabel", label: "BANK", align: "left", widthExcel: 18, widthHtml: "6rem", hideWhenFilterSet: "bank" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
-      { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "rbo_ro" },
-      { key: "branchCode", label: "BRANCH CODE", align: "center", widthExcel: 12, widthHtml: "6rem" },
-      { key: "branchName", label: "BRANCH NAME", align: "left", widthExcel: 28, widthHtml: "11rem" },
+      { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
+      { key: "branchCode", label: "BRANCH CODE", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
+      { key: "branchName", label: "BRANCH NAME", align: "left", widthExcel: 28, widthHtml: "12rem" },
       { key: "place", label: "PLACE", align: "left", widthExcel: 16, widthHtml: "8rem" },
-      { key: "active", label: "ACTIVE", align: "center", widthExcel: 8, widthHtml: "4rem", hideWhenFilterSet: "active" }
+      { key: "active", label: "ACTIVE", align: "center", widthExcel: 8, widthHtml: "5rem", hideWhenFilterSet: "active" }
     ],
 
     maxRows: 50000
@@ -368,7 +368,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -376,9 +376,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
@@ -391,7 +391,7 @@ export const reports = {
         hideWhenFilterSet: "receivedFrom"
       },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -401,7 +401,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "closureBalance",
@@ -409,8 +409,8 @@ export const reports = {
         type: "inr",
         align: "right",
         sum: true,
-        widthExcel: 16,
-        widthHtml: "7rem"
+        widthExcel: 20,
+        widthHtml: "10rem"
       },
       { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" },
       {
@@ -419,8 +419,8 @@ export const reports = {
         type: "inr",
         align: "right",
         sum: true,
-        widthExcel: 16,
-        widthHtml: "6rem"
+        widthExcel: 20,
+        widthHtml: "10rem"
       },
       { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" }
     ],
@@ -566,7 +566,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -574,9 +574,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
@@ -589,7 +589,7 @@ export const reports = {
         hideWhenFilterSet: "receivedFrom"
       },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -599,7 +599,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "closureBalance",
@@ -608,7 +608,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "7rem"
+        widthHtml: "10rem"
       },
       { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" },
       {
@@ -618,7 +618,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "6rem"
+        widthHtml: "10rem"
       },
       { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" }
     ],
@@ -748,7 +748,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -756,9 +756,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
@@ -771,7 +771,7 @@ export const reports = {
         hideWhenFilterSet: "receivedFrom"
       },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -781,7 +781,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "closureBalance",
@@ -790,7 +790,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "7rem"
+        widthHtml: "10rem"
       },
       { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" },
       {
@@ -800,7 +800,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "6rem"
+        widthHtml: "10rem"
       },
       { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" }
     ],
@@ -931,7 +931,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -939,9 +939,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
@@ -954,7 +954,7 @@ export const reports = {
         hideWhenFilterSet: "receivedFrom"
       },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -964,7 +964,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "closureBalance",
@@ -973,7 +973,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "7rem"
+        widthHtml: "10rem"
       },
       {
         key: "amountRecovered",
@@ -982,7 +982,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "6rem"
+        widthHtml: "10rem"
       },
       {
         key: "returnDate",
@@ -991,7 +991,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" }
     ],
@@ -1122,7 +1122,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -1130,9 +1130,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "6rem"
+        widthHtml: "7rem"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
       { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
       { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
@@ -1145,7 +1145,7 @@ export const reports = {
         hideWhenFilterSet: "receivedFrom"
       },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "7rem" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
       { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
       { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
@@ -1155,7 +1155,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       {
         key: "amountRecovered",
@@ -1164,7 +1164,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "6rem"
+        widthHtml: "10rem"
       },
       {
         key: "closureBalance",
@@ -1173,7 +1173,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 16,
-        widthHtml: "7rem"
+        widthHtml: "10rem"
       },
       {
         key: "settledDate",
@@ -1182,7 +1182,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "5rem"
+        widthHtml: "7rem"
       },
       { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" }
     ],
@@ -1489,14 +1489,14 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "createdDate", label: "CREATED DATE", align: "center", widthExcel: 20, widthHtml: "9rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "createdDate", label: "CREATED DATE", align: "center", widthExcel: 20, widthHtml: "7rem" },
       {
         key: "userLabel",
         label: "USER",
         align: "left",
         widthExcel: 18,
-        widthHtml: "8rem",
+        widthHtml: "11rem",
         hideWhenFilterSet: "user"
       },
       {
@@ -1504,7 +1504,7 @@ export const reports = {
         label: "MODULE",
         align: "left",
         widthExcel: 22,
-        widthHtml: "9rem",
+        widthHtml: "8rem",
         hideWhenFilterSet: "module"
       },
       {
@@ -1516,8 +1516,8 @@ export const reports = {
         hideWhenFilterSet: "action"
       },
       { key: "recordLabel", label: "RECORD", align: "left", widthExcel: 24, widthHtml: "10rem" },
-      { key: "oldData", label: "OLD DATA", align: "left", widthExcel: 48, widthHtml: "16rem" },
-      { key: "newData", label: "NEW DATA", align: "left", widthExcel: 48, widthHtml: "16rem" }
+      { key: "oldData", label: "OLD DATA", align: "left", widthExcel: 48, widthHtml: "10rem" },
+      { key: "newData", label: "NEW DATA", align: "left", widthExcel: 48, widthHtml: "10rem" }
     ],
 
     maxRows: 50000
@@ -1600,8 +1600,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -1609,7 +1609,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "unitLabel",
@@ -1624,7 +1624,7 @@ export const reports = {
         label: "PAID TO",
         align: "left",
         widthExcel: 22,
-        widthHtml: "9rem",
+        widthHtml: "11rem",
         hideWhenFilterSet: "paidTo"
       },
       { key: "remarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" },
@@ -1633,7 +1633,7 @@ export const reports = {
         label: "PAYMENT MODE",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem",
+        widthHtml: "5rem",
         hideWhenFilterSet: "paymentMode"
       },
       {
@@ -1644,7 +1644,7 @@ export const reports = {
         widthHtml: "8rem",
         hideWhenFilterSet: "npaCurrentAc"
       },
-      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "6rem" },
+      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "7.5rem" },
       {
         key: "chequeDate",
         label: "CHEQUE DATE",
@@ -1652,9 +1652,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "8rem" },
+      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "11rem" },
       {
         key: "amount",
         label: "AMOUNT",
@@ -1662,7 +1662,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -1730,8 +1730,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -1739,7 +1739,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "unitLabel",
@@ -1761,7 +1761,7 @@ export const reports = {
         label: "PAYMENT MODE",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem",
+        widthHtml: "5rem",
         hideWhenFilterSet: "paymentMode"
       },
       { key: "remarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" },
@@ -1773,7 +1773,7 @@ export const reports = {
         widthHtml: "8rem",
         hideWhenFilterSet: "npaCurrentAc"
       },
-      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "6rem" },
+      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "7.5rem" },
       {
         key: "chequeDate",
         label: "CHEQUE DATE",
@@ -1781,9 +1781,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "8rem" },
+      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "11rem" },
       {
         key: "amount",
         label: "AMOUNT",
@@ -1791,7 +1791,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -1899,8 +1899,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -1908,7 +1908,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "unitLabel",
@@ -1923,7 +1923,7 @@ export const reports = {
         label: "PARTY",
         align: "left",
         widthExcel: 22,
-        widthHtml: "9rem",
+        widthHtml: "11rem",
         hideWhenFilterSet: "paidTo"
       },
       {
@@ -1941,7 +1941,7 @@ export const reports = {
         label: "PAYMENT MODE",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem",
+        widthHtml: "5rem",
         hideWhenFilterSet: "paymentMode",
         hideWhenDataType: "Payment Mode Wise"
       },
@@ -1953,7 +1953,7 @@ export const reports = {
         widthHtml: "8rem",
         hideWhenFilterSet: "npaCurrentAc"
       },
-      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "6rem" },
+      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "7.5rem" },
       {
         key: "chequeDate",
         label: "CHEQUE DATE",
@@ -1961,9 +1961,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "8rem" },
+      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "11rem" },
       {
         key: "amount",
         label: "AMOUNT",
@@ -1971,7 +1971,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -2064,8 +2064,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -2073,7 +2073,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "unitLabel",
@@ -2096,7 +2096,7 @@ export const reports = {
         label: "PARTY",
         align: "left",
         widthExcel: 22,
-        widthHtml: "9rem",
+        widthHtml: "11rem",
         hideWhenFilterSet: "party"
       },
       { key: "remarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" },
@@ -2105,7 +2105,7 @@ export const reports = {
         label: "PAYMENT MODE",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem",
+        widthHtml: "5rem",
         hideWhenFilterSet: "paymentMode"
       },
       {
@@ -2116,7 +2116,7 @@ export const reports = {
         widthHtml: "8rem",
         hideWhenFilterSet: "npaCurrentAc"
       },
-      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "6rem" },
+      { key: "chequeNo", label: "CHEQUE NO", align: "left", widthExcel: 14, widthHtml: "7.5rem" },
       {
         key: "chequeDate",
         label: "CHEQUE DATE",
@@ -2124,9 +2124,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "8rem" },
+      { key: "inFavourOf", label: "IN FAVOUR OF", align: "left", widthExcel: 20, widthHtml: "11rem" },
       {
         key: "receiptAmount",
         label: "RECEIPT AMOUNT",
@@ -2134,7 +2134,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       },
       {
         key: "paymentAmount",
@@ -2143,7 +2143,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -2196,8 +2196,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -2205,7 +2205,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "fromCurrentAcLabel",
@@ -2231,7 +2231,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -2288,8 +2288,8 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
-      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      { key: "voucherNo", label: "VOUCHER NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "date",
         label: "DATE",
@@ -2297,7 +2297,7 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
       {
         key: "transactionType",
@@ -2323,7 +2323,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -2418,7 +2418,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "invoiceDate",
         label: "INVOICE DATE",
@@ -2426,10 +2426,10 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "invoiceNo", label: "INVOICE NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
+      { key: "invoiceNo", label: "INVOICE NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
       { key: "borrower", label: "BORROWER", align: "left", widthExcel: 28, widthHtml: "11rem" },
       {
         key: "unitLabel",
@@ -2444,7 +2444,7 @@ export const reports = {
         label: "BANK",
         align: "center",
         widthExcel: 10,
-        widthHtml: "4rem",
+        widthHtml: "6rem",
         hideWhenFilterSet: "bank"
       },
       {
@@ -2463,7 +2463,7 @@ export const reports = {
         widthHtml: "8rem",
         hideWhenFilterSet: "npaCurrentAc"
       },
-      { key: "finalInvoice", label: "FINAL INVOICE", align: "center", widthExcel: 12, widthHtml: "5.5rem" },
+      { key: "finalInvoice", label: "FINAL INVOICE", align: "center", widthExcel: 12, widthHtml: "5rem" },
       {
         key: "grandTotal",
         label: "INVOICE AMOUNT",
@@ -2471,7 +2471,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       }
     ],
 
@@ -2554,7 +2554,7 @@ export const reports = {
     },
 
     columns: [
-      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "2.5rem" },
+      { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
         key: "invoiceDate",
         label: "INVOICE DATE",
@@ -2562,9 +2562,9 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "invoiceNo", label: "INVOICE NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
+      { key: "invoiceNo", label: "INVOICE NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
       {
         key: "receivedDate",
         label: "RECEIVED DATE",
@@ -2572,11 +2572,11 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
-        widthHtml: "5.5rem"
+        widthHtml: "7rem"
       },
-      { key: "refNo", label: "REF NO", align: "center", widthExcel: 16, widthHtml: "7rem" },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "6.5rem" },
-      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 24, widthHtml: "10rem" },
+      { key: "refNo", label: "REF NO", align: "center", widthExcel: 16, widthHtml: "7.5rem" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
+      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 24, widthHtml: "11rem" },
       {
         key: "unitLabel",
         label: "UNIT",
@@ -2590,7 +2590,7 @@ export const reports = {
         label: "BANK",
         align: "center",
         widthExcel: 10,
-        widthHtml: "4rem",
+        widthHtml: "6rem",
         hideWhenFilterSet: "bank"
       },
       {
@@ -2616,7 +2616,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       },
       {
         key: "tdsPercentage",
@@ -2624,7 +2624,7 @@ export const reports = {
         type: "number",
         align: "right",
         widthExcel: 10,
-        widthHtml: "4.5rem"
+        widthHtml: "5rem"
       },
       {
         key: "tdsAmount",
@@ -2633,7 +2633,7 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       },
       {
         key: "receivedAmount",
@@ -2642,9 +2642,9 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 14,
-        widthHtml: "6.5rem"
+        widthHtml: "10rem"
       },
-      { key: "roundOff", label: "ROUND OFF", align: "center", widthExcel: 12, widthHtml: "5.5rem" }
+      { key: "roundOff", label: "ROUND OFF", align: "center", widthExcel: 12, widthHtml: "5rem" }
     ],
 
     maxRows: 50000

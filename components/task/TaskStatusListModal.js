@@ -1,5 +1,13 @@
 "use client";
 
+// Dashboard drilldown — full task list modal (View all / status click from My Tasks).
+
+/**
+ * Paginated task table in a full-screen modal. Filter by status tab, bucket (assigned vs created),
+ * and search. Opens TaskDetailPanel via onSelectTask. Parent: MyTasksWidget.js.
+ * API: GET /api/task?bucket=assigned_to_me|created_by_me
+ */
+
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import TaskBucketSwitch from "./TaskBucketSwitch";
 import TaskExpandableSearch from "./TaskExpandableSearch";
@@ -20,6 +28,7 @@ import {
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import TaskModalPortal from "./TaskModalPortal";
 
+/** Split flat task list into buckets keyed by TASK_STATUSES. */
 function groupTasksByStatus(tasks) {
   const groups = Object.fromEntries(TASK_STATUSES.map((st) => [st, []]));
   for (const task of tasks) {
@@ -29,12 +38,14 @@ function groupTasksByStatus(tasks) {
   return groups;
 }
 
+/** Map widget drilldown status (or VIEW_ALL) to modal initial tab. */
 function resolveInitialStatus(initialStatus) {
   if (initialStatus === VIEW_ALL_STATUS) return VIEW_ALL_STATUS;
   if (TASK_STATUSES.includes(initialStatus)) return initialStatus;
   return "Pending";
 }
 
+/** Assignee + follow-up avatar cells in the task table. */
 function PeopleCell({ assigneeLabel, followUpLabel }) {
   const assignee = String(assigneeLabel || "").trim();
   const followUp = String(followUpLabel || "").trim();
@@ -63,6 +74,7 @@ function PeopleCell({ assigneeLabel, followUpLabel }) {
   );
 }
 
+/** Placeholder rows while task list API is loading. */
 function TableListSkeleton() {
   return (
     <div className="task-list-table-skeleton" aria-hidden="true">
@@ -73,6 +85,7 @@ function TableListSkeleton() {
   );
 }
 
+/** Overdue day count with color severity (red = very overdue). */
 function DaysPastDueCell({ dueDate, status }) {
   const days = daysPastDue(dueDate, status);
   const severity = overdueDaysSeverity(days);
@@ -91,6 +104,7 @@ function DaysPastDueCell({ dueDate, status }) {
   );
 }
 
+/** Single row in the task list table — Edit opens detail panel. */
 function TaskListTableRow({ task, onOpen }) {
   return (
     <tr className="task-group-row">
@@ -127,6 +141,7 @@ function TaskListTableRow({ task, onOpen }) {
   );
 }
 
+/** Shown when search or status filter returns zero tasks. */
 function ListEmptyState({ search, activeStatus }) {
   const statusLabel =
     activeStatus === VIEW_ALL_STATUS ? "tasks" : `${activeStatus.toLowerCase()} tasks`;
@@ -146,6 +161,17 @@ function ListEmptyState({ search, activeStatus }) {
   );
 }
 
+/**
+ * Full-screen task list modal with status tabs, bucket switch, search, pagination.
+ * @param {{
+ *   open: boolean,
+ *   initialStatus: string | null,
+ *   refreshKey?: number,
+ *   onClose: () => void,
+ *   onSelectTask: (task: object) => void,
+ *   onAddTask?: () => void
+ * }} props
+ */
 export default function TaskStatusListModal({
   open,
   initialStatus,
@@ -180,6 +206,7 @@ export default function TaskStatusListModal({
     setPage(1);
   }, [activeStatus, search]);
 
+  /** Fetch tasks for current bucket (assigned_to_me vs created_by_me). */
   const loadTasks = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -204,6 +231,7 @@ export default function TaskStatusListModal({
     loadTasks();
   }, [open, bucket, refreshKey, loadTasks]);
 
+  /** Client-side search across title, description, people, priority, status. */
   const searchFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return tasks;

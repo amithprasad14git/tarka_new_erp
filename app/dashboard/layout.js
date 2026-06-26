@@ -1,9 +1,10 @@
-// Application route/page/API handler for this feature area.
-// Keep module-specific business logic in lib/modules/<module> files.
+// Application page layout — dashboard workspace (sidebar, tabs, landing widgets).
 
 /**
- * Dashboard area: requires login; builds sidebar from modules the user may access (any of view/create/edit/delete); mounts tabbed
- * module panels (see DashboardTabs). `children` from the layout is not used for module body—tabs render clients.
+ * Dashboard area: requires login; builds sidebar from modules/reports the user may access;
+ * filters landing widgets by dashboard permission (config/dashboards.js).
+ * Mounts DashboardTabs which renders KPI widgets on /dashboard home.
+ * Guide: docs/DASHBOARDS.md
  */
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -21,6 +22,7 @@ import { DashboardUserProvider } from "../../components/DashboardUserProvider";
 import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
 import AppFooter from "../../components/AppFooter";
+import DashboardAlertsProvider from "../../components/dashboard/DashboardAlertsProvider";
 import "../../components/task/task.css";
 import "../../components/reminder/reminder.css";
 
@@ -65,7 +67,7 @@ export default async function DashboardLayout({ children }) {
     return acc;
   }, {});
 
-  // Landing dashboards: visible only when user has permission on dashboard permission key.
+  // Landing dashboards: each config entry checked via dashboardAccess (matrix + auto-grant).
   const visibleDashboards = [];
   for (const d of dashboards) {
     const permissionKey = String(d.permissionKey || d.key || "").trim();
@@ -81,28 +83,31 @@ export default async function DashboardLayout({ children }) {
       email={user.email}
       unitId={user.unit != null ? Number(user.unit) : null}
     >
-      <div className="flux-layout">
-        <DashboardSidebar groups={groups} />
-        <main className="flux-main flux-main--with-footer">
-          <InactivityLogout />
-          <header className="flux-topbar">
-            <div className="topbar-leading">
-              <TopbarGreeting />
-              <TopbarWeather />
+      <DashboardAlertsProvider>
+        <div className="flux-layout">
+          <DashboardSidebar groups={groups} />
+          <main className="flux-main flux-main--with-footer">
+            <InactivityLogout />
+            <header className="flux-topbar">
+              <div className="topbar-leading">
+                <TopbarGreeting />
+                <TopbarWeather />
+              </div>
+              <DashboardTopbar userUsername={user.username} userFullName={user.fullName} />
+            </header>
+            {/* Due-items toast renders inside DashboardAlertsBell (topbar) */}
+            <div className="flux-main-scroll-region">
+              <div className="flux-content">
+                <DashboardTabs
+                  visibleModuleKeys={allVisibleKeys}
+                  visibleDashboards={visibleDashboards}
+                />
+              </div>
             </div>
-            <DashboardTopbar userUsername={user.username} userFullName={user.fullName} />
-          </header>
-          <div className="flux-main-scroll-region">
-            <div className="flux-content">
-              <DashboardTabs
-                visibleModuleKeys={allVisibleKeys}
-                visibleDashboards={visibleDashboards}
-              />
-            </div>
-          </div>
-          <AppFooter />
-        </main>
-      </div>
+            <AppFooter />
+          </main>
+        </div>
+      </DashboardAlertsProvider>
     </DashboardUserProvider>
   );
 }

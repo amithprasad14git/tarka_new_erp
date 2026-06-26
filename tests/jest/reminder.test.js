@@ -85,6 +85,17 @@ describe("reminder module", () => {
     });
   });
 
+  test("applyReminderBeforeWrite allows status change when due date unchanged and in past", async () => {
+    await expect(
+      applyReminderBeforeWrite(conn, {
+        user: { id: 1, role: 2 },
+        merged: { status: "Completed", dueDate: "2020-01-01", recurrenceType: "None" },
+        childTableRows: {},
+        oldRow: { createdBy: 1, status: "Pending", dueDate: "2020-01-01", recurrenceType: "None" }
+      })
+    ).resolves.toBeUndefined();
+  });
+
   test("applyReminderBeforeWrite stamps createdBy on create", async () => {
     await applyReminderBeforeWrite(conn, {
       user: { id: 7 },

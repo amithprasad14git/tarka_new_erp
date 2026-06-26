@@ -1,5 +1,13 @@
 "use client";
 
+// Dashboard drilldown — full reminder list modal (View all from My Reminders).
+
+/**
+ * Paginated reminder table in a full-screen modal. Filter by status tab and search.
+ * Opens ReminderDetailPanel via onSelectReminder. Parent: MyRemindersWidget.js.
+ * API: GET /api/reminder
+ */
+
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import ReminderExpandableSearch from "./ReminderExpandableSearch";
 import ReminderStatusNav from "./ReminderStatusNav";
@@ -17,6 +25,7 @@ import {
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import ReminderModalPortal from "./ReminderModalPortal";
 
+/** Split flat reminder list into buckets keyed by REMINDER_STATUSES. */
 function groupRemindersByStatus(reminders) {
   const groups = Object.fromEntries(REMINDER_STATUSES.map((st) => [st, []]));
   for (const r of reminders) {
@@ -26,12 +35,14 @@ function groupRemindersByStatus(reminders) {
   return groups;
 }
 
+/** Map widget drilldown status (or VIEW_ALL) to modal initial tab. */
 function resolveInitialStatus(initialStatus) {
   if (initialStatus === VIEW_ALL_STATUS) return VIEW_ALL_STATUS;
   if (REMINDER_STATUSES.includes(initialStatus)) return initialStatus;
   return "Pending";
 }
 
+/** Placeholder rows while reminder list API is loading. */
 function TableListSkeleton() {
   return (
     <div className="reminder-list-table-skeleton" aria-hidden="true">
@@ -42,6 +53,7 @@ function TableListSkeleton() {
   );
 }
 
+/** Overdue day count with color severity. */
 function DaysPastDueCell({ dueDate, status }) {
   const days = daysPastDue(dueDate, status);
   const severity = overdueDaysSeverity(days);
@@ -50,6 +62,7 @@ function DaysPastDueCell({ dueDate, status }) {
   return <span className={`reminder-group-overdue reminder-group-overdue--${severity}`}>{days}d</span>;
 }
 
+/** Single row in the reminder list table — Open launches detail panel. */
 function ReminderListTableRow({ reminder, onOpen }) {
   return (
     <tr className="reminder-group-row">
@@ -90,6 +103,7 @@ function ReminderListTableRow({ reminder, onOpen }) {
   );
 }
 
+/** Shown when search or status filter returns zero reminders. */
 function ListEmptyState({ search, activeStatus }) {
   const statusLabel =
     activeStatus === VIEW_ALL_STATUS ? "reminders" : `${activeStatus.toLowerCase()} reminders`;
@@ -108,6 +122,17 @@ function ListEmptyState({ search, activeStatus }) {
   );
 }
 
+/**
+ * Full-screen reminder list modal with status tabs, search, pagination.
+ * @param {{
+ *   open: boolean,
+ *   initialStatus?: string,
+ *   refreshKey?: number,
+ *   onClose: () => void,
+ *   onSelectReminder: (reminder: object) => void,
+ *   onAddReminder?: () => void
+ * }} props
+ */
 export default function ReminderListModal({
   open,
   initialStatus,
@@ -140,15 +165,12 @@ export default function ReminderListModal({
     setPage(1);
   }, [activeStatus, search]);
 
+  /** Fetch all reminders for the logged-in user (filtered by status tab client-side). */
   const loadReminders = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const q = new URLSearchParams();
-      if (activeStatus && activeStatus !== VIEW_ALL_STATUS) {
-        q.set("status", activeStatus);
-      }
-      const res = await fetch(`/api/reminder?${q.toString()}`, { cache: "no-store" });
+      const res = await fetch("/api/reminder", { cache: "no-store" });
       const body = await readJsonResponse(res);
       if (!res.ok) {
         setError(formatApiErrorPayload(body, "Failed to load reminders"));
@@ -160,7 +182,7 @@ export default function ReminderListModal({
     } finally {
       setLoading(false);
     }
-  }, [activeStatus]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -212,7 +234,6 @@ export default function ReminderListModal({
 
   if (!open) return null;
 
-  const scopeTotalCount = searchFiltered.length;
   const statusTotalCount = statusFiltered.length;
 
   return (
@@ -229,9 +250,6 @@ export default function ReminderListModal({
               <h2 id={titleId} className="reminder-modal-title">
                 Reminders
               </h2>
-              <p className="reminder-modal-subtitle">
-                {scopeTotalCount} {scopeTotalCount === 1 ? "reminder" : "reminders"}
-              </p>
             </div>
             <button type="button" className="reminder-modal-close" onClick={() => onClose?.()} aria-label="Close">
               ×

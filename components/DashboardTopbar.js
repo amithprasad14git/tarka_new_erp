@@ -13,6 +13,7 @@ import ThemeToggle from "./ThemeToggle";
 import TopbarIstClock from "./TopbarIstClock";
 import TopbarMicroFloatLane from "./TopbarMicroFloatLane";
 import UserMenu from "./UserMenu";
+import DashboardAlertsBell from "./dashboard/DashboardAlertsBell";
 
 /**
  * Expands in the topbar; micro lane fills remaining width (flex: 1).
@@ -23,6 +24,7 @@ export default function DashboardTopbar({ userUsername, userFullName = "" }) {
     // Right-side cluster: sparkle lane, clock, theme, account menu.
     <div className="dashboard-topbar-actions">
       <TopbarMicroFloatLane />
+      <DashboardAlertsBell />
       <TopbarIstClock />
       <ThemeToggle />
       <UserMenu username={userUsername} fullName={userFullName} />

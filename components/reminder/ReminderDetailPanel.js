@@ -1,5 +1,13 @@
 "use client";
 
+// Dashboard modal — view/edit a single reminder from list or widget.
+
+/**
+ * Side panel / modal for one reminder: details form, status pills, activity feed.
+ * GET/PATCH /api/reminder/:id. Respects completed-lock permissions banner.
+ * Parent: MyRemindersWidget.js via ReminderModalPortal.
+ */
+
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import ReminderActivityList from "./ReminderActivityList";
 import ReminderRecurrencePicker from "./ReminderRecurrencePicker";
@@ -9,13 +17,13 @@ import {
   daysPastDue,
   formatReminderDate,
   isDueDateOnOrAfterToday,
-  minDueDateToday,
   overdueDaysSeverity
 } from "./reminderUtils";
 import { labelWithRequiredMark } from "../../lib/formFieldLabel";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import ReminderModalPortal from "./ReminderModalPortal";
 
+/** Plain-English banner when user cannot edit a completed reminder. */
 function permissionBannerText(permissions) {
   if (!permissions) return null;
   if (permissions.isCompletedLocked) {
@@ -24,11 +32,13 @@ function permissionBannerText(permissions) {
   return null;
 }
 
+/** Normalize API due date to YYYY-MM-DD for date input. */
 function dueDateValue(raw) {
   if (!raw) return "";
   return String(raw).slice(0, 10);
 }
 
+/** Overdue days readout in reminder detail header. */
 function DaysPastDueDisplay({ dueDate, status }) {
   const days = daysPastDue(dueDate, status);
   const severity = overdueDaysSeverity(days);
@@ -40,6 +50,7 @@ function DaysPastDueDisplay({ dueDate, status }) {
   );
 }
 
+/** Hydrate form state from GET /api/reminder/:id response. */
 function resetFormFromReminder(data, setters) {
   setters.setReminder(data);
   setters.setPermissions(data.permissions || null);
@@ -50,6 +61,10 @@ function resetFormFromReminder(data, setters) {
   setters.setStatus(data.status || "Pending");
 }
 
+/**
+ * Reminder detail/edit dialog — loads by reminderId when open.
+ * @param {{ open: boolean, reminderId: number | string | null, onClose: () => void, onUpdated?: () => void }} props
+ */
 export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdated }) {
   const dialogTitleId = useId();
   const titleId = useId();
@@ -153,26 +168,18 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
     setError("");
   }
 
-  async function refreshAfterSave(spawnedReminder) {
-    const body = await loadReminder();
-    if (!body) return;
-    const data = body.data || {};
-    reloadFormFromReminder(data);
-    setActivity(body.childTableRows?.activity_log || []);
-    if (spawnedReminder?.dueDate) {
-      setSuccessMsg(`Next reminder scheduled for ${formatReminderDate(spawnedReminder.dueDate)}`);
-    }
-    onUpdated?.();
-  }
-
   async function handleSave(e) {
     e.preventDefault();
     if (!hasSaveableChanges) return;
-    if (canEditDetails && recurrenceType !== "None" && !dueDate) {
+    const currentDueDate = dueDateValue(reminder?.dueDate);
+    const dueDateChanged = dueDate !== currentDueDate;
+    const recurrenceChanged = recurrenceType !== (reminder?.recurrenceType || "None");
+
+    if (canEditDetails && recurrenceChanged && recurrenceType !== "None" && !dueDate) {
       setError("Due date is required for recurring reminders.");
       return;
     }
-    if (canEditDetails && dueDate && !isDueDateOnOrAfterToday(dueDate)) {
+    if (canEditDetails && dueDateChanged && dueDate && !isDueDateOnOrAfterToday(dueDate)) {
       setError("Due date cannot be in the past.");
       return;
     }
@@ -205,7 +212,8 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
         setError(formatApiErrorPayload(body, "Failed to save"));
         return;
       }
-      await refreshAfterSave(body.spawnedReminder);
+      onUpdated?.();
+      onClose?.();
     } catch {
       setError("Failed to save");
     } finally {
@@ -246,9 +254,6 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
                   ×
                 </button>
               </header>
-
-              {error ? <p className="reminder-form-error reminder-form-error--detail">{error}</p> : null}
-              {successMsg ? <p className="reminder-form-success reminder-form-error--detail">{successMsg}</p> : null}
 
               <div className="reminder-detail-body">
                 <section className="reminder-detail-details">
@@ -340,7 +345,6 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
                               type="date"
                               className="reminder-input"
                               value={dueDate}
-                              min={minDueDateToday()}
                               onChange={(e) => setDueDate(e.target.value)}
                             />
                           ) : (
@@ -369,10 +373,18 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
                 </div>
               </div>
 
-              {(showPermissionBanner || hasSaveableChanges) ? (
+              {(showPermissionBanner || hasSaveableChanges || error || successMsg) ? (
                 <footer className="reminder-detail-footer">
                   <div className="reminder-detail-footer-start">
-                    {showPermissionBanner ? (
+                    {error ? (
+                      <p className="reminder-form-error reminder-form-error--footer" role="alert">
+                        {error}
+                      </p>
+                    ) : successMsg ? (
+                      <p className="reminder-form-success reminder-form-success--footer" role="status">
+                        {successMsg}
+                      </p>
+                    ) : showPermissionBanner ? (
                       <div className="reminder-permission-hint reminder-permission-hint--footer" role="status">
                         <span className="reminder-permission-hint-icon" aria-hidden="true">
                           🔒

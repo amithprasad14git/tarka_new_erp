@@ -2388,6 +2388,21 @@ button.reminder-completion-total-row:hover {
   margin-left: auto;
 }
 
+.reminder-form-error--footer,
+.reminder-form-success--footer {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.reminder-form-error--footer {
+  color: var(--danger);
+}
+
+.reminder-form-success--footer {
+  color: var(--success, #15803d);
+}
+
 .reminder-modal--create {
   max-width: 560px;
   height: auto;
@@ -4341,4 +4356,381 @@ button.reminder-completion-total-row:hover {
   100% {
     background-position: -200% 0;
   }
+}
+
+/* In-app reminder alerts (topbar bell + banner) */
+.reminder-alerts-bell {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reminder-alerts-bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.reminder-alerts-bell-btn:hover,
+.reminder-alerts-bell-btn.is-open {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  background: color-mix(in srgb, var(--brand) 6%, var(--panel));
+}
+
+.reminder-alerts-bell-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.reminder-alerts-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+
+.reminder-alerts-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 120;
+  width: min(320px, 92vw);
+  max-height: min(360px, 70vh);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--line) 30%, transparent) inset;
+  overflow: hidden;
+}
+
+.reminder-alerts-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  background: color-mix(in srgb, var(--line) 8%, var(--panel));
+}
+
+.reminder-alerts-dropdown-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--line) 70%, transparent) transparent;
+}
+
+.reminder-alerts-dropdown-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.reminder-alerts-dropdown-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.reminder-alerts-dropdown-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 65%, transparent);
+}
+
+.reminder-alerts-dropdown-body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.reminder-alerts-dropdown-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.reminder-alerts-dropdown-loading {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-empty {
+  margin: 0;
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+
+.reminder-alerts-dropdown-list > li + li {
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.reminder-alerts-dropdown-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.reminder-alerts-dropdown-item--static {
+  cursor: default;
+}
+
+.reminder-alerts-dropdown-item:hover {
+  background: color-mix(in srgb, var(--line) 22%, transparent);
+}
+
+.reminder-alerts-dropdown-item--static:hover {
+  background: transparent;
+}
+
+.reminder-alerts-dropdown-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.reminder-alerts-dropdown-item-due {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-item-due.is-overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.reminder-alerts-dropdown-section {
+  border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+}
+
+.reminder-alerts-dropdown-section:first-of-type {
+  border-top: none;
+}
+
+.reminder-alerts-dropdown-section-label {
+  margin: 0;
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-section-empty {
+  margin: 0;
+  padding: 4px 12px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.reminder-alerts-dropdown-item-lead {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.reminder-alerts-dropdown-item-meta .reminder-alerts-dropdown-item-due {
+  flex-shrink: 0;
+  margin-left: auto;
+  text-align: right;
+}
+
+.reminder-alerts-dropdown-item-status {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 12%, var(--panel));
+  color: var(--brand);
+}
+
+.reminder-alerts-dropdown-item-status--pending {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 12%, var(--panel));
+}
+
+.reminder-alerts-dropdown-item-status--in-progress {
+  color: var(--brand-dark);
+  background: color-mix(in srgb, var(--brand) 12%, var(--panel));
+}
+
+.reminder-alerts-dropdown-footer {
+  padding: 8px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+}
+
+.reminder-alerts-dropdown-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+}
+
+.reminder-alerts-dropdown-link:hover {
+  text-decoration: underline;
+}
+
+@keyframes reminder-alerts-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reminder-alerts-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.reminder-alerts-toast {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 119;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(320px, 92vw);
+  max-width: calc(100vw - 24px);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--line));
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.16),
+    0 0 0 1px color-mix(in srgb, var(--line) 35%, transparent) inset;
+  animation: reminder-alerts-toast-in 220ms ease-out both;
+}
+
+.reminder-alerts-toast.is-exiting {
+  animation: reminder-alerts-toast-out 180ms ease-in both;
+}
+
+.reminder-alerts-toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.reminder-alerts-toast-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
+  line-height: 1.4;
+}
+
+.reminder-alerts-toast-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.reminder-alerts-toast-view {
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.reminder-alerts-toast-view:hover {
+  background: color-mix(in srgb, var(--danger) 6%, var(--panel));
+}
+
+.reminder-alerts-toast-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.reminder-alerts-toast-dismiss:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--line) 30%, transparent);
 }

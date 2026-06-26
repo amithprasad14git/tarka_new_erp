@@ -1096,12 +1096,6 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, page, limit, viewMode, viewColumnFilters]);
 
-  useEffect(() => {
-    if (isActive) return;
-    recordsFetchKeyRef.current = "";
-    permissionsFetchKeyRef.current = "";
-  }, [isActive]);
-
   /**
    * Commit staged inputs to server filters (resets to page 1). Text filters apply on Enter; selects on change.
    * Uses a functional merge so `viewColumnFilterInput` is never stale when combining several columns.

@@ -48,7 +48,7 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
 
   return (
     <div
-      className={`report-output-table-scroll-outer${showScrollDown ? " has-scroll-hint" : ""}${showScrollTop ? " has-scroll-top" : ""}`}
+      className={`report-output-table-scroll-outer${overflowY ? " has-overflow" : ""}${showScrollDown ? " has-scroll-hint" : ""}${showScrollTop ? " has-scroll-top" : ""}`}
     >
       <div
         ref={scrollRef}
@@ -59,27 +59,31 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
       >
         {children}
       </div>
-      {showScrollDown ? (
-        <div className="report-output-scroll-hint" aria-hidden="true">
-          <img src={SCROLL_DOWN_SRC} alt="" className="report-output-scroll-hint-img" width={28} height={35} />
+      {overflowY ? (
+        <div className="report-output-scroll-footer-slot">
+          {showScrollDown ? (
+            <div className="report-output-scroll-hint" aria-hidden="true">
+              <img src={SCROLL_DOWN_SRC} alt="" className="report-output-scroll-hint-img" width={28} height={35} />
+            </div>
+          ) : null}
+          {showScrollTop ? (
+            <button
+              type="button"
+              className="report-output-scroll-top"
+              aria-label="Scroll to top of report"
+              title="Scroll to top"
+              onClick={scrollToTop}
+            >
+              <img
+                src={SCROLL_TOP_SRC}
+                alt=""
+                className="report-output-scroll-hint-img report-output-scroll-top-img"
+                width={28}
+                height={35}
+              />
+            </button>
+          ) : null}
         </div>
-      ) : null}
-      {showScrollTop ? (
-        <button
-          type="button"
-          className="report-output-scroll-top"
-          aria-label="Scroll to top of report"
-          title="Scroll to top"
-          onClick={scrollToTop}
-        >
-          <img
-            src={SCROLL_TOP_SRC}
-            alt=""
-            className="report-output-scroll-hint-img report-output-scroll-top-img"
-            width={28}
-            height={35}
-          />
-        </button>
       ) : null}
     </div>
   );

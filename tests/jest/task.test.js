@@ -11,7 +11,8 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 }));
 
 jest.mock("../../lib/istDateTime", () => ({
-  formatInstantAsMysqlDatetimeIST: jest.fn(() => "2026-06-13 12:00:00")
+  formatInstantAsMysqlDatetimeIST: jest.fn(() => "2026-06-13 12:00:00"),
+  getYmdISTFromInstant: jest.fn(() => "2026-06-13")
 }));
 
 const {
@@ -82,6 +83,30 @@ describe("task module", () => {
       code: "TASK_VALIDATION_FAILED",
       message: "Follow-up person cannot be the same as the assignee."
     });
+  });
+
+  test("applyTaskBeforeWrite rejects past due date", async () => {
+    await expect(
+      applyTaskBeforeWrite(conn, {
+        user: { id: 1 },
+        merged: { dueDate: "2020-01-01", assignee: 5 },
+        childTableRows: {}
+      })
+    ).rejects.toMatchObject({
+      code: "TASK_VALIDATION_FAILED",
+      message: "Due date cannot be in the past."
+    });
+  });
+
+  test("applyTaskBeforeWrite allows update when due date unchanged and in past", async () => {
+    await expect(
+      applyTaskBeforeWrite(conn, {
+        user: { id: 1, role: 2 },
+        merged: { taskTitle: "Updated", dueDate: "2020-01-01", assignee: 5, createdBy: 1 },
+        childTableRows: {},
+        oldRow: { createdBy: 1, assignee: 5, status: "Pending", dueDate: "2020-01-01", taskTitle: "Old" }
+      })
+    ).resolves.toBeUndefined();
   });
 
   test("applyTaskBeforeWrite strips status_history and enriches comments", async () => {

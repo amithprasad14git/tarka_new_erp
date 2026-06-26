@@ -1,7 +1,16 @@
 "use client";
 
+// Dashboard panel — month grid of task due dates (My Tasks widget column 3).
+
+/**
+ * Read-only calendar heatmap: each cell shows day + badge count of tasks due that date.
+ * Data comes from /api/dashboard/my_tasks calendar payload.
+ * Parent: MyTasksWidget.js
+ */
+
 import { formatTaskDate } from "./taskUtils";
 
+/** Fallback when API has not yet returned calendar cells. */
 const EMPTY_CALENDAR = {
   monthLabel: "",
   today: "",
@@ -11,22 +20,18 @@ const EMPTY_CALENDAR = {
   summary: { dueInMonth: 0, overdueInMonth: 0 }
 };
 
+/**
+ * Task due-date calendar for the current month.
+ * @param {{ calendar?: object, metrics?: object }} props
+ */
 export default function TaskDueCalendarPanel({ calendar = EMPTY_CALENDAR, metrics = {} }) {
   const cal = calendar?.cells?.length ? calendar : EMPTY_CALENDAR;
-  const overdue = Number(metrics.overdueTasks) || Number(cal.summary?.overdueInMonth) || 0;
   const dueToday = Number(metrics.dueToday) || 0;
   const dueThisWeek = Number(metrics.dueThisWeek) || 0;
 
   return (
     <div className="task-due-calendar" aria-label="Task due date calendar">
       <div className="task-due-calendar-main">
-        {overdue > 0 ? (
-          <div className="task-due-calendar-alert">
-            <span className="task-due-calendar-alert-dot" aria-hidden="true" />
-            {overdue} overdue
-          </div>
-        ) : null}
-
         <div className="task-due-calendar-weekdays">
           {cal.weekdays.map((w, i) => (
             <span key={`${w}-${i}`} className="task-due-calendar-weekday">
@@ -66,8 +71,7 @@ export default function TaskDueCalendarPanel({ calendar = EMPTY_CALENDAR, metric
             </span>
           </div>
           <p className="task-due-calendar-footer-note">
-            {dueToday} today · {dueThisWeek} this week
-            {cal.noDueDateCount > 0 ? ` · ${cal.noDueDateCount} no date` : ""}
+            {dueToday} due today · {dueThisWeek} this week
           </p>
         </div>
       </div>

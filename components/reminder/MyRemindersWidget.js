@@ -1,15 +1,26 @@
 "use client";
 
+// Dashboard widget UI — My Reminders (list, calendar + modals).
+
+/**
+ * Landing widget for the user's reminders.
+ * Two panels: scrollable reminder cards (filterable by calendar date) and due calendar.
+ * Modals: ReminderListModal, ReminderCreateModal, ReminderDetailPanel.
+ * Data: parent cache via DashboardWidgetLoader; falls back to GET /api/dashboard/my_reminders.
+ * Guide: docs/DASHBOARDS.md
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import DashboardSectionHeader from "../dashboards/DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../dashboards/DashboardWidgetRefreshHeader";
 import ReminderDashboardList from "./ReminderDashboardList";
 import ReminderDueCalendarPanel from "./ReminderDueCalendarPanel";
 import ReminderListModal from "./ReminderListModal";
 import ReminderCreateModal from "./ReminderCreateModal";
 import ReminderDetailPanel from "./ReminderDetailPanel";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
-import { formatDashboardUpdatedAt } from "../../lib/formatDashboardUpdatedAt";
 
+/** Default metrics when API has not returned yet. */
 const EMPTY_METRICS = {
   totalReminders: 0,
   completedReminders: 0,
@@ -20,6 +31,10 @@ const EMPTY_METRICS = {
   dueThisWeek: 0
 };
 
+/**
+ * My Reminders dashboard widget — list, calendar, and reminder modals.
+ * @param {{ data?: object, loading?: boolean, lastFetchedAt?: Date | number | null, onRefresh?: () => void }} props
+ */
 export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefresh }) {
   const [metrics, setMetrics] = useState(data?.metrics || EMPTY_METRICS);
   const [calendar, setCalendar] = useState(data?.calendar || null);
@@ -31,12 +46,14 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
   const [listRefreshKey, setListRefreshKey] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
 
+  /** Copy metrics and calendar from parent loader payload into local state. */
   const syncFromData = useCallback((payload) => {
     if (!payload) return;
     setMetrics(payload.metrics || EMPTY_METRICS);
     setCalendar(payload.calendar || null);
   }, []);
 
+  /** Fetch fresh summary when parent did not preload metrics. */
   const loadSummary = useCallback(async () => {
     setCountsLoading(true);
     setLocalError("");
@@ -65,58 +82,55 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
     }
   }, [data, loadSummary]);
 
+  /** Toolbar refresh — parent cache + local summary + list remount. */
   function handleRefresh() {
     onRefresh?.();
     loadSummary();
     setListRefreshKey((k) => k + 1);
   }
 
+  /** After create modal saves. */
   function handleCreated() {
     handleRefresh();
   }
 
+  /** After detail panel edit. */
   function handleDetailUpdated() {
     handleRefresh();
   }
 
+  /** Toggle calendar date filter for ReminderDashboardList (click same date clears). */
   function handleCalendarDateClick(date) {
     setSelectedDate((prev) => (prev === date ? null : date));
   }
 
   const isBusy = loading || countsLoading;
   const monthSubtitle = calendar?.monthLabel ? calendar.monthLabel : "Due dates";
-  const updatedLabel = formatDashboardUpdatedAt(lastFetchedAt);
 
   return (
     <>
       <article className="dashboard-widget-card reminder-widget-card reminder-widget-card--compact">
-        <header className="reminder-widget-header">
-          <h3 className="reminder-widget-title">My Reminders</h3>
-          <div className="reminder-widget-toolbar">
-            {updatedLabel ? <span className="reminder-widget-updated">{updatedLabel}</span> : null}
-            <button
-              type="button"
-              className={`reminder-widget-icon-btn ${isBusy ? "is-spinning" : ""}`}
-              onClick={handleRefresh}
-              disabled={isBusy}
-              aria-label="Refresh reminders"
-              title="Refresh"
-            >
-              ↻
-            </button>
-            <span className="reminder-widget-toolbar-sep" aria-hidden="true" />
-            <button type="button" className="reminder-widget-toolbar-btn" onClick={() => setListModalOpen(true)}>
-              View all
-            </button>
-            <button
-              type="button"
-              className="reminder-widget-toolbar-btn reminder-widget-toolbar-btn--primary"
-              onClick={() => setCreateOpen(true)}
-            >
-              + Add reminder
-            </button>
-          </div>
-        </header>
+        <DashboardWidgetRefreshHeader
+          title="My Reminders"
+          lastFetchedAt={lastFetchedAt}
+          loading={isBusy}
+          onRefresh={handleRefresh}
+          actions={
+            <>
+              <span className="reminder-widget-toolbar-sep" aria-hidden="true" />
+              <button type="button" className="reminder-widget-toolbar-btn" onClick={() => setListModalOpen(true)}>
+                View all
+              </button>
+              <button
+                type="button"
+                className="reminder-widget-toolbar-btn reminder-widget-toolbar-btn--primary"
+                onClick={() => setCreateOpen(true)}
+              >
+                + Add reminder
+              </button>
+            </>
+          }
+        />
 
         {localError ? <p className="reminder-form-error reminder-form-error--inline">{localError}</p> : null}
 
@@ -138,7 +152,7 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
             <div className="reminder-dash-panel reminder-dash-panel--calendar">
               <div className="dashboard-recovery-section-header reminder-dash-section-header--calendar">
                 <h4 className="dashboard-recovery-section-title">
-                  Due calendar
+                  Due Calendar
                   {monthSubtitle ? <span className="reminder-dash-calendar-month">{monthSubtitle}</span> : null}
                 </h4>
               </div>

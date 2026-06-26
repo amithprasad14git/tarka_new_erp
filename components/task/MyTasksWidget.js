@@ -1,7 +1,18 @@
 "use client";
 
+// Dashboard widget UI — My Tasks (completion, workload, calendar + modals).
+
+/**
+ * Landing widget for tasks assigned to the logged-in user.
+ * Three panels: completion donut (click status → list modal), workload tiles, due calendar.
+ * Modals: TaskStatusListModal (view all / status drilldown), TaskCreateModal, TaskDetailPanel.
+ * Data: parent cache via DashboardWidgetLoader; falls back to GET /api/dashboard/my_tasks.
+ * Guide: docs/DASHBOARDS.md
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import DashboardSectionHeader from "../dashboards/DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../dashboards/DashboardWidgetRefreshHeader";
 import {
   TaskCompletionPanel,
   TaskWorkloadPanel
@@ -11,8 +22,8 @@ import TaskStatusListModal from "./TaskStatusListModal";
 import TaskCreateModal from "./TaskCreateModal";
 import TaskDetailPanel from "./TaskDetailPanel";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
-import { formatDashboardUpdatedAt } from "../../lib/formatDashboardUpdatedAt";
 
+/** Default metrics when API has not returned yet. */
 const EMPTY_METRICS = {
   totalTasks: 0,
   completedTasks: 0,
@@ -29,6 +40,10 @@ const EMPTY_METRICS = {
   inProgressRate: 0
 };
 
+/**
+ * My Tasks dashboard widget — orchestrates panels and task modals.
+ * @param {{ data?: object, loading?: boolean, lastFetchedAt?: Date | number | null, onRefresh?: () => void }} props
+ */
 export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh }) {
   const [metrics, setMetrics] = useState(data?.assignedToMe?.metrics || EMPTY_METRICS);
   const [calendar, setCalendar] = useState(data?.assignedToMe?.calendar || null);
@@ -40,6 +55,7 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
   const [detailId, setDetailId] = useState(null);
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
+  /** Copy metrics/calendar/openCount from parent loader payload into local state. */
   const syncFromData = useCallback((payload) => {
     if (!payload?.assignedToMe) return;
     setMetrics(payload.assignedToMe.metrics || EMPTY_METRICS);
@@ -47,6 +63,7 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
     setOpenCount(payload.assignedToMe.openCount || 0);
   }, []);
 
+  /** Fetch fresh summary when parent did not preload assignedToMe metrics. */
   const loadSummary = useCallback(async () => {
     setCountsLoading(true);
     setLocalError("");
@@ -75,16 +92,19 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
     }
   }, [data, loadSummary]);
 
+  /** Toolbar refresh — tell parent to reload cache and refetch local summary. */
   function handleRefresh() {
     onRefresh?.();
     loadSummary();
   }
 
+  /** After create modal saves — refresh counts and force list modal to reload. */
   function handleCreated() {
     handleRefresh();
     setListRefreshKey((k) => k + 1);
   }
 
+  /** After detail panel edit — same as handleCreated. */
   function handleDetailUpdated() {
     handleRefresh();
     setListRefreshKey((k) => k + 1);
@@ -92,42 +112,35 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
 
   const isBusy = loading || countsLoading;
   const monthSubtitle = calendar?.monthLabel ? calendar.monthLabel : "Due dates";
-  const updatedLabel = formatDashboardUpdatedAt(lastFetchedAt);
 
   return (
     <>
       <article className="dashboard-widget-card task-widget-card task-widget-card--compact">
-        <header className="task-widget-header">
-          <h3 className="task-widget-title">My Tasks</h3>
-          <div className="task-widget-toolbar">
-            {updatedLabel ? <span className="task-widget-updated">{updatedLabel}</span> : null}
-            <button
-              type="button"
-              className={`task-widget-icon-btn ${isBusy ? "is-spinning" : ""}`}
-              onClick={handleRefresh}
-              disabled={isBusy}
-              aria-label="Refresh tasks"
-              title="Refresh"
-            >
-              ↻
-            </button>
-            <span className="task-widget-toolbar-sep" aria-hidden="true" />
-            <button
-              type="button"
-              className="task-widget-toolbar-btn"
-              onClick={() => setListModalStatus("Pending")}
-            >
-              View all
-            </button>
-            <button
-              type="button"
-              className="task-widget-toolbar-btn task-widget-toolbar-btn--primary"
-              onClick={() => setCreateOpen(true)}
-            >
-              + Add task
-            </button>
-          </div>
-        </header>
+        <DashboardWidgetRefreshHeader
+          title="My Tasks"
+          lastFetchedAt={lastFetchedAt}
+          loading={isBusy}
+          onRefresh={handleRefresh}
+          actions={
+            <>
+              <span className="task-widget-toolbar-sep" aria-hidden="true" />
+              <button
+                type="button"
+                className="task-widget-toolbar-btn"
+                onClick={() => setListModalStatus("Pending")}
+              >
+                View all
+              </button>
+              <button
+                type="button"
+                className="task-widget-toolbar-btn task-widget-toolbar-btn--primary"
+                onClick={() => setCreateOpen(true)}
+              >
+                + Add task
+              </button>
+            </>
+          }
+        />
 
         {localError ? <p className="task-form-error task-form-error--inline">{localError}</p> : null}
 
@@ -146,7 +159,7 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
 
           <div className="task-dash-col task-dash-col--wide">
             <div className="task-dash-panel">
-              <DashboardSectionHeader title="Workload" subtitle="Priority & deadlines" />
+              <DashboardSectionHeader title="Workload" subtitle="Priority & Deadlines" />
               <div className="task-dash-panel-body task-dash-panel-body--workload">
                 <TaskWorkloadPanel metrics={metrics} />
               </div>
@@ -157,7 +170,7 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
             <div className="task-dash-panel task-dash-panel--calendar">
               <div className="dashboard-recovery-section-header task-dash-section-header--calendar">
                 <h4 className="dashboard-recovery-section-title">
-                  Due calendar
+                  Due Calendar
                   {monthSubtitle ? <span className="task-dash-calendar-month">{monthSubtitle}</span> : null}
                 </h4>
               </div>

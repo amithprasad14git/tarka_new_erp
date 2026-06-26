@@ -3,6 +3,7 @@
 // Section header for dashboard sub-panels — matches main card title/subtitle typography.
 
 /**
+ * Title + optional subtitle for each sub-panel inside a dashboard widget card.
  * @param {{ title: string, subtitle?: string }} props
  */
 export default function DashboardSectionHeader({ title, subtitle = "" }) {

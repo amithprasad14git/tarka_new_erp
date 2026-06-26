@@ -1,6 +1,12 @@
 "use client";
 
-// Month-wise recovery column chart for dashboard widgets (active FY).
+// Shared dashboard chart — month-wise column bars for FY trends.
+
+/**
+ * Column chart for month-wise recovery or settlement amounts within the active FY.
+ * Used by Recovery Target (recovery date) and Regional Performance (settlement date).
+ * variant="inline" fits inside dashboard-recovery-layout panel 4.
+ */
 
 import {
   formatDashboardInrAmountShort,
@@ -8,6 +14,7 @@ import {
 } from "../../lib/formatInrNumber";
 
 /**
+ * Short label for x-axis (e.g. "Apr" from "Apr-2025" or monthKey).
  * @param {string} monthLabel
  * @param {string} monthKey
  */
@@ -26,18 +33,23 @@ function shortMonthLabel(monthLabel, monthKey) {
 }
 
 /**
+ * Column chart — one bar per month, height scaled to max amount in rows.
  * @param {{
  *   rows?: Array<{ monthKey?: string, monthLabel?: string, amountRecovered?: number }>,
  *   title?: string,
  *   variant?: "default" | "inline",
- *   hideHeading?: boolean
+ *   hideHeading?: boolean,
+ *   hideBarValues?: boolean,
+ *   onBarClick?: (row: { monthKey?: string, monthLabel?: string, amountRecovered?: number }) => void
  * }} props
  */
 export default function MonthWiseRecoveryBars({
   rows = [],
-  title = "Month wise recovery (FY)",
+  title = "Month Wise Recovery (FY)",
   variant = "default",
-  hideHeading = false
+  hideHeading = false,
+  hideBarValues = false,
+  onBarClick
 }) {
   const maxAmount = rows.reduce((m, r) => Math.max(m, Number(r.amountRecovered) || 0), 0);
   const isInline = variant === "inline";
@@ -80,13 +92,28 @@ export default function MonthWiseRecoveryBars({
                   return (
                     <div
                       key={r.monthKey || fullLabel}
-                      className="dashboard-month-col"
+                      className={`dashboard-month-col${onBarClick ? " dashboard-chart-clickable" : ""}`}
                       title={`${fullLabel}: ${amountLabel}`}
                       aria-label={`${fullLabel}: ${amountLabel}`}
+                      role={onBarClick ? "button" : undefined}
+                      tabIndex={onBarClick ? 0 : undefined}
+                      onClick={onBarClick ? () => onBarClick(r) : undefined}
+                      onKeyDown={
+                        onBarClick
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                onBarClick(r);
+                              }
+                            }
+                          : undefined
+                      }
                     >
-                      <span className="dashboard-month-bar-value">
-                        {formatDashboardInrAmountShort(amount)}
-                      </span>
+                      {!hideBarValues ? (
+                        <span className="dashboard-month-bar-value">
+                          {formatDashboardInrAmountShort(amount)}
+                        </span>
+                      ) : null}
                       <div
                         className="dashboard-month-bar-fill"
                         style={{ height: `${pct}%` }}

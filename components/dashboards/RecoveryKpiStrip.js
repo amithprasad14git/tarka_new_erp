@@ -7,6 +7,7 @@ import { formatInrNumberForDisplay } from "../../lib/formatInrNumber";
 const MAX_STATUS_ROWS = 12;
 
 /**
+ * Recovery Target panel 3 — recovered/part-recovered counts and pending cases by status.
  * @param {{
  *   recoveredCaseCount?: number,
  *   partRecoveredCaseCount?: number,
@@ -31,13 +32,13 @@ export default function RecoveryKpiStrip({
     <div className="dashboard-recovery-kpi-layout">
       <div className={gridClass}>
         <article className="dashboard-kpi-card">
-          <p className="dashboard-kpi-label">Recovered cases (FY)</p>
+          <p className="dashboard-kpi-label">Recovered Cases (FY)</p>
           <p className="dashboard-kpi-value">
             {formatInrNumberForDisplay(recoveredCaseCount, { integerOnly: true })}
           </p>
         </article>
         <article className="dashboard-kpi-card">
-          <p className="dashboard-kpi-label">Part-recovered cases</p>
+          <p className="dashboard-kpi-label">Part-Recovered Cases</p>
           <p className="dashboard-kpi-value">
             {formatInrNumberForDisplay(partRecoveredCaseCount, { integerOnly: true })}
           </p>
@@ -45,7 +46,7 @@ export default function RecoveryKpiStrip({
       </div>
 
       <div className="dashboard-recovery-status-section">
-        <p className="dashboard-recovery-status-heading">Pending cases on hand</p>
+        <p className="dashboard-recovery-status-heading">Pending Cases on Hand</p>
         {statusRows.length ? (
           <div
             className="dashboard-recovery-status-grid"

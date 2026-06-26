@@ -11,6 +11,7 @@ import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableId } from "../../../../lib/sqlModuleTable";
 import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { validateNewPassword } from "../../../../lib/passwordPolicy";
 
 /**
  * Helper used for "same text" comparison in validations.
@@ -49,9 +50,14 @@ export async function POST(req) {
     if (!currentPassword || !newPassword || !confirmPassword) {
       return Response.json({ error: "All password fields are required." }, { status: 400 });
     }
-    if (newPassword.length < 8) {
-      return Response.json({ error: "New password must be at least 8 characters." }, { status: 400 });
+
+    const passwordPolicyError = validateNewPassword(newPassword, {
+      username: sessionUser.username
+    });
+    if (passwordPolicyError) {
+      return Response.json({ error: passwordPolicyError }, { status: 400 });
     }
+
     if (normalizeText(newPassword) !== normalizeText(confirmPassword)) {
       return Response.json({ error: "New password and confirm password do not match." }, { status: 400 });
     }

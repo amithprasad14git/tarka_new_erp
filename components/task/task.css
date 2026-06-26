@@ -758,6 +758,15 @@ button.task-completion-total-row:hover {
   height: 100%;
   min-height: 0;
   flex: 1;
+  --task-workload-mix-strong: 32%;
+  --task-workload-mix-soft: 12%;
+  --task-workload-border-mix: 42%;
+}
+
+[data-theme="dark"] .task-workload-panel {
+  --task-workload-mix-strong: 8%;
+  --task-workload-mix-soft: 8%;
+  --task-workload-border-mix: 22%;
 }
 
 .task-workload-body {
@@ -786,8 +795,12 @@ button.task-completion-total-row:hover {
   gap: 2px;
   padding: 8px 6px 6px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--tile-accent) 8%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--tile-accent) 22%, var(--line));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tile-accent) var(--task-workload-mix-strong), var(--panel)),
+    color-mix(in srgb, var(--tile-accent) var(--task-workload-mix-soft), var(--panel))
+  );
+  border: 1px solid color-mix(in srgb, var(--tile-accent) var(--task-workload-border-mix), var(--line));
   min-width: 0;
   min-height: 0;
 }

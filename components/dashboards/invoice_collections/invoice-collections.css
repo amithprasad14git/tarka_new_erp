@@ -1,0 +1,140 @@
+.invoice-collections-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.invoice-collections-modal {
+  width: 100%;
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  max-height: min(88dvh, 900px);
+  overflow: hidden;
+}
+
+.invoice-collections-modal--table {
+  max-width: min(1100px, 96vw);
+}
+
+.invoice-collections-summary-modal {
+  max-width: min(560px, 96vw);
+}
+
+.invoice-collections-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoice-collections-summary-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.invoice-collections-summary-kpis .dashboard-kpi-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 8px 10px;
+}
+
+.invoice-collections-summary-kpis .dashboard-kpi-value {
+  font-size: 13px;
+}
+
+.invoice-collections-summary-bars .dashboard-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invoice-collections-summary-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px 16px;
+}
+
+.invoice-collections-summary-report-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.invoice-collections-summary-report-link:hover {
+  text-decoration: underline;
+}
+
+.invoice-collections-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.invoice-collections-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.invoice-collections-modal-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.invoice-collections-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.invoice-collections-modal-close:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.invoice-collections-modal-error {
+  margin: 0;
+  padding: 8px 20px 0;
+}
+
+.invoice-collections-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 20px;
+}
+
+.invoice-collections-modal-footer {
+  flex-shrink: 0;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--line);
+}

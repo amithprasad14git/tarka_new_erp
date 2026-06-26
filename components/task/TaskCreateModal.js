@@ -1,5 +1,12 @@
 "use client";
 
+// Dashboard modal — create a new task from My Tasks widget.
+
+/**
+ * Form modal to add a task (title, assignee, due date, priority, etc.).
+ * POST /api/task on save. Parent: MyTasksWidget.js via TaskModalPortal.
+ */
+
 import { useEffect, useId, useState } from "react";
 import LookupSelect from "../LookupSelect";
 import TaskPriorityPicker from "./TaskPriorityPicker";
@@ -8,6 +15,10 @@ import { isDueDateOnOrAfterToday, minDueDateToday } from "./taskUtils";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import TaskModalPortal from "./TaskModalPortal";
 
+/**
+ * Create-task dialog — resets form each time it opens.
+ * @param {{ open: boolean, onClose: () => void, onCreated?: () => void }} props
+ */
 export default function TaskCreateModal({ open, onClose, onCreated }) {
   const idBase = useId();
   const titleId = `${idBase}-dialog-title`;
@@ -31,6 +42,7 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
     resetForm();
   }, [open]);
 
+  /** Clear all fields when modal opens. */
   function resetForm() {
     setError("");
     setTaskTitle("");
@@ -43,6 +55,7 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
 
   if (!open) return null;
 
+  /** Validate and POST new task to /api/task. */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");

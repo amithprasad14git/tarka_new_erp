@@ -22,7 +22,7 @@ import DashboardWidgetLoader from "./dashboards/DashboardWidgetLoader";
 const MAX_OPEN_TABS = 5;
 
 function extractModuleKey(pathname) {
-  // Expected patterns: /dashboard/<module> or /dashboard/<module>/*
+  // Parse /dashboard/<module> from URL — null on landing /dashboard.
   const parts = String(pathname || "").split("/").filter(Boolean);
   if (parts.length < 2) return null;
   if (parts[0] !== "dashboard") return null;
@@ -31,7 +31,9 @@ function extractModuleKey(pathname) {
 
 /**
  * In-page dashboard tabs: keeps multiple module screens mounted so users can multitask.
- * Also renders landing dashboard widgets (permission-filtered) on `/dashboard`.
+ * On `/dashboard` (no module selected) renders landing KPI widgets in a grid.
+ * Full-width slots: unit_wise_recovery_target, regional_performance.
+ * Guide: docs/DASHBOARDS.md
  * @param {{ visibleModuleKeys: string[], visibleDashboards?: Array<{ key: string, title: string, description?: string, icon?: string, tone?: string }> }} props
  */
 export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboards = [] }) {
@@ -109,7 +111,16 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
         {landingWidgets.length ? (
           <div className="dashboard-widget-grid dashboard-widget-grid--landing">
             {landingWidgets.map((d) => (
-              <div key={d.key} id={`dashboard-widget-${d.key}`} className="dashboard-widget-slot">
+              <div
+                key={d.key}
+                id={`dashboard-widget-${d.key}`}
+                className={
+                  // Full-width row for four-panel recovery-style layouts.
+                  d.key === "unit_wise_recovery_target" || d.key === "regional_performance"
+                    ? "dashboard-widget-slot dashboard-widget-slot--full"
+                    : "dashboard-widget-slot"
+                }
+              >
                 <DashboardWidgetLoader
                   dashboardKey={d.key}
                   cache={dashboardCache[d.key] || {}}

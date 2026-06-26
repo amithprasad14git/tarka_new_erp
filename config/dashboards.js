@@ -1,16 +1,19 @@
-// Configuration file for project/runtime behavior.
-// Keep module-specific business logic in lib/modules/<module> files.
+// Configuration — landing dashboard widgets on the /dashboard home page.
 
 /**
- * Dashboard registry (landing page cards + landing widgets).
+ * Registry of dashboard widgets (KPI panels users see after login on Dashboard home).
  *
- * Permission model:
- * - Each dashboard maps to one `user_permissions.module` key via `permissionKey`.
- * - If the logged-in user has any access on that key, the card/widget is visible.
- * - Per-dashboard settings may also live in config/dashboards/<key>.js.
+ * Each entry needs:
+ * - key — used in URL `/api/dashboard/<key>` and React loader
+ * - permissionKey — row in User Permissions matrix (group "Dashboards")
+ * - landingWidget: true — show on /dashboard grid (not just sidebar cards)
+ *
+ * Full guide: docs/DASHBOARDS.md
+ * Runners: lib/dashboards/<key>/run.js via lib/dashboards/dashboardRegistry.js
  */
 export const dashboards = [
   {
+    // Row 1 full width — recovery target vs achieved for current FY.
     key: "unit_wise_recovery_target",
     permissionKey: "dashboard_unit_wise_recovery_target",
     title: "Unit Wise Recovery Target",
@@ -22,6 +25,7 @@ export const dashboards = [
     autoGrantForAssignedUnit: true
   },
   {
+    // Personal task summary — counts by status for logged-in user.
     key: "my_tasks",
     permissionKey: "dashboard_my_tasks",
     title: "My Tasks",
@@ -31,11 +35,42 @@ export const dashboards = [
     landingWidget: true
   },
   {
+    // Personal reminders list — upcoming items for logged-in user.
     key: "my_reminders",
     permissionKey: "dashboard_my_reminders",
     title: "My Reminders",
     icon: "🔔",
     description: "Create, view, and manage your personal reminders.",
+    tone: "brand",
+    landingWidget: true
+  },
+  {
+    // Branch lookup tool — search by code or name across bank hierarchy.
+    key: "search_bank_branch",
+    permissionKey: "dashboard_search_bank_branch",
+    title: "Search Bank & Branch",
+    icon: "🔍",
+    description: "Find branches by code or name with bank hierarchy.",
+    tone: "info",
+    landingWidget: true
+  },
+  {
+    // FY invoice billed vs received — KPI grid and by-bank pie.
+    key: "invoice_collections",
+    permissionKey: "dashboard_invoice_collections",
+    title: "Invoice Collections",
+    icon: "💰",
+    description: "Billed vs received and pending invoices for the current financial year.",
+    tone: "brand",
+    landingWidget: true
+  },
+  {
+    // Row 4 full width — FY settled cases by loan type, region, and month.
+    key: "regional_performance",
+    permissionKey: "dashboard_regional_performance",
+    title: "Regional Performance",
+    icon: "📊",
+    description: "Settled cases by loan type, region, and month for the current financial year.",
     tone: "brand",
     landingWidget: true
   }

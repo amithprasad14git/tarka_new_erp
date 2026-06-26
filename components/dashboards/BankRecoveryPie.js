@@ -1,12 +1,18 @@
 "use client";
 
-// Compact bank-wise recovery pie for Unit Wise Recovery Target dashboard.
+// Shared dashboard chart — pie slices for bank or loan-type share of amount.
+
+/**
+ * Compact SVG pie used by Recovery Target (by bank), Invoice Collections (by bank),
+ * and Regional Performance (by loan type). Rows need bankLabel + amountRecovered.
+ */
 
 import { formatReportAmountForDisplay } from "../../lib/formatInrNumber";
 
 const SLICE_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4"];
 
 /**
+ * Converts a polar angle to x/y on the pie circle (SVG math helper).
  * @param {number} cx
  * @param {number} cy
  * @param {number} r
@@ -18,6 +24,7 @@ function polarToCartesian(cx, cy, r, angleDeg) {
 }
 
 /**
+ * SVG path for one pie wedge from center to arc (returns null when slice is a full circle).
  * @param {number} cx
  * @param {number} cy
  * @param {number} r
@@ -51,11 +58,13 @@ function describeSlicePath(cx, cy, r, startAngle, endAngle) {
 }
 
 /**
+ * Renders pie + legend from rows (bank or loan type share of total recovered/billed).
  * @param {{
- *   rows?: Array<{ bankId?: number | string, bankLabel?: string, amountRecovered?: number, achievedPct?: number }>
+ *   rows?: Array<{ bankId?: number | string, bankLabel?: string, amountRecovered?: number, achievedPct?: number }>,
+ *   emptyMessage?: string
  * }} props
  */
-export default function BankRecoveryPie({ rows = [] }) {
+export default function BankRecoveryPie({ rows = [], emptyMessage = "No bank recovery" }) {
   const total = rows.reduce((s, r) => s + (Number(r.amountRecovered) || 0), 0);
   const cx = 64;
   const cy = 64;
@@ -63,6 +72,7 @@ export default function BankRecoveryPie({ rows = [] }) {
   const size = 128;
 
   let angle = 0;
+  // Build slice angles proportional to each row's share of total.
   const slices = rows.map((row, i) => {
     const amount = Number(row.amountRecovered) || 0;
     const sliceAngle = total > 0 ? (amount / total) * 360 : 0;
@@ -125,7 +135,7 @@ export default function BankRecoveryPie({ rows = [] }) {
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="dashboard-bank-pie" aria-hidden="true">
             <circle cx={cx} cy={cy} r={r} className="dashboard-bank-pie-track" />
           </svg>
-          <p className="dashboard-widget-empty dashboard-widget-empty--inline">No bank recovery</p>
+          <p className="dashboard-widget-empty dashboard-widget-empty--inline">{emptyMessage}</p>
         </div>
       )}
     </div>

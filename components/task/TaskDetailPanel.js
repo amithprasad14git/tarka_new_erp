@@ -1,5 +1,13 @@
 "use client";
 
+// Dashboard modal — view/edit a single task from list or widget drilldown.
+
+/**
+ * Side panel / modal for one task: details form, status pills, comments, activity feed.
+ * GET/PATCH /api/task/:id. Respects role-based permissions banner.
+ * Parent: MyTasksWidget.js via TaskModalPortal.
+ */
+
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import LookupSelect from "../LookupSelect";
 import TaskDetailFeedTabs from "./TaskDetailFeedTabs";
@@ -7,10 +15,11 @@ import TaskPriorityPicker from "./TaskPriorityPicker";
 import TaskStatusPills from "./TaskStatusPills";
 import TaskAvatar from "./TaskAvatar";
 import TaskStatusBadge from "./TaskStatusBadge";
-import { formatTaskDate, isDueDateOnOrAfterToday, minDueDateToday, daysPastDue, overdueDaysSeverity } from "./taskUtils";
+import { formatTaskDate, isDueDateOnOrAfterToday, daysPastDue, overdueDaysSeverity } from "./taskUtils";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import TaskModalPortal from "./TaskModalPortal";
 
+/** Plain-English banner when user has limited edit rights on this task. */
 function permissionBannerText(permissions) {
   if (!permissions) return null;
   if (permissions.isCompletedLocked) {
@@ -29,16 +38,19 @@ function permissionBannerText(permissions) {
   return null;
 }
 
+/** Normalize API due date to YYYY-MM-DD for date input. */
 function dueDateValue(raw) {
   if (!raw) return "";
   return String(raw).slice(0, 10);
 }
 
+/** Normalize follow-up person id for LookupSelect. */
 function followUpValue(raw) {
   if (raw == null || raw === "") return "";
   return String(raw);
 }
 
+/** Overdue days readout in task detail header. */
 function DaysPastDueDisplay({ dueDate, status }) {
   const days = daysPastDue(dueDate, status);
   const severity = overdueDaysSeverity(days);
@@ -52,6 +64,7 @@ function DaysPastDueDisplay({ dueDate, status }) {
   );
 }
 
+/** Hydrate form state from GET /api/task/:id response. */
 function resetFormFromTask(data, setters) {
   setters.setTask(data);
   setters.setPermissions(data.permissions || null);
@@ -63,6 +76,10 @@ function resetFormFromTask(data, setters) {
   setters.setStatus(data.status || "Pending");
 }
 
+/**
+ * Task detail/edit dialog — loads by taskId when open.
+ * @param {{ open: boolean, taskId: number | string | null, onClose: () => void, onUpdated?: () => void }} props
+ */
 export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
   const dialogTitleId = useId();
   const titleId = useId();
@@ -237,7 +254,9 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
   async function handleSave(e) {
     e.preventDefault();
     if (!hasSaveableChanges) return;
-    if (canEditDetails && dueDate && !isDueDateOnOrAfterToday(dueDate)) {
+    const currentDueDate = dueDateValue(task?.dueDate);
+    const dueDateChanged = dueDate !== currentDueDate;
+    if (canEditDetails && dueDateChanged && dueDate && !isDueDateOnOrAfterToday(dueDate)) {
       setError("Due date cannot be in the past.");
       return;
     }
@@ -279,7 +298,8 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
         setError(formatApiErrorPayload(body, "Failed to save"));
         return;
       }
-      await refreshAfterSave();
+      onUpdated?.();
+      onClose?.();
     } catch {
       setError("Failed to save");
     } finally {
@@ -418,7 +438,6 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                               type="date"
                               className="task-input"
                               value={dueDate}
-                              min={minDueDateToday()}
                               onChange={(e) => setDueDate(e.target.value)}
                             />
                           ) : (

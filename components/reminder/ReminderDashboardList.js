@@ -1,5 +1,14 @@
 "use client";
 
+// Dashboard panel — scrollable pending reminder cards (My Reminders widget column 1).
+
+/**
+ * Compact list of pending reminders for the logged-in user.
+ * Optional dueDateFilter from ReminderDueCalendarPanel click narrows to one day.
+ * Clicking a card opens ReminderDetailPanel. API: GET /api/reminder?status=Pending.
+ * Parent: MyRemindersWidget.js
+ */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ReminderRecurrenceBadge } from "./ReminderStatusBadge";
 import {
@@ -8,6 +17,10 @@ import {
 } from "./reminderUtils";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 
+/**
+ * Due date chip with overdue vs upcoming styling.
+ * @param {{ dueDate?: string, status?: string }} props
+ */
 function DueChip({ dueDate, status }) {
   if (!dueDate) {
     return <span className="reminder-due-chip reminder-due-chip--none">No date</span>;
@@ -21,6 +34,7 @@ function DueChip({ dueDate, status }) {
   );
 }
 
+/** Placeholder cards while reminder list is loading. */
 function InlineListSkeleton() {
   return (
     <div className="reminder-dash-cards-skeleton" aria-hidden="true">
@@ -31,11 +45,16 @@ function InlineListSkeleton() {
   );
 }
 
+/** True when reminder has a recurrence rule (not one-time). */
 function isRecurringReminder(reminder) {
   const type = String(reminder?.recurrenceType || "None").trim();
   return type && type !== "None";
 }
 
+/**
+ * One clickable reminder card in the dashboard list.
+ * @param {{ reminder: object, onOpen?: (reminder: object) => void }} props
+ */
 function ReminderCard({ reminder, onOpen }) {
   const overdue = isDueOverdue(reminder.dueDate, reminder.status);
   const recurring = isRecurringReminder(reminder);
@@ -66,6 +85,14 @@ function ReminderCard({ reminder, onOpen }) {
   );
 }
 
+/**
+ * Pending reminders list with optional calendar date filter.
+ * @param {{
+ *   dueDateFilter?: string | null,
+ *   refreshKey?: number,
+ *   onOpenReminder?: (reminder: object) => void
+ * }} props
+ */
 export default function ReminderDashboardList({
   dueDateFilter = null,
   refreshKey = 0,
@@ -75,6 +102,7 @@ export default function ReminderDashboardList({
   const [error, setError] = useState("");
   const [reminders, setReminders] = useState([]);
 
+  /** Fetch pending reminders, optionally filtered to one due date. */
   const loadReminders = useCallback(async () => {
     setLoading(true);
     setError("");

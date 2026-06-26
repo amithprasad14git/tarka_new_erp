@@ -1,7 +1,18 @@
 "use client";
 
+// Dashboard charts for My Tasks widget — completion donut and workload tiles.
+
+/**
+ * Sub-panels used by MyTasksWidget.js: TaskCompletionPanel, TaskWorkloadPanel.
+ * Clicking a status row in completion panel opens TaskStatusListModal (via onStatusClick).
+ */
+
 import { TASK_STATUS_COLORS } from "./taskUtils";
 
+/**
+ * Donut ring showing % of assigned tasks marked completed.
+ * @param {{ completionRate?: number }} props
+ */
 export function TaskCompletionDonut({ completionRate = 0 }) {
   const pct = Math.max(0, Math.min(100, Number(completionRate) || 0));
   const r = 48;
@@ -22,18 +33,23 @@ export function TaskCompletionDonut({ completionRate = 0 }) {
       </svg>
       <div className="task-completion-donut-center">
         <strong>{pct.toFixed(1)}%</strong>
-        <span>done</span>
+        <span>Done</span>
       </div>
     </div>
   );
 }
 
+/** Status rows shown beside the completion donut (clickable when onStatusClick provided). */
 const COMPLETION_STAT_ROWS = [
   { status: "Completed", key: "completedTasks", label: "Completed" },
-  { status: "In Progress", key: "workInProgress", label: "In progress" },
+  { status: "In Progress", key: "workInProgress", label: "In Progress" },
   { status: "Pending", key: "pendingTasks", label: "Pending" }
 ];
 
+/**
+ * One status count row — button when onStatusClick opens list modal filtered to that status.
+ * @param {{ status: string, label: string, value: number, onStatusClick?: (status: string) => void }} props
+ */
 function CompletionTotalRow({ status, label, value, onStatusClick }) {
   const color = TASK_STATUS_COLORS[status];
   const slug = status.replace(/\s+/g, "-").toLowerCase();
@@ -66,6 +82,10 @@ function CompletionTotalRow({ status, label, value, onStatusClick }) {
   );
 }
 
+/**
+ * Left panel: completion % donut + status counts (drilldown to TaskStatusListModal).
+ * @param {{ metrics?: object, onStatusClick?: (status: string) => void }} props
+ */
 export function TaskCompletionPanel({ metrics = {}, onStatusClick }) {
   const cancelled = Number(metrics.cancelledTasks) || 0;
   const completionRate = Number(metrics.completionRate) || 0;
@@ -101,23 +121,34 @@ export function TaskCompletionPanel({ metrics = {}, onStatusClick }) {
   );
 }
 
+/** Urgency tiles: overdue, due today, due this week. */
 const WORKLOAD_URGENCY = [
   { key: "overdueTasks", label: "Overdue", color: "#dc2626" },
-  { key: "dueToday", label: "Due today", color: "#d97706" },
-  { key: "dueThisWeek", label: "This week", color: "#8b5cf6" }
+  { key: "dueToday", label: "Due Today", color: "#d97706" },
+  { key: "dueThisWeek", label: "This Week", color: "#8b5cf6" }
 ];
 
+/** Secondary workload tiles: high priority, done this week, active count. */
 const WORKLOAD_SECONDARY = [
-  { key: "highPriorityOpen", label: "High priority", color: "#ea580c" },
-  { key: "finishedLastWeek", label: "Done this week", color: "#16a34a" },
+  { key: "highPriorityOpen", label: "High Priority", color: "#ea580c" },
+  { key: "finishedLastWeek", label: "Done This Week", color: "#16a34a" },
   { key: "activeTasks", label: "Active", color: "#6366f1" }
 ];
 
+/**
+ * Max value for scaling workload bar fills within one tile row.
+ * @param {object} metrics
+ * @param {string[]} keys
+ */
 function workloadScaleMax(metrics, keys) {
   const vals = keys.map((k) => Number(metrics[k]) || 0);
   return Math.max(1, ...vals, Number(metrics.totalTasks) || 0);
 }
 
+/**
+ * Row of three workload tiles with proportional fill bars.
+ * @param {{ items: Array<{ key: string, label: string, color: string }>, metrics: object }} props
+ */
 function WorkloadTileRow({ items, metrics }) {
   const scaleMax = workloadScaleMax(
     metrics,
@@ -146,6 +177,10 @@ function WorkloadTileRow({ items, metrics }) {
   );
 }
 
+/**
+ * Middle panel: urgency + secondary workload tiles with footer summary line.
+ * @param {{ metrics?: object }} props
+ */
 export function TaskWorkloadPanel({ metrics = {} }) {
   const dueSoon =
     (Number(metrics.overdueTasks) || 0) +
@@ -171,6 +206,10 @@ export function TaskWorkloadBars(props) {
   return <TaskWorkloadPanel metrics={props.metrics} />;
 }
 
+/**
+ * Compact KPI strip (legacy/alternate layout) — total, open, active, overdue.
+ * @param {{ metrics?: object, openCount?: number }} props
+ */
 export function TaskSummaryStrip({ metrics = {}, openCount = 0 }) {
   const items = [
     { label: "Total", value: metrics.totalTasks, tone: "brand" },

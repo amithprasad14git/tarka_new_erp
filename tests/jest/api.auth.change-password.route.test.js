@@ -40,12 +40,16 @@ function makeReq(body) {
   return { json: jest.fn().mockResolvedValue(body) };
 }
 
+const sessionUser = { id: 1, username: "demo.user" };
+const validNewPassword = "NewSec9@key";
+
 // Automated checks for: api/auth/change-password route.
 describe("api/auth/change-password route", () => {
   // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-1" }) });
+    getSessionUser.mockResolvedValue(sessionUser);
   });
 
   test("returns 401 when session user is missing", async () => {
@@ -56,43 +60,122 @@ describe("api/auth/change-password route", () => {
   });
 
   test("returns 400 for missing fields", async () => {
-    getSessionUser.mockResolvedValue({ id: 1 });
     const res = await POST(makeReq({ currentPassword: "", newPassword: "", confirmPassword: "" }));
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({ error: "All password fields are required." });
   });
 
-  test("returns 400 when new and confirm do not match", async () => {
-    getSessionUser.mockResolvedValue({ id: 1 });
+  test("returns 400 when new password has no digit", async () => {
     const res = await POST(
-      makeReq({ currentPassword: "old12345", newPassword: "new12345", confirmPassword: "new12346" })
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: "Secure@key",
+        confirmPassword: "Secure@key"
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: "New password must include at least one number."
+    });
+  });
+
+  test("returns 400 when new password has no allowed special character", async () => {
+    const res = await POST(
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: "Secure9key",
+        confirmPassword: "Secure9key"
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: "New password must include at least one special character (@ # $ % & *)."
+    });
+  });
+
+  test("returns 400 when new password uses only disallowed specials", async () => {
+    const res = await POST(
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: "Secure9!key",
+        confirmPassword: "Secure9!key"
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: "New password must include at least one special character (@ # $ % & *)."
+    });
+  });
+
+  test('returns 400 when new password contains the word "password"', async () => {
+    const res = await POST(
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: "MyPassword1@",
+        confirmPassword: "MyPassword1@"
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'New password cannot contain the word "password".'
+    });
+  });
+
+  test("returns 400 when new password contains session username", async () => {
+    const res = await POST(
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: "demo.user9@",
+        confirmPassword: "demo.user9@"
+      })
+    );
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: "New password cannot contain your username."
+    });
+  });
+
+  test("returns 400 when new and confirm do not match", async () => {
+    const res = await POST(
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: validNewPassword,
+        confirmPassword: "NewSec9@key2"
+      })
     );
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({ error: "New password and confirm password do not match." });
   });
 
   test("returns 400 when current password is incorrect", async () => {
-    getSessionUser.mockResolvedValue({ id: 1 });
     pool.query.mockResolvedValueOnce([[{ id: 1, password: "old12345" }]]);
     const res = await POST(
-      makeReq({ currentPassword: "wrong", newPassword: "new12345", confirmPassword: "new12345" })
+      makeReq({
+        currentPassword: "wrong",
+        newPassword: validNewPassword,
+        confirmPassword: validNewPassword
+      })
     );
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({ error: "Current password is incorrect." });
   });
 
   test("updates password and returns success", async () => {
-    getSessionUser.mockResolvedValue({ id: 1 });
     pool.query
       .mockResolvedValueOnce([[{ id: 1, password: "old12345" }]]) // SELECT
       .mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE
     const res = await POST(
-      makeReq({ currentPassword: "old12345", newPassword: "new12345", confirmPassword: "new12345" })
+      makeReq({
+        currentPassword: "old12345",
+        newPassword: validNewPassword,
+        confirmPassword: validNewPassword
+      })
     );
     expect(res.status).toBe(200);
-    expect(pool.query).toHaveBeenNthCalledWith(2, "UPDATE `users` SET password = ? WHERE id = ?", ["new12345", 1]);
+    expect(pool.query).toHaveBeenNthCalledWith(2, "UPDATE `users` SET password = ? WHERE id = ?", [
+      validNewPassword,
+      1
+    ]);
     await expect(res.json()).resolves.toEqual({ ok: true, message: "Password changed successfully." });
   });
 });
-
-

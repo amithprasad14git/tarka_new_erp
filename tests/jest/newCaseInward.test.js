@@ -164,9 +164,8 @@ function baseRoutes(overrides = {}) {
 describe("newCaseInward module", () => {
   /**
    * Coverage note:
-   * `newCaseInward.js` lines 316-320 (`LOAN_CATEGORY_CASE_NO_MAP_MISSING`) are a defensive branch
-   * that requires `LOAN_CATEGORY_CASE_NO_CODES` to be empty. Since the map is hardcoded non-empty
-   * in production code and not exported for mutation, this path is intentionally not forced in tests.
+   * `LOAN_CATEGORY_CASE_NO_MAP_MISSING` is a defensive branch when the label map is empty.
+   * The map is hardcoded non-empty in production code and not exported for mutation.
    */
 // Automated checks for: resolveNewCaseInwardBankRuleByBranch.
   describe("resolveNewCaseInwardBankRuleByBranch", () => {
@@ -671,15 +670,14 @@ describe("newCaseInward module", () => {
 
 // Automated checks for: assignNewCaseInwardCaseNo.
   describe("assignNewCaseInwardCaseNo", () => {
+    const chainQueryMatch = (sql) =>
+      sql.includes("loanCategoryLabel") && sql.includes("caseNoPrefix");
+
     test("assigns next case number with mapped loan category code", async () => {
       const conn = createConn([
         {
-          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
-          reply: [[{ loanCategory: 3 }]] // => CF
-        },
-        {
-          when: (sql) => sql.includes("SELECT bm.caseNoPrefix AS caseNoPrefix"),
-          reply: [[{ caseNoPrefix: "SBI" }]]
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[{ loanCategoryLabel: "Collateral Free", caseNoPrefix: "SBI" }]]
         },
         {
           when: (sql) => sql.includes("INSERT INTO module_number_sequence"),
@@ -712,6 +710,10 @@ describe("newCaseInward module", () => {
     test("fails when loan category is missing on inserted row", async () => {
       const conn = createConn([
         {
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[]]
+        },
+        {
           when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
           reply: [[{ loanCategory: null }]]
         }
@@ -719,11 +721,11 @@ describe("newCaseInward module", () => {
       await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "LOAN_CATEGORY_MISSING" });
     });
 
-    test("fails when loan category id is not mapped", async () => {
+    test("fails when loan category label is not mapped", async () => {
       const conn = createConn([
         {
-          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
-          reply: [[{ loanCategory: 999 }]]
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[{ loanCategoryLabel: "Unknown Type", caseNoPrefix: "SBI" }]]
         }
       ]);
       await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({
@@ -731,25 +733,29 @@ describe("newCaseInward module", () => {
       });
     });
 
-    test("fails when loan category id is non-numeric", async () => {
+    test("fails when loan category FK is set but cannot be resolved", async () => {
       const conn = createConn([
+        {
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[]]
+        },
         {
           when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
           reply: [[{ loanCategory: "abc" }]]
         }
       ]);
-      await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "LOAN_CATEGORY_MISSING" });
+      await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "CASE_NO_PREFIX_UNRESOLVED" });
     });
 
     test("fails when bank prefix chain cannot be resolved", async () => {
       const conn = createConn([
         {
-          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
-          reply: [[{ loanCategory: 4 }]]
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[]]
         },
         {
-          when: (sql) => sql.includes("SELECT bm.caseNoPrefix AS caseNoPrefix"),
-          reply: [[]]
+          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
+          reply: [[{ loanCategory: 4 }]]
         }
       ]);
       await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "CASE_NO_PREFIX_UNRESOLVED" });
@@ -758,12 +764,8 @@ describe("newCaseInward module", () => {
     test("fails when bank prefix is blank", async () => {
       const conn = createConn([
         {
-          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
-          reply: [[{ loanCategory: 4 }]]
-        },
-        {
-          when: (sql) => sql.includes("SELECT bm.caseNoPrefix AS caseNoPrefix"),
-          reply: [[{ caseNoPrefix: "   " }]]
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[{ loanCategoryLabel: "SARFAESI", caseNoPrefix: "   " }]]
         }
       ]);
       await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "CASE_NO_PREFIX_EMPTY" });
@@ -772,12 +774,8 @@ describe("newCaseInward module", () => {
     test("fails when sequence row is missing after upsert", async () => {
       const conn = createConn([
         {
-          when: (sql) => sql.includes("SELECT loanCategory FROM new_case_inward WHERE id = ? LIMIT 1"),
-          reply: [[{ loanCategory: 9 }]]
-        },
-        {
-          when: (sql) => sql.includes("SELECT bm.caseNoPrefix AS caseNoPrefix"),
-          reply: [[{ caseNoPrefix: "CAN" }]]
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[{ loanCategoryLabel: "Vehicle Loan", caseNoPrefix: "CAN" }]]
         },
         {
           when: (sql) => sql.includes("INSERT INTO module_number_sequence"),

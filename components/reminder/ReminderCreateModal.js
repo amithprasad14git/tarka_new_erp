@@ -1,5 +1,12 @@
 "use client";
 
+// Dashboard modal — create a new reminder from My Reminders widget.
+
+/**
+ * Form modal to add a reminder (title, notes, due date, recurrence).
+ * POST /api/reminder on save. Parent: MyRemindersWidget.js via ReminderModalPortal.
+ */
+
 import { useEffect, useId, useState } from "react";
 import ReminderRecurrencePicker from "./ReminderRecurrencePicker";
 import { labelWithRequiredMark } from "../../lib/formFieldLabel";
@@ -7,6 +14,10 @@ import { isDueDateOnOrAfterToday, minDueDateToday } from "./reminderUtils";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
 import ReminderModalPortal from "./ReminderModalPortal";
 
+/**
+ * Create-reminder dialog — resets form each time it opens.
+ * @param {{ open: boolean, onClose: () => void, onCreated?: () => void }} props
+ */
 export default function ReminderCreateModal({ open, onClose, onCreated }) {
   const idBase = useId();
   const titleId = `${idBase}-dialog-title`;
@@ -26,6 +37,7 @@ export default function ReminderCreateModal({ open, onClose, onCreated }) {
     resetForm();
   }, [open]);
 
+  /** Clear all fields when modal opens. */
   function resetForm() {
     setError("");
     setReminderTitle("");
@@ -36,6 +48,7 @@ export default function ReminderCreateModal({ open, onClose, onCreated }) {
 
   if (!open) return null;
 
+  /** Validate and POST new reminder to /api/reminder. */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");

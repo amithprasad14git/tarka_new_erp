@@ -875,7 +875,7 @@ export const modules = {
   // ---------------------------------------------------------------------------
   // NEW CASE INWARD — Parent transaction; line items in `new_case_inward_amount_recovered`
   // Case No is filled by the server after save: {bank caseNoPrefix}/{loan category code}/{nnnnn}.
-  // Case No / sequences: lib/modules/newCaseInward.js (LOAN_CATEGORY_CASE_NO_CODES + assignNewCaseInwardCaseNo)
+  // Case No / sequences: lib/modules/newCaseInward.js (LOAN_CATEGORY_CASE_NO_CODES by lookup label + assignNewCaseInwardCaseNo)
   // ---------------------------------------------------------------------------
   new_case_inward: {
     label: "New Case Inward",
@@ -907,7 +907,7 @@ export const modules = {
         label: "Unit",
         required: true,
         showInView: true,
-        lookup: { module: "unit_master", valueField: "id" }
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "entrustmentDate",
@@ -2391,7 +2391,7 @@ export const modules = {
   task_master: {
     label: "Task Management",
     icon: "✅",
-    group: "Tasks",
+    group: "Tasks & Reminders",
     table: "task_master",
     lookupDisplayField: "taskTitle",
     rowScopeOwnAlsoMatchFields: ["assignee"],
@@ -2538,7 +2538,7 @@ export const modules = {
   reminder_master: {
     label: "Reminder Management",
     icon: "🔔",
-    group: "Tasks",
+    group: "Tasks & Reminders",
     table: "reminder_master",
     lookupDisplayField: "reminderTitle",
     fields: [

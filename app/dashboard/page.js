@@ -1,10 +1,9 @@
-// Application route/page/API handler for this feature area.
-// Keep module-specific business logic in lib/modules/<module> files.
+// Application page — /dashboard landing (widgets rendered by layout + DashboardTabs).
 
 /**
- * `/dashboard` landing:
- * Dashboard layout renders the shared tab container, but this page returns `null`
- * so the initial state is an empty module selection.
+ * `/dashboard` home route. Returns null because DashboardTabs in layout.js
+ * renders landing KPI widgets when no module tab is active.
+ * Guide: docs/DASHBOARDS.md
  */
 export default async function DashboardIndexPage() {
   // Tabs UI lives in layout; this route intentionally renders nothing.

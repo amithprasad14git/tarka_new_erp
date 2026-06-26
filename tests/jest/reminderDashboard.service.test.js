@@ -88,6 +88,7 @@ const {
   appendReminderOwnerFilter,
   buildDueCalendarGrid,
   loadReminderDashboardSummary,
+  loadReminderAlerts,
   listRemindersForDashboard
 } = require("../../lib/modules/reminderDashboard.service");
 
@@ -258,6 +259,74 @@ describe("reminderDashboard.service", () => {
       const [sql, values] = pool.query.mock.calls[0];
       expect(sql).toContain("DATE(`dueDate`) = ?");
       expect(values).toContain("2026-06-14");
+    });
+  });
+
+  describe("loadReminderAlerts", () => {
+    test("returns counts and pending due/overdue items for owner", async () => {
+      pool.query
+        .mockResolvedValueOnce([
+          [
+            {
+              totalReminders: 3,
+              completedReminders: 0,
+              pendingReminders: 3,
+              cancelledReminders: 0,
+              overdueReminders: 2,
+              dueToday: 1,
+              dueThisWeek: 0
+            }
+          ]
+        ])
+        .mockResolvedValueOnce([
+          [
+            { id: 1, reminderTitle: "Overdue", dueDate: "2026-06-01", status: "Pending" },
+            { id: 2, reminderTitle: "Today", dueDate: "2026-06-13", status: "Pending" }
+          ]
+        ]);
+
+      const alerts = await loadReminderAlerts({ id: 7, role: 2 });
+
+      expect(alerts).toEqual({
+        overdueCount: 2,
+        dueTodayCount: 1,
+        alertCount: 3,
+        items: [
+          expect.objectContaining({ id: 1, reminderTitle: "Overdue", isOverdue: true }),
+          expect.objectContaining({ id: 2, reminderTitle: "Today", isOverdue: false })
+        ]
+      });
+
+      const [itemsSql, itemsValues] = pool.query.mock.calls[1];
+      expect(itemsSql).toContain("`status` = ?");
+      expect(itemsSql).toContain("DATE(`dueDate`) <= CURDATE()");
+      expect(itemsValues).toContain("Pending");
+      expect(itemsValues).toContain(7);
+      expect(itemsValues).toContain(10);
+    });
+
+    test("admin query omits owner filter", async () => {
+      pool.query
+        .mockResolvedValueOnce([
+          [
+            {
+              totalReminders: 1,
+              completedReminders: 0,
+              pendingReminders: 1,
+              cancelledReminders: 0,
+              overdueReminders: 1,
+              dueToday: 0,
+              dueThisWeek: 0
+            }
+          ]
+        ])
+        .mockResolvedValueOnce([[{ id: 9, reminderTitle: "Any", dueDate: "2026-06-01", status: "Pending" }]]);
+
+      await loadReminderAlerts({ id: 1, role: 1 });
+
+      const [itemsSql, itemsValues] = pool.query.mock.calls[1];
+      expect(itemsSql).not.toContain("`createdBy` = ?");
+      expect(itemsValues).not.toContain(1);
     });
   });
 });

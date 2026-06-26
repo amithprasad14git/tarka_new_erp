@@ -1,7 +1,16 @@
 "use client";
 
+// Dashboard panel — clickable month grid of reminder due dates (My Reminders column 2).
+
+/**
+ * Calendar heatmap where clicking a day filters ReminderDashboardList to that due date.
+ * Selected date toggles off on second click. Data from /api/dashboard/my_reminders calendar.
+ * Parent: MyRemindersWidget.js
+ */
+
 import { formatReminderDate } from "./reminderUtils";
 
+/** Fallback when API has not yet returned calendar cells. */
 const EMPTY_CALENDAR = {
   monthLabel: "",
   today: "",
@@ -11,6 +20,15 @@ const EMPTY_CALENDAR = {
   summary: { dueInMonth: 0, overdueInMonth: 0 }
 };
 
+/**
+ * Reminder due-date calendar with date selection for list filtering.
+ * @param {{
+ *   calendar?: object,
+ *   metrics?: object,
+ *   selectedDate?: string | null,
+ *   onDateClick?: (date: string) => void
+ * }} props
+ */
 export default function ReminderDueCalendarPanel({
   calendar = EMPTY_CALENDAR,
   metrics = {},
@@ -18,20 +36,12 @@ export default function ReminderDueCalendarPanel({
   onDateClick
 }) {
   const cal = calendar?.cells?.length ? calendar : EMPTY_CALENDAR;
-  const overdue = Number(metrics.overdueReminders) || Number(cal.summary?.overdueInMonth) || 0;
   const dueToday = Number(metrics.dueToday) || 0;
   const dueThisWeek = Number(metrics.dueThisWeek) || 0;
 
   return (
     <div className="reminder-due-calendar" aria-label="Reminder due date calendar">
       <div className="reminder-due-calendar-main">
-        {overdue > 0 ? (
-          <div className="reminder-due-calendar-alert">
-            <span className="reminder-due-calendar-alert-dot" aria-hidden="true" />
-            {overdue} overdue
-          </div>
-        ) : null}
-
         <div className="reminder-due-calendar-weekdays">
           {cal.weekdays.map((w, i) => (
             <span key={`${w}-${i}`} className="reminder-due-calendar-weekday">

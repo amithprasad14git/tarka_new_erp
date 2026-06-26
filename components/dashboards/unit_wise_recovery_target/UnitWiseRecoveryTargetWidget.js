@@ -1,6 +1,12 @@
 "use client";
 
-// Unit Wise Recovery Target — landing widget (donut, bank pie, KPIs, month trend).
+// Dashboard widget UI — Unit Wise Recovery Target (full-width four-panel FY recovery).
+
+/**
+ * Landing widget: recovery donut + totals | bank pie | KPI strip | month-wise recovery.
+ * Recovery amounts use recoveredDate in active FY. Full-width dashboard-recovery-layout.
+ * Guide: docs/DASHBOARDS.md
+ */
 
 import { formatDashboardInrAmount } from "../../../lib/formatInrNumber";
 import UnitTargetDonut from "../UnitTargetDonut";
@@ -11,6 +17,7 @@ import RecoveryKpiStrip from "../RecoveryKpiStrip";
 import MonthWiseRecoveryBars from "../MonthWiseRecoveryBars";
 
 /**
+ * Full-width Recovery Target widget — donut, bank pie, KPI strip, month chart.
  * @param {{
  *   data: object,
  *   loading?: boolean,
@@ -56,9 +63,10 @@ export default function UnitWiseRecoveryTargetWidget({
         <p className="dashboard-widget-empty">{message}</p>
       ) : (
         <div className="dashboard-recovery-layout">
+          {/* Panel 1 — FY target vs achieved donut + amount totals */}
           <div className="dashboard-recovery-col dashboard-recovery-col--donut">
             <div className="dashboard-recovery-panel">
-              <DashboardSectionHeader title="Recovery progress" subtitle="Target vs achieved" />
+              <DashboardSectionHeader title="Recovery Progress" subtitle="Target vs Achieved" />
               <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--progress">
                 <div className="dashboard-recovery-progress-body">
                   <div className="dashboard-recovery-progress-chart">
@@ -74,7 +82,7 @@ export default function UnitWiseRecoveryTargetWidget({
                       <dd>{formatDashboardInrAmount(totals.amountRecovered)}</dd>
                     </div>
                     <div className="dashboard-recovery-total-row">
-                      <dt>Gap to target</dt>
+                      <dt>Gap to Target</dt>
                       <dd>{formatDashboardInrAmount(totals.gapToTarget)}</dd>
                     </div>
                   </dl>
@@ -82,17 +90,19 @@ export default function UnitWiseRecoveryTargetWidget({
               </div>
             </div>
           </div>
+          {/* Panel 2 — share of recovery by bank (pie chart) */}
           <div className="dashboard-recovery-col dashboard-recovery-col--bank">
             <div className="dashboard-recovery-panel">
-              <DashboardSectionHeader title="Bank wise recovery" subtitle="Share of FY recovery" />
+              <DashboardSectionHeader title="Bank Wise Recovery" subtitle="Share of FY Recovery" />
               <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--bank">
                 <BankRecoveryPie rows={rows} />
               </div>
             </div>
           </div>
+          {/* Panel 3 — case counts and status KPI strip */}
           <div className="dashboard-recovery-col dashboard-recovery-col--kpis">
             <div className="dashboard-recovery-panel dashboard-recovery-panel--kpis">
-              <DashboardSectionHeader title="Recovery KPIs" subtitle="Current financial year" />
+              <DashboardSectionHeader title="Recovery KPIs" subtitle="Current Financial Year" />
               <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--kpis">
                 <RecoveryKpiStrip
                   layout="compact"
@@ -103,9 +113,10 @@ export default function UnitWiseRecoveryTargetWidget({
               </div>
             </div>
           </div>
+          {/* Panel 4 — month-by-month recovery trend bars */}
           <div className="dashboard-recovery-col dashboard-recovery-col--months">
             <div className="dashboard-recovery-panel">
-              <DashboardSectionHeader title="Month wise recovery" subtitle="Trend by month" />
+              <DashboardSectionHeader title="Month Wise Recovery" subtitle="Trend by Month" />
               <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--months">
                 <MonthWiseRecoveryBars rows={monthWiseRecovery} variant="inline" hideHeading />
               </div>
