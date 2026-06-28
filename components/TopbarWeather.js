@@ -118,11 +118,12 @@ export default function TopbarWeather() {
         )}
         {status === "ready" && data && (
           <>
-            <span
-              className={`topbar-weather-icon topbar-weather-icon--${kindFromCode(data.weatherCode)}`}
-              aria-hidden="true"
-            >
-              {GLYPH[kindFromCode(data.weatherCode)] ?? GLYPH.cloud}
+            <span className="topbar-weather-icon-wrap" aria-hidden="true">
+              <span
+                className={`topbar-weather-icon topbar-weather-icon--${kindFromCode(data.weatherCode)}`}
+              >
+                {GLYPH[kindFromCode(data.weatherCode)] ?? GLYPH.cloud}
+              </span>
             </span>
             <span className="topbar-weather-temp">{data.temperatureC}°C</span>
             <span className="topbar-weather-city">{data.cityLabel}</span>

@@ -87,7 +87,9 @@
  *   `lookup.ui` to `"lov"` | `"dropdown"` | `"select"` | `"list"`.
  * - Popup picker (search + table + double-click): `lookup.ui` =
  *   `"picker"` | `"popup"` | `"modal"` | `"dialog"`.
- * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column).
+ * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column),
+ *   `lookup.pickerSortDir` — `"asc"` (default) or `"desc"`.
+ *   `lookup.pickerSearchPlaceholder` — optional override for popup search input hint (default derived from referenced module search columns).
  * - Popup columns: `lookup.pickerColumns`: `[{ field: "name", header: "Name" }, { field: "email", header: "Email" }]`.
  *   `field` must match a column returned by the referenced module’s list API. If omitted, one column or all parsed display columns are shown.
  *
@@ -175,6 +177,9 @@ const STANDARD_ROW_AUDIT_FIELDS = [
   },
   { name: "modifiedDate", type: "text", label: "Modified Date", excludeFromForm: true, showInView: false }
 ];
+
+/** All new_case_inward Case No popup pickers: newest record first. */
+const NCI_CASE_NO_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
 
 // All screens/modules the ERP knows about. Key = internal name; value = settings + fields.
 // Each module value typically has: label, icon, group, table, fields[], and optional flags (readOnly, postCreateAck, …).
@@ -1065,7 +1070,7 @@ export const modules = {
         table: "new_case_inward_amount_recovered",
         parentFkField: "caseInwardId", // FK column on child table → new_case_inward.id
         label: "Amount Recovered",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "recoveredDate",
@@ -1133,7 +1138,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { transfer_case_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -1224,7 +1229,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { public_notice_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -1242,7 +1247,7 @@ export const modules = {
         table: "public_notice_details",
         parentFkField: "publicNoticeId",
         label: "Details",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         maxRows: 3,
         fields: [
           {
@@ -1332,7 +1337,7 @@ export const modules = {
           // Client overrides picker to sarfaesi_case_status_update_case_picker (SARFAESI + unused cases).
           extraLovParams: { public_notice_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -1350,7 +1355,7 @@ export const modules = {
         table: "sarfaesi_case_status_update_details",
         parentFkField: "sarfaesiUpdateId",
         label: "Details",
-        indexColumnWidth: "3rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars",
@@ -1432,7 +1437,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { return_case_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -1448,7 +1453,12 @@ export const modules = {
         label: "Investigating Officer",
         required: true,
         showInView: false,
-        lookup: { module: "employee_master", valueField: "id", ui: "lov" }
+        lookup: {
+          module: "employee_master",
+          valueField: "id",
+          ui: "lov",
+          extraLovParams: { f_active: "Yes" }
+        }
       },
       {
         name: "borrowerLatestDetails",
@@ -1474,7 +1484,7 @@ export const modules = {
         table: "return_case_details",
         parentFkField: "returnCaseId",
         label: "Return Case Details",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "select",
@@ -1942,7 +1952,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -1996,7 +2006,7 @@ export const modules = {
         table: "recovery_invoice_charges",
         parentFkField: "recoveryInvoiceId", // FK column on child table
         label: "Recovery Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "percentage",
@@ -2060,7 +2070,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -2114,7 +2124,7 @@ export const modules = {
         table: "sarfaesi_invoice_charges",
         parentFkField: "sarfaesiInvoiceId", // FK column on child table
         label: "SARFAESI Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",
@@ -2184,7 +2194,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -2238,7 +2248,7 @@ export const modules = {
         table: "vehicle_invoice_charges",
         parentFkField: "vehicleInvoiceId", // FK column on child table
         label: "Seizing Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",

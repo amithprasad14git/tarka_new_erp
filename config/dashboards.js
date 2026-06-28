@@ -20,9 +20,7 @@ export const dashboards = [
     icon: "🎯",
     description: "Recovery achieved vs target for your unit (current financial year).",
     tone: "brand",
-    landingWidget: true,
-    /** Role 2+ users with an assigned unit see this without an explicit matrix row. */
-    autoGrantForAssignedUnit: true
+    landingWidget: true
   },
   {
     // Personal task summary — counts by status for logged-in user.
@@ -45,7 +43,17 @@ export const dashboards = [
     landingWidget: true
   },
   {
-    // Branch lookup tool — search by code or name across bank hierarchy.
+    // Full width — FY settled cases by loan type, region, and month.
+    key: "regional_performance",
+    permissionKey: "dashboard_regional_performance",
+    title: "Regional Performance",
+    icon: "📊",
+    description: "Settled cases by loan type, region, and month for the current financial year.",
+    tone: "brand",
+    landingWidget: true
+  },
+  {
+    // Half width — branch lookup tool (paired with Invoice Collections on the same row).
     key: "search_bank_branch",
     permissionKey: "dashboard_search_bank_branch",
     title: "Search Bank & Branch",
@@ -55,22 +63,12 @@ export const dashboards = [
     landingWidget: true
   },
   {
-    // FY invoice billed vs received — KPI grid and by-bank pie.
+    // Half width — FY invoice billed vs received (paired with Search Bank & Branch).
     key: "invoice_collections",
     permissionKey: "dashboard_invoice_collections",
     title: "Invoice Collections",
     icon: "💰",
     description: "Billed vs received and pending invoices for the current financial year.",
-    tone: "brand",
-    landingWidget: true
-  },
-  {
-    // Row 4 full width — FY settled cases by loan type, region, and month.
-    key: "regional_performance",
-    permissionKey: "dashboard_regional_performance",
-    title: "Regional Performance",
-    icon: "📊",
-    description: "Settled cases by loan type, region, and month for the current financial year.",
     tone: "brand",
     landingWidget: true
   }

@@ -170,6 +170,7 @@ export default function DynamicForm({
           </>
         ) : useTextarea ? (
           <textarea
+            key={ui.inputKey ?? fieldDomId}
             id={fieldDomId}
             name={f.name}
             rows={Number.isFinite(textareaRows) && textareaRows > 1 ? textareaRows : 3}
@@ -242,6 +243,7 @@ export default function DynamicForm({
           />
         ) : (
           <input
+            key={ui.inputKey ?? fieldDomId}
             id={fieldDomId}
             name={f.name}
             type={f.type}

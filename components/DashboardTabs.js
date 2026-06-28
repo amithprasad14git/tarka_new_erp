@@ -8,6 +8,7 @@
  * syncing the address bar for refresh and back/forward. Most tabs use `MasterModuleClient`;
  * `user_permissions` uses `UserPermissionsMatrixClient`.
  * At most MAX_OPEN_TABS modules may be open; opening another shows a toast and keeps the current tab.
+ * Landing dashboard widgets stay mounted (hidden) while module tabs are open so closing a tab does not reload charts.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -21,6 +22,14 @@ import DashboardWidgetLoader from "./dashboards/DashboardWidgetLoader";
 
 const MAX_OPEN_TABS = 5;
 
+const FULL_WIDTH_LANDING_KEYS = new Set(["unit_wise_recovery_target", "regional_performance"]);
+
+function landingSlotClass(dashboardKey) {
+  return FULL_WIDTH_LANDING_KEYS.has(dashboardKey)
+    ? "dashboard-widget-slot dashboard-widget-slot--full"
+    : "dashboard-widget-slot";
+}
+
 function extractModuleKey(pathname) {
   // Parse /dashboard/<module> from URL — null on landing /dashboard.
   const parts = String(pathname || "").split("/").filter(Boolean);
@@ -32,7 +41,7 @@ function extractModuleKey(pathname) {
 /**
  * In-page dashboard tabs: keeps multiple module screens mounted so users can multitask.
  * On `/dashboard` (no module selected) renders landing KPI widgets in a grid.
- * Full-width slots: unit_wise_recovery_target, regional_performance.
+ * Full-width slots: unit_wise_recovery_target, regional_performance (above Search + Invoice row).
  * Guide: docs/DASHBOARDS.md
  * @param {{ visibleModuleKeys: string[], visibleDashboards?: Array<{ key: string, title: string, description?: string, icon?: string, tone?: string }> }} props
  */
@@ -105,39 +114,6 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
     });
   }, [pathname, visibleSet, router]);
 
-  if (!activeKey) {
-    return (
-      <section className="dashboard-landing" aria-label="Dashboards">
-        {landingWidgets.length ? (
-          <div className="dashboard-widget-grid dashboard-widget-grid--landing">
-            {landingWidgets.map((d) => (
-              <div
-                key={d.key}
-                id={`dashboard-widget-${d.key}`}
-                className={
-                  // Full-width row for four-panel recovery-style layouts.
-                  d.key === "unit_wise_recovery_target" || d.key === "regional_performance"
-                    ? "dashboard-widget-slot dashboard-widget-slot--full"
-                    : "dashboard-widget-slot"
-                }
-              >
-                <DashboardWidgetLoader
-                  dashboardKey={d.key}
-                  cache={dashboardCache[d.key] || {}}
-                  onCacheUpdate={updateDashboardCache}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="dashboard-landing-empty">
-            No dashboard is assigned to your account. Contact administrator to grant dashboard permissions.
-          </p>
-        )}
-      </section>
-    );
-  }
-
   function activateTab(key) {
     // Activating a tab updates state and keeps the URL in sync for refresh/back navigation.
     setActiveKey(key);
@@ -171,69 +147,106 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
     if (nextActive && key === activeKey) router.push(`/dashboard/${nextActive}`);
   }
 
-  return (
-    <div className="dashboard-tabs">
-      <ToastNotice toast={toast} onClose={() => setToast(null)} />
-      <div className="dashboard-tabs-bar" role="tablist" aria-label="Module tabs">
-        {openTabs.map((k) => {
-          const label = modules[k]?.label || reports[k]?.label || k;
-          const icon = modules[k]?.icon || reports[k]?.icon || "📄";
-          const isActive = k === activeKey;
-          return (
-            <button
-              key={k}
-              type="button"
-              className={`dashboard-tab ${isActive ? "is-active" : ""}`}
-              onClick={() => activateTab(k)}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`tab-panel-${k}`}
-              title={label}
-            >
-              <span className="dashboard-tab-icon" aria-hidden>
-                {icon}
-              </span>
-              <span className="dashboard-tab-label">{label}</span>
-              <span
-                className="dashboard-tab-close"
-                onClick={(e) => closeTab(k, e)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") closeTab(k, e);
-                }}
-                aria-label={`Close ${label} tab`}
-                title="Close tab"
-              >
-                ×
-              </span>
-            </button>
-          );
-        })}
-      </div>
+  const showLanding = !activeKey;
 
-      <div className="dashboard-tabs-content">
-        {openTabs.map((k) => {
-          const isActive = k === activeKey;
-          return (
-            <div
-              key={`panel-${k}`}
-              id={`tab-panel-${k}`}
-              role="tabpanel"
-              aria-hidden={!isActive}
-              style={{ display: isActive ? "block" : "none" }}
-            >
-              {k === "user_permissions" ? (
-                <UserPermissionsMatrixClient isActive={isActive} />
-              ) : reports[k] ? (
-                <ReportModuleClient reportKey={k} isActive={isActive} />
-              ) : (
-                <MasterModuleClient moduleKey={k} isActive={isActive} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+  return (
+    <>
+      <ToastNotice toast={toast} onClose={() => setToast(null)} />
+
+      {openTabs.length > 0 ? (
+        <div className="dashboard-tabs">
+          <div className="dashboard-tabs-bar" role="tablist" aria-label="Module tabs">
+            {openTabs.map((k) => {
+              const label = modules[k]?.label || reports[k]?.label || k;
+              const icon = modules[k]?.icon || reports[k]?.icon || "📄";
+              const isActive = k === activeKey;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  className={`dashboard-tab ${isActive ? "is-active" : ""}`}
+                  onClick={() => activateTab(k)}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`tab-panel-${k}`}
+                  title={label}
+                >
+                  <span className="dashboard-tab-icon" aria-hidden>
+                    {icon}
+                  </span>
+                  <span className="dashboard-tab-label">{label}</span>
+                  <span
+                    className="dashboard-tab-close"
+                    onClick={(e) => closeTab(k, e)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") closeTab(k, e);
+                    }}
+                    aria-label={`Close ${label} tab`}
+                    title="Close tab"
+                  >
+                    ×
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="dashboard-tabs-content">
+            {openTabs.map((k) => {
+              const isActive = k === activeKey;
+              return (
+                <div
+                  key={`panel-${k}`}
+                  id={`tab-panel-${k}`}
+                  role="tabpanel"
+                  aria-hidden={!isActive}
+                  style={{ display: isActive ? "block" : "none" }}
+                >
+                  {k === "user_permissions" ? (
+                    <UserPermissionsMatrixClient isActive={isActive} />
+                  ) : reports[k] ? (
+                    <ReportModuleClient reportKey={k} isActive={isActive} />
+                  ) : (
+                    <MasterModuleClient moduleKey={k} isActive={isActive} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Landing widgets stay mounted while module tabs are open (hidden) — avoids refetch/chart flash on tab close. */}
+      <section
+        className="dashboard-landing"
+        aria-label="Dashboards"
+        aria-hidden={!showLanding}
+        style={{ display: showLanding ? undefined : "none" }}
+      >
+        {landingWidgets.length ? (
+          <div className="dashboard-widget-grid dashboard-widget-grid--landing">
+            {landingWidgets.map((d) => (
+              <div
+                key={d.key}
+                id={`dashboard-widget-${d.key}`}
+                className={landingSlotClass(d.key)}
+              >
+                <DashboardWidgetLoader
+                  dashboardKey={d.key}
+                  cache={dashboardCache[d.key] || {}}
+                  onCacheUpdate={updateDashboardCache}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="dashboard-landing-empty">
+            No dashboard is assigned to your account. Contact administrator to grant dashboard permissions.
+          </p>
+        )}
+      </section>
+    </>
   );
 }

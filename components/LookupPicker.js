@@ -9,7 +9,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
-import { getPickerColumns } from "../lib/lookupUi";
+import { getPickerColumns, getLookupPickerSearchPlaceholder } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
 import { formatUserFacingError, readApiErrorMessage } from "../lib/fetchClientError";
 import { apiUserMessage } from "../lib/apiUserMessages";
@@ -55,6 +55,8 @@ export default function LookupPicker({
   const labelField =
     resolveLookupLabelFieldName(lookup) || String(lookup?.valueField ?? "").trim() || "id";
   const sortField = lookup.pickerSortBy || labelField;
+  const sortDir =
+    String(lookup.pickerSortDir || "asc").toLowerCase() === "desc" ? "desc" : "asc";
   const extraLovEntries = Object.entries(lookup?.extraLovParams || {})
     .map(([k, v]) => [String(k || "").trim(), v == null ? "" : String(v).trim()])
     .filter(([k, v]) => Boolean(k) && Boolean(v))
@@ -146,7 +148,7 @@ export default function LookupPicker({
           limit: String(pageSize),
           search: submittedSearch,
           sortBy: sortField,
-          sortDir: "asc",
+          sortDir,
           lov: "1"
         });
         appendLookupValueMasterLovParams(q, lookupFetchConfig);
@@ -173,7 +175,7 @@ export default function LookupPicker({
     return () => {
       cancelled = true;
     };
-  }, [open, page, submittedSearch, lookupFetchConfig, sortField, pageSize]);
+  }, [open, page, submittedSearch, lookupFetchConfig, sortField, sortDir, pageSize]);
 
   useEffect(() => {
     if (!open) return;
@@ -203,11 +205,7 @@ export default function LookupPicker({
   const totalPages = Math.max(1, Number(meta.totalPages) || 1);
   const displayText = selectedLabel || (selectedId ? `(id: ${selectedId})` : "");
   const showClear = Boolean(selectedId) && !disabled;
-  const sortColumnHeader =
-    columns.find((col) => String(col.field) === String(sortField))?.header ||
-    lookup?.pickerSortByLabel ||
-    sortField;
-  const searchHelp = `Enter ${sortColumnHeader}... Press Enter to search`;
+  const searchHelp = useMemo(() => getLookupPickerSearchPlaceholder(lookup), [lookup]);
   // Auto-size modal width from configured columns so wide pickers remain readable.
   const modalWidthPx = Math.min(1600, Math.max(760, columns.length * 180));
 

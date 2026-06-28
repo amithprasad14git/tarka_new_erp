@@ -30,7 +30,14 @@ jest.mock("../../config/modules", () => ({
     child_module: {
       table: "child_parent",
       fields: [{ name: "name", type: "text", required: true }],
-      childTables: [{ key: "lines", table: "child_lines", fields: [{ name: "v", type: "number", required: true }] }]
+      childTables: [
+        {
+          key: "lines",
+          table: "child_lines",
+          parentFkField: "parentId",
+          fields: [{ name: "v", type: "number", required: true }]
+        }
+      ]
     },
     ack_module: {
       table: "ack_table",
@@ -142,7 +149,8 @@ jest.mock("../../lib/services/crudPayloadValidation", () => ({
 }));
 
 jest.mock("../../lib/childTablesSync", () => ({
-  syncChildTablesInTransaction: jest.fn()
+  syncChildTablesInTransaction: jest.fn(),
+  deleteChildTablesForParent: jest.fn()
 }));
 
 jest.mock("../../lib/modules/newCaseInward", () => ({
@@ -162,7 +170,7 @@ const { enrichLookupDisplayRows } = require("../../lib/crudLookupEnrich");
 const { loadChildTableRowsForParent } = require("../../lib/childTablesLoad");
 const { writeAuditLog } = require("../../lib/audit");
 const { validateCrudPayloadForWrite } = require("../../lib/services/crudPayloadValidation");
-const { syncChildTablesInTransaction } = require("../../lib/childTablesSync");
+const { syncChildTablesInTransaction, deleteChildTablesForParent } = require("../../lib/childTablesSync");
 const {
   stripClientAuditFields,
   moduleHasRowAuditFields,
@@ -562,6 +570,32 @@ describe("crud.service", () => {
       canUserModifyRow.mockResolvedValueOnce(false);
       const result = await deleteCrudRecord(user, "sample_module", 1);
       expect(result).toEqual({ status: 403, body: { error: "Forbidden" } });
+    });
+
+    test("deletes child rows in transaction before parent when module has childTables", async () => {
+      hasModulePermission.mockResolvedValueOnce(true);
+      pool.query.mockResolvedValueOnce([[{ id: 5, name: "Parent" }]]);
+      canUserModifyRow.mockResolvedValueOnce(true);
+
+      const txConn = makeTxConn();
+      txConn.query.mockResolvedValueOnce([{ affectedRows: 2 }]).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      pool.getConnection.mockResolvedValueOnce(txConn);
+
+      const result = await deleteCrudRecord(user, "child_module", 5);
+
+      expect(result).toEqual({ status: 200, body: { ok: true } });
+      expect(txConn.beginTransaction).toHaveBeenCalled();
+      expect(deleteChildTablesForParent).toHaveBeenCalledWith(
+        txConn,
+        expect.objectContaining({ table: "child_parent" }),
+        5
+      );
+      expect(txConn.query).toHaveBeenCalledWith("DELETE FROM child_parent WHERE id=?", [5]);
+      expect(txConn.commit).toHaveBeenCalled();
+      expect(txConn.release).toHaveBeenCalled();
+      expect(writeAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({ action: "delete", moduleName: "child_module", recordId: 5 })
+      );
     });
   });
 

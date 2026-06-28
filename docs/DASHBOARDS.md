@@ -19,7 +19,7 @@ When you log in and open **Dashboard** (home), you may see one or more widgets i
 
 **Full-width rows:** Unit Wise Recovery Target and Regional Performance span the whole row (four panels side by side).
 
-If you do not see a widget, an administrator must grant the matching **Dashboards** permission in **User Permissions** (except Unit Wise Recovery Target, which unit users with an assigned unit may see automatically — see below).
+If you do not see a widget, an administrator must grant the matching **Dashboards** permission in **User Permissions**.
 
 ---
 
@@ -31,7 +31,6 @@ Each dashboard has a **permission key** in `config/dashboards.js` (for example `
 |------|---------|
 | **Admin (role 1)** | Sees all dashboards |
 | **Explicit permission** | User has any access on that dashboard key in User Permissions matrix |
-| **Auto-grant (special)** | **Unit Wise Recovery Target** only: role 2+ users with an assigned unit see it even without a matrix row |
 
 Dashboard permissions appear under the **Dashboards** group in the User Permissions matrix. They are **view-only** (no add/edit/delete columns).
 
@@ -55,7 +54,7 @@ flowchart TB
 ```
 
 1. **Layout** checks login and builds the list of dashboards this user may see.
-2. **DashboardWidgetLoader** fetches `/api/dashboard/<key>` once and caches the result in the browser.
+2. **DashboardWidgetLoader** fetches `/api/dashboard/<key>` once and caches the result in the browser. Landing widgets **stay mounted** (hidden) while module tabs are open, so closing a tab does not reload charts — only **Refresh** or a new login triggers refetch.
 3. **API** checks session + permission, then calls the matching **runner** in `lib/dashboards/<key>/run.js`.
 4. **Runner** loads FY bounds, unit scope, and runs SQL (or task/reminder services).
 5. **Widget component** draws charts and KPI cards from the JSON.
@@ -145,7 +144,7 @@ Each function in these files should have a short plain-English comment (what it 
 |---------------|------|
 | Add/remove a dashboard, title, permission key | `config/dashboards.js` |
 | Wire runner to config key | `lib/dashboards/dashboardRegistry.js` |
-| Permission / auto-grant logic | `lib/dashboards/dashboardAccess.js` |
+| Permission logic | `lib/dashboards/dashboardAccess.js` |
 | API entry point | `app/api/dashboard/[key]/route.js` |
 | Landing grid + full-width slots | `components/DashboardTabs.js` |
 | Map key → React widget | `components/dashboards/DashboardWidgetLoader.js` |

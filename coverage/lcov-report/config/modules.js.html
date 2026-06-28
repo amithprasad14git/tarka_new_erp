@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
@@ -2683,7 +2683,17 @@
 <a name='L2618'></a><a href='#L2618'>2618</a>
 <a name='L2619'></a><a href='#L2619'>2619</a>
 <a name='L2620'></a><a href='#L2620'>2620</a>
-<a name='L2621'></a><a href='#L2621'>2621</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2621'></a><a href='#L2621'>2621</a>
+<a name='L2622'></a><a href='#L2622'>2622</a>
+<a name='L2623'></a><a href='#L2623'>2623</a>
+<a name='L2624'></a><a href='#L2624'>2624</a>
+<a name='L2625'></a><a href='#L2625'>2625</a>
+<a name='L2626'></a><a href='#L2626'>2626</a>
+<a name='L2627'></a><a href='#L2627'>2627</a>
+<a name='L2628'></a><a href='#L2628'>2628</a>
+<a name='L2629'></a><a href='#L2629'>2629</a>
+<a name='L2630'></a><a href='#L2630'>2630</a>
+<a name='L2631'></a><a href='#L2631'>2631</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2836,9 +2846,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2863,7 +2873,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5392,7 +5412,9 @@
  *   `lookup.ui` to `"lov"` | `"dropdown"` | `"select"` | `"list"`.
  * - Popup picker (search + table + double-click): `lookup.ui` =
  *   `"picker"` | `"popup"` | `"modal"` | `"dialog"`.
- * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column).
+ * - Optional: `lookup.pickerLimit` (default 20, max 100), `lookup.pickerSortBy` (server sort column; default first display column),
+ *   `lookup.pickerSortDir` — `"asc"` (default) or `"desc"`.
+ *   `lookup.pickerSearchPlaceholder` — optional override for popup search input hint (default derived from referenced module search columns).
  * - Popup columns: `lookup.pickerColumns`: `[{ field: "name", header: "Name" }, { field: "email", header: "Email" }]`.
  *   `field` must match a column returned by the referenced module’s list API. If omitted, one column or all parsed display columns are shown.
  *
@@ -5480,6 +5502,9 @@ const STANDARD_ROW_AUDIT_FIELDS = [
   },
   { name: "modifiedDate", type: "text", label: "Modified Date", excludeFromForm: true, showInView: false }
 ];
+&nbsp;
+/** All new_case_inward Case No popup pickers: newest record first. */
+const NCI_CASE_NO_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
 &nbsp;
 // All screens/modules the ERP knows about. Key = internal name; value = settings + fields.
 // Each module value typically has: label, icon, group, table, fields[], and optional flags (readOnly, postCreateAck, …).
@@ -6370,7 +6395,7 @@ export const modules = {
         table: "new_case_inward_amount_recovered",
         parentFkField: "caseInwardId", // FK column on child table → new_case_inward.id
         label: "Amount Recovered",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "recoveredDate",
@@ -6438,7 +6463,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { transfer_case_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -6529,7 +6554,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { public_notice_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -6547,7 +6572,7 @@ export const modules = {
         table: "public_notice_details",
         parentFkField: "publicNoticeId",
         label: "Details",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         maxRows: 3,
         fields: [
           {
@@ -6637,7 +6662,7 @@ export const modules = {
           // Client overrides picker to sarfaesi_case_status_update_case_picker (SARFAESI + unused cases).
           extraLovParams: { public_notice_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -6655,7 +6680,7 @@ export const modules = {
         table: "sarfaesi_case_status_update_details",
         parentFkField: "sarfaesiUpdateId",
         label: "Details",
-        indexColumnWidth: "3rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars",
@@ -6737,7 +6762,7 @@ export const modules = {
           ui: "picker",
           extraLovParams: { return_case_case_picker: "1" },
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -6753,7 +6778,12 @@ export const modules = {
         label: "Investigating Officer",
         required: true,
         showInView: false,
-        lookup: { module: "employee_master", valueField: "id", ui: "lov" }
+        lookup: {
+          module: "employee_master",
+          valueField: "id",
+          ui: "lov",
+          extraLovParams: { f_active: "Yes" }
+        }
       },
       {
         name: "borrowerLatestDetails",
@@ -6779,7 +6809,7 @@ export const modules = {
         table: "return_case_details",
         parentFkField: "returnCaseId",
         label: "Return Case Details",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "select",
@@ -7247,7 +7277,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -7301,7 +7331,7 @@ export const modules = {
         table: "recovery_invoice_charges",
         parentFkField: "recoveryInvoiceId", // FK column on child table
         label: "Recovery Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "percentage",
@@ -7365,7 +7395,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -7419,7 +7449,7 @@ export const modules = {
         table: "sarfaesi_invoice_charges",
         parentFkField: "sarfaesiInvoiceId", // FK column on child table
         label: "SARFAESI Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",
@@ -7489,7 +7519,7 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "caseNo",
+          ...NCI_CASE_NO_PICKER_SORT,
           pickerColumns: [
             { field: "caseNo", header: "Case No" },
             { field: "unitLabel", header: "Unit" },
@@ -7543,7 +7573,7 @@ export const modules = {
         table: "vehicle_invoice_charges",
         parentFkField: "vehicleInvoiceId", // FK column on child table
         label: "Seizing Charges",
-        indexColumnWidth: "2.25rem",
+        indexColumnWidth: "4rem",
         fields: [
           {
             name: "particulars", type: "lookup", label: "Particulars", required: true, columnWidth: "25rem",
@@ -7696,7 +7726,7 @@ export const modules = {
   task_master: {
     label: "Task Management",
     icon: "✅",
-    group: "Tasks",
+    group: "Tasks &amp; Reminders",
     table: "task_master",
     lookupDisplayField: "taskTitle",
     rowScopeOwnAlsoMatchFields: ["assignee"],
@@ -7843,7 +7873,7 @@ export const modules = {
   reminder_master: {
     label: "Reminder Management",
     icon: "🔔",
-    group: "Tasks",
+    group: "Tasks &amp; Reminders",
     table: "reminder_master",
     lookupDisplayField: "reminderTitle",
     fields: [
@@ -7930,7 +7960,7 @@ export const modules = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-26T01:27:17.468Z
+                at 2026-06-28T09:43:39.077Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -1,7 +1,8 @@
 import { FINAL_CASE_STATUSES, normalizeNciCaseStatusLabel } from "../../lib/modules/newCaseInwardCaseStatus";
+import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
-import { buildSettledCaseStatusWhereSql } from "../../lib/reports/report_settled_cases";
+import { buildSettledCaseStatusWhereSql, buildSettledCasesReportWhereSql } from "../../lib/reports/report_settled_cases";
 import { getReportRunner } from "../../lib/reports/reportRegistry";
 
 describe("report_settled_cases config", () => {
@@ -28,11 +29,17 @@ describe("report_settled_cases config", () => {
     ]);
   });
 
-  test("fromDate and toDate default to month start/end", () => {
+  test("fromDate and toDate default to month start and today", () => {
     const cfg = getReportConfig("report_settled_cases");
     const values = getReportFilterInitialValues(cfg);
     expect(values.fromDate).toMatch(/^\d{4}-\d{2}-01$/);
-    expect(values.toDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(values.toDate).toBe(getYmdISTFromInstant(new Date()));
+  });
+
+  test("date filters are labeled as settled date range", () => {
+    const cfg = getReportConfig("report_settled_cases");
+    expect(cfg?.fields?.find((f) => f.name === "fromDate")?.label).toBe("Settled From Date");
+    expect(cfg?.fields?.find((f) => f.name === "toDate")?.label).toBe("Settled To Date");
   });
 
   test("closureBalance and amountRecovered are summed in footer", () => {
@@ -43,6 +50,32 @@ describe("report_settled_cases config", () => {
 
   test("runner is registered", () => {
     expect(typeof getReportRunner("report_settled_cases")?.runReport).toBe("function");
+  });
+});
+
+describe("buildSettledCasesReportWhereSql", () => {
+  test("filters on settled date range, not entrustment date", async () => {
+    const { whereSql, values } = await buildSettledCasesReportWhereSql(
+      { id: 1, role: 1 },
+      { fromDate: "2026-06-01", toDate: "2026-06-30" }
+    );
+    expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) >= ?");
+    expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) <= ?");
+    expect(whereSql).not.toContain("entrustmentDate");
+    expect(values).toEqual(expect.arrayContaining(["2026-06-01", "2026-06-30"]));
+  });
+
+  test("includes all final statuses except Returned", async () => {
+    const { whereSql, values } = await buildSettledCasesReportWhereSql(
+      { id: 1, role: 1 },
+      { fromDate: "2026-06-01", toDate: "2026-06-30" }
+    );
+    const status = buildSettledCaseStatusWhereSql();
+    expect(whereSql).toContain(status.sql);
+    expect(values).not.toContain("returned");
+    expect(values).toContain("closed");
+    expect(values).toContain("auctioned");
+    expect(whereSql).not.toMatch(/amount_recovered|recoveredAmount/i);
   });
 });
 

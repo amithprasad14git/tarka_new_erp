@@ -816,8 +816,8 @@ export const reports = {
     group: "Case Related Reports",
 
     fields: [
-      { name: "fromDate", type: "date", label: "From Date", required: true, maxToday: true, default: "monthStart" },
-      { name: "toDate", type: "date", label: "To Date", required: true, maxToday: true, default: "monthEnd" },
+      { name: "fromDate", type: "date", label: "Return From Date", required: true, maxToday: true, default: "monthStart" },
+      { name: "toDate", type: "date", label: "Return To Date", required: true, maxToday: true, default: "monthEnd" },
       {
         name: "unit",
         type: "lookup",
@@ -1007,8 +1007,8 @@ export const reports = {
     group: "Case Related Reports",
 
     fields: [
-      { name: "fromDate", type: "date", label: "From Date", required: true, maxToday: true, default: "monthStart" },
-      { name: "toDate", type: "date", label: "To Date", required: true, maxToday: true, default: "monthEnd" },
+      { name: "fromDate", type: "date", label: "Settled From Date", required: true, maxToday: true, default: "monthStart" },
+      { name: "toDate", type: "date", label: "Settled To Date", required: true, maxToday: true, default: "today" },
       {
         name: "unit",
         type: "lookup",

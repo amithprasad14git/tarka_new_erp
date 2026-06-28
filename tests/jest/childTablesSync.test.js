@@ -18,7 +18,7 @@ jest.mock("mysql2", () => ({
 }));
 
 const mysql = require("mysql2");
-const { syncChildTablesInTransaction } = require("../../lib/childTablesSync");
+const { syncChildTablesInTransaction, deleteChildTablesForParent } = require("../../lib/childTablesSync");
 
 // Helper used by tests: makeConn.
 function makeConn(impl) {
@@ -326,4 +326,98 @@ describe("childTablesSync.syncChildTablesInTransaction", () => {
   });
 });
 
+describe("childTablesSync.deleteChildTablesForParent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("deletes rows from each configured child table by parent FK", async () => {
+    const conn = makeConn();
+    await expect(deleteChildTablesForParent(conn, baseModuleConfig(), 101)).resolves.toBeUndefined();
+
+    expect(conn.query).toHaveBeenCalledTimes(1);
+    expect(conn.query).toHaveBeenCalledWith(
+      "DELETE FROM `new_case_inward_amount_recovered` WHERE `caseInwardId` = ?",
+      [101]
+    );
+  });
+
+  test("deletes sarfaesi_invoice_charges by sarfaesiInvoiceId", async () => {
+    const conn = makeConn();
+    const cfg = {
+      childTables: [
+        {
+          key: "sarfaesi_charges",
+          table: "sarfaesi_invoice_charges",
+          parentFkField: "sarfaesiInvoiceId",
+          fields: [{ name: "particulars", type: "lookup", required: true }]
+        }
+      ]
+    };
+
+    await deleteChildTablesForParent(conn, cfg, 42);
+
+    expect(conn.query).toHaveBeenCalledWith(
+      "DELETE FROM `sarfaesi_invoice_charges` WHERE `sarfaesiInvoiceId` = ?",
+      [42]
+    );
+  });
+
+  test("deletes vehicle_invoice_charges by vehicleInvoiceId", async () => {
+    const conn = makeConn();
+    const cfg = {
+      childTables: [
+        {
+          key: "vehicle_charges",
+          table: "vehicle_invoice_charges",
+          parentFkField: "vehicleInvoiceId",
+          fields: [{ name: "particulars", type: "lookup", required: true }]
+        }
+      ]
+    };
+
+    await deleteChildTablesForParent(conn, cfg, 88);
+
+    expect(conn.query).toHaveBeenCalledWith(
+      "DELETE FROM `vehicle_invoice_charges` WHERE `vehicleInvoiceId` = ?",
+      [88]
+    );
+  });
+
+  test("deletes serverOnly child tables on parent delete", async () => {
+    const conn = makeConn();
+    const cfg = {
+      childTables: [
+        {
+          key: "status_history",
+          table: "task_status_history",
+          parentFkField: "taskId",
+          syncMode: "serverOnly",
+          fields: [{ name: "toStatus", type: "text" }]
+        }
+      ]
+    };
+
+    await deleteChildTablesForParent(conn, cfg, 55);
+
+    expect(conn.query).toHaveBeenCalledWith("DELETE FROM `task_status_history` WHERE `taskId` = ?", [55]);
+  });
+
+  test("no-op when module has no childTables", async () => {
+    const conn = makeConn();
+    await expect(deleteChildTablesForParent(conn, {}, 1)).resolves.toBeUndefined();
+    expect(conn.query).not.toHaveBeenCalled();
+  });
+
+  test("rejects child table with missing table name", async () => {
+    const conn = makeConn();
+    const cfg = {
+      childTables: [{ key: "bad", fields: [] }]
+    };
+
+    await expect(deleteChildTablesForParent(conn, cfg, 1)).rejects.toMatchObject({
+      code: "CHILD_ROWS_INVALID"
+    });
+  });
+});
 

@@ -659,9 +659,27 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const [childRowsByKey, setChildRowsByKey] = useState(() =>
     emptyChildRowsState(modules[moduleKey]?.childTables)
   );
-  const recoveryInvoiceClient = useRecoveryInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
-  const sarfaesiInvoiceClient = useSarfaesiInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
-  const vehicleInvoiceClient = useVehicleInvoiceClientModel({ moduleKey, config, editingRow, childRowsByKey });
+  const recoveryInvoiceClient = useRecoveryInvoiceClientModel({
+    moduleKey,
+    config,
+    editingRow,
+    formKey,
+    childRowsByKey
+  });
+  const sarfaesiInvoiceClient = useSarfaesiInvoiceClientModel({
+    moduleKey,
+    config,
+    editingRow,
+    formKey,
+    childRowsByKey
+  });
+  const vehicleInvoiceClient = useVehicleInvoiceClientModel({
+    moduleKey,
+    config,
+    editingRow,
+    formKey,
+    childRowsByKey
+  });
   const recordsFetchKeyRef = useRef("");
   const permissionsFetchKeyRef = useRef("");
 
@@ -867,6 +885,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     createDraftRow: createChildDraftRow,
     setChildRowsByKey
   });
+  const returnCaseEntryFormInitialValues = useMemo(() => {
+    if (!isReturnCase) return entryFormInitialValues;
+    return { ...entryFormInitialValues, ...returnCaseClient.autoValues };
+  }, [isReturnCase, entryFormInitialValues, returnCaseClient.autoValues]);
+  const recoveryInvoiceEntryFormInitialValues = useMemo(() => {
+    if (!isRecoveryInvoice) return entryFormInitialValues;
+    return { ...entryFormInitialValues, ...recoveryInvoiceClient.autoValues };
+  }, [isRecoveryInvoice, entryFormInitialValues, recoveryInvoiceClient.autoValues]);
+  const sarfaesiInvoiceEntryFormInitialValues = useMemo(() => {
+    if (!isSarfaesiInvoice) return entryFormInitialValues;
+    return { ...entryFormInitialValues, ...sarfaesiInvoiceClient.autoValues };
+  }, [isSarfaesiInvoice, entryFormInitialValues, sarfaesiInvoiceClient.autoValues]);
+  const vehicleInvoiceEntryFormInitialValues = useMemo(() => {
+    if (!isVehicleInvoice) return entryFormInitialValues;
+    return { ...entryFormInitialValues, ...vehicleInvoiceClient.autoValues };
+  }, [isVehicleInvoice, entryFormInitialValues, vehicleInvoiceClient.autoValues]);
   const sarfaesiCaseStatusUpdateClient = useSarfaesiCaseStatusUpdateClientModel({
     moduleKey,
     editingRow,
@@ -1013,9 +1047,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     // Let snapshot model observe caseNo changes first.
     caseSnapshot.handleCaseFieldValueChange(fieldName, value);
     if (invoicesReceivedClient.handleFieldValueChange(fieldName, value)) return;
-    recoveryInvoiceClient.handleFieldValueChange(fieldName, value);
-    sarfaesiInvoiceClient.handleFieldValueChange(fieldName, value);
-    vehicleInvoiceClient.handleFieldValueChange(fieldName, value);
+    if (recoveryInvoiceClient.handleFieldValueChange(fieldName, value)) return;
+    if (sarfaesiInvoiceClient.handleFieldValueChange(fieldName, value)) return;
+    if (vehicleInvoiceClient.handleFieldValueChange(fieldName, value)) return;
     if (nciClient.onFieldValueChange(fieldName, value)) {
       return;
     }
@@ -1026,6 +1060,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     // accounts_loan_ac: cash clears NPA lookup; non-cash refetches first current a/c for unit (see accountsLoanAcClient.js).
     if (accountsLoanAcClient.handleFieldValueChange(fieldName, value)) return;
     if (transferClient.handleFieldValueChange(fieldName, value)) return;
+    if (returnCaseClient.handleFieldValueChange(fieldName, value)) return;
   }
 
   const loadRecords = async () => {
@@ -1966,7 +2001,17 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
             moduleKey={moduleKey}
             config={entryModeConfig}
             onSubmit={handleSubmit}
-            initialValues={entryFormInitialValues}
+            initialValues={
+              isReturnCase
+                ? returnCaseEntryFormInitialValues
+                : isRecoveryInvoice
+                  ? recoveryInvoiceEntryFormInitialValues
+                  : isSarfaesiInvoice
+                    ? sarfaesiInvoiceEntryFormInitialValues
+                    : isVehicleInvoice
+                      ? vehicleInvoiceEntryFormInitialValues
+                      : entryFormInitialValues
+            }
             readOnlyFields={entryFormReadOnlyFields}
             fieldUiOverrides={entryFieldUiOverrides}
             lookupOptionsByField={isNciModule ? nciClient.lookupOptionsByField : null}

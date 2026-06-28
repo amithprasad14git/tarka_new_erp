@@ -13,6 +13,10 @@ jest.mock("../../config/modules", () => ({
   modules: {
     return_case: { table: "return_case" },
     new_case_inward: { table: "new_case_inward" },
+    branch_master: { table: "branch_master" },
+    rbo_master: { table: "rbo_master" },
+    ho_zo_master: { table: "ho_zo_master" },
+    bank_master: { table: "bank_master" },
     lookup_value_master: { table: "lookup_value_master" },
     financial_year_master: { table: "financial_year_master" }
   }
@@ -59,7 +63,12 @@ jest.mock("../../lib/istDateTime", () => ({
   getYmdISTFromInstant: jest.fn(() => "2026-04-30")
 }));
 
-const { validateReturnCaseBeforeWrite, assignReturnCaseRefNo } = require("../../lib/modules/returnCase");
+const {
+  validateReturnCaseBeforeWrite,
+  assignReturnCaseRefNo,
+  buildReturnCaseCcToLine,
+  resolveReturnCaseCcToByCaseId
+} = require("../../lib/modules/returnCase");
 
 // Helper used by tests: createConn.
 function createConn(routes) {
@@ -247,6 +256,60 @@ describe("returnCase module", () => {
       "UPDATE return_case SET refNo = ? WHERE id = ? AND (refNo IS NULL OR TRIM(refNo) = '')",
       ["RETURN/FY26/00008", 8]
     );
+  });
+});
+
+describe("returnCase CC To helpers", () => {
+  test("buildReturnCaseCcToLine uses Assistant General Manager for CAN", () => {
+    expect(buildReturnCaseCcToLine("CAN", "Mysore Region")).toBe(
+      "The Assistant General Manager, Mysore Region"
+    );
+    expect(buildReturnCaseCcToLine("can", "Mysore Region")).toBe(
+      "The Assistant General Manager, Mysore Region"
+    );
+  });
+
+  test("buildReturnCaseCcToLine uses Zonal Manager for BOI", () => {
+    expect(buildReturnCaseCcToLine("BOI", "Bangalore Zone")).toBe("The Zonal Manager, Bangalore Zone");
+    expect(buildReturnCaseCcToLine("boi", "Bangalore Zone")).toBe("The Zonal Manager, Bangalore Zone");
+  });
+
+  test("buildReturnCaseCcToLine uses Regional Manager for other banks", () => {
+    expect(buildReturnCaseCcToLine("SBI", "Chennai Region")).toBe("The Regional Manager, Chennai Region");
+    expect(buildReturnCaseCcToLine("", "Chennai Region")).toBe("The Regional Manager, Chennai Region");
+  });
+
+  test("buildReturnCaseCcToLine returns empty when RBO name missing", () => {
+    expect(buildReturnCaseCcToLine("CAN", "")).toBe("");
+    expect(buildReturnCaseCcToLine("CAN", "   ")).toBe("");
+  });
+
+  test("resolveReturnCaseCcToByCaseId returns ccTo from bank cascade", async () => {
+    const conn = createConn([
+      {
+        when: (sql) => sql.includes("bankCode") && sql.includes("rboFullName"),
+        reply: [[{ bankCode: "CAN", rboFullName: "Mysore Region" }]]
+      }
+    ]);
+    await expect(resolveReturnCaseCcToByCaseId(conn, 42)).resolves.toEqual({
+      ccTo: "The Assistant General Manager, Mysore Region"
+    });
+  });
+
+  test("resolveReturnCaseCcToByCaseId returns empty for invalid case id", async () => {
+    const conn = createConn([]);
+    await expect(resolveReturnCaseCcToByCaseId(conn, 0)).resolves.toEqual({ ccTo: "" });
+    await expect(resolveReturnCaseCcToByCaseId(conn, "x")).resolves.toEqual({ ccTo: "" });
+  });
+
+  test("resolveReturnCaseCcToByCaseId returns empty when chain not found", async () => {
+    const conn = createConn([
+      {
+        when: (sql) => sql.includes("bankCode") && sql.includes("rboFullName"),
+        reply: [[]]
+      }
+    ]);
+    await expect(resolveReturnCaseCcToByCaseId(conn, 99)).resolves.toEqual({ ccTo: "" });
   });
 });
 

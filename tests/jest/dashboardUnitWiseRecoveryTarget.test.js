@@ -68,6 +68,7 @@ describe("dashboard config", () => {
     const cfg = getDashboardConfig("unit_wise_recovery_target");
     expect(cfg?.permissionKey).toBe("dashboard_unit_wise_recovery_target");
     expect(cfg?.landingWidget).toBe(true);
+    expect(cfg?.autoGrantForAssignedUnit).toBeUndefined();
   });
 
   test("runner is registered", () => {
@@ -270,7 +271,7 @@ describe("loadDashboardForUser permissions", () => {
     hasAnyModuleAccess.mockResolvedValue(false);
   });
 
-  test("returns 403 when user lacks dashboard permission and unit auto-grant", async () => {
+  test("returns 403 when user lacks dashboard permission", async () => {
     const result = await loadDashboardForUser(
       { id: 2, role: 2, unit: null },
       "unit_wise_recovery_target"
@@ -278,7 +279,17 @@ describe("loadDashboardForUser permissions", () => {
     expect(result.status).toBe(403);
   });
 
-  test("allows role 2 user with assigned unit via autoGrantForAssignedUnit", async () => {
+  test("returns 403 for role 2 user with assigned unit but no matrix permission", async () => {
+    const result = await loadDashboardForUser(
+      { id: 2, role: 2, unit: 5 },
+      "unit_wise_recovery_target"
+    );
+    expect(result.status).toBe(403);
+    expect(hasAnyModuleAccess).toHaveBeenCalled();
+  });
+
+  test("allows role 2 user when hasAnyModuleAccess grants dashboard permission", async () => {
+    hasAnyModuleAccess.mockResolvedValue(true);
     pool.query
       .mockResolvedValueOnce([
         [{ id: 3, yearCode: "2025-26", startDate: "2025-04-01", endDate: "2026-03-31" }]
@@ -298,7 +309,7 @@ describe("loadDashboardForUser permissions", () => {
     );
     expect(result.status).toBe(200);
     expect(result.body.kpis).toBeDefined();
-    expect(hasAnyModuleAccess).not.toHaveBeenCalled();
+    expect(hasAnyModuleAccess).toHaveBeenCalled();
   });
 
   test("returns 404 for unknown dashboard key", async () => {
@@ -313,7 +324,14 @@ describe("canAccessDashboard", () => {
     hasAnyModuleAccess.mockResolvedValue(false);
   });
 
-  test("auto-grants unit_wise_recovery_target when user has unit", async () => {
+  test("denies when user has unit but no explicit permission", async () => {
+    const allowed = await canAccessDashboard({ id: 2, role: 2, unit: 3 }, "unit_wise_recovery_target");
+    expect(allowed).toBe(false);
+    expect(hasAnyModuleAccess).toHaveBeenCalled();
+  });
+
+  test("allows when user has explicit permission", async () => {
+    hasAnyModuleAccess.mockResolvedValue(true);
     const allowed = await canAccessDashboard({ id: 2, role: 2, unit: 3 }, "unit_wise_recovery_target");
     expect(allowed).toBe(true);
   });

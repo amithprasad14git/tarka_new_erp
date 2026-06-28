@@ -1,7 +1,10 @@
 import { FINAL_CASE_STATUSES } from "../../lib/modules/newCaseInwardCaseStatus";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
-import { buildReturnedCaseStatusWhereSql } from "../../lib/reports/report_returned_cases";
+import {
+  buildReturnedCaseStatusWhereSql,
+  buildReturnedCasesReportWhereSql
+} from "../../lib/reports/report_returned_cases";
 import { getReportRunner } from "../../lib/reports/reportRegistry";
 
 describe("report_returned_cases config", () => {
@@ -36,6 +39,12 @@ describe("report_returned_cases config", () => {
     expect(values.outputFormat).toBe("HTML");
   });
 
+  test("date filters are labeled as return date range", () => {
+    const cfg = getReportConfig("report_returned_cases");
+    expect(cfg?.fields?.find((f) => f.name === "fromDate")?.label).toBe("Return From Date");
+    expect(cfg?.fields?.find((f) => f.name === "toDate")?.label).toBe("Return To Date");
+  });
+
   test("closureBalance and amountRecovered are summed in footer", () => {
     const cfg = getReportConfig("report_returned_cases");
     const sumKeys = (cfg?.columns || []).filter((c) => c.sum).map((c) => c.key);
@@ -44,6 +53,29 @@ describe("report_returned_cases config", () => {
 
   test("runner is registered", () => {
     expect(typeof getReportRunner("report_returned_cases")?.runReport).toBe("function");
+  });
+});
+
+describe("buildReturnedCasesReportWhereSql", () => {
+  test("filters on return date range, not entrustment date", async () => {
+    const { whereSql, values } = await buildReturnedCasesReportWhereSql(
+      { id: 1, role: 1 },
+      { fromDate: "2026-06-01", toDate: "2026-06-30" }
+    );
+    expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) >= ?");
+    expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) <= ?");
+    expect(whereSql).not.toContain("entrustmentDate");
+    expect(values).toEqual(expect.arrayContaining(["2026-06-01", "2026-06-30"]));
+  });
+
+  test("includes returned status filter only", async () => {
+    const { whereSql, values } = await buildReturnedCasesReportWhereSql(
+      { id: 1, role: 1 },
+      { fromDate: "2026-06-01", toDate: "2026-06-30" }
+    );
+    const status = buildReturnedCaseStatusWhereSql();
+    expect(whereSql).toContain(status.sql);
+    expect(values).toContain("returned");
   });
 });
 

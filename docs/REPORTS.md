@@ -193,6 +193,11 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **html** — JSON for on-screen table (`ReportOutputView`).
 - **excel** — `.xlsx` download (same filters and data). Filename derived from report title + date range.
 
+## Shared case-report SQL conventions
+
+- **Branch column (`branchLabel`):** `CONCAT(bank.bankCode, ' - ', branchName, ' (', branchCode, ')')` via [`lib/reports/reportBranchLabelSql.js`](lib/reports/reportBranchLabelSql.js) — e.g. `SBI - Palahally (040404)`.
+- **Lookup joins:** `receivedFrom` and `loanType` use **INNER JOIN** (mandatory fields). **`npaStatus` stays LEFT JOIN** so legacy rows with empty NPA status are not dropped.
+
 ## Reference reports
 
 ### New Case Inward Register
@@ -232,9 +237,9 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_returned_cases`
 - **SQL:** `lib/reports/report_returned_cases.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** From/To Date (month defaults), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** Return From/To Date (month defaults; filters on **Return Date**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
 - **Returned only:** `LOWER(TRIM(caseStatus lookup)) = 'returned'` — must match **Returned** in `FINAL_CASE_STATUSES`; open/ongoing cases excluded
-- **Date range:** `entrustmentDate` between From and To Date
+- **Date range:** `DATE(caseStatusUpdatedDate)` (Return Date) between Return From and Return To Date
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
 - **Return Date:** `caseStatusUpdatedDate` on the case record
 - **Totals row:** sums Closure Balance and Amount Recovered; Remarks = `caseStatusRemarks`
@@ -243,10 +248,10 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_settled_cases`
 - **SQL:** `lib/reports/report_settled_cases.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** From/To Date (month defaults), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
-- **Settled only:** case status in `FINAL_CASE_STATUSES` **except Returned** (`Closed`, `Settled under Compromise`, etc.); open/ongoing and Returned cases excluded
-- **Date range:** `entrustmentDate` between From and To Date
-- **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
+- **Filters:** Settled From/To Date (month defaults; filters on **Settled Date**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Settled only:** case status in `FINAL_CASE_STATUSES` **except Returned** — `Closed`, `Settled under Compromise`, `Regularized/Upgraded`, `Auctioned`, `Settled Under RINN`, `Settled by Bank`, `Renewal/Restructure`; open/ongoing and **Returned** excluded
+- **Date range:** `DATE(caseStatusUpdatedDate)` (Settled Date) between Settled From and Settled To Date — same date field as Region/Unit cumulative reports and Regional Performance dashboard. **Settled To Date** defaults to **today** (not month-end).
+- **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case (display column; no minimum required for inclusion)
 - **Settled Date:** `caseStatusUpdatedDate` on the case record
 - **Case Status:** lookup label on the case record
 - **Totals row:** sums Closure Balance and Amount Recovered

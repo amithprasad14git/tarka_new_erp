@@ -145,7 +145,7 @@ Quick facts:
 | Browser fetch + cache | `components/dashboards/DashboardWidgetLoader.js` |
 | Landing grid layout | `components/DashboardTabs.js` |
 
-**Unit Wise Recovery Target** is the only dashboard with `autoGrantForAssignedUnit`: unit operators see it when they have an assigned unit, even without an explicit matrix row. All other dashboards need an explicit **Dashboards** permission.
+All dashboards require an explicit **Dashboards** permission in User Permissions (admin exempt).
 
 ---
 

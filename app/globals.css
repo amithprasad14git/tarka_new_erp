@@ -571,7 +571,7 @@ body {
 .topbar-weather-cluster {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -600,13 +600,23 @@ body {
   color: var(--muted);
 }
 
+.topbar-weather-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.15em;
+  height: 1em;
+  line-height: 1;
+  overflow: visible;
+}
+
 .topbar-weather-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.2em;
-  height: 1.2em;
-  font-size: 1.05em;
+  flex-shrink: 0;
+  font-size: 2.15em;
   line-height: 1;
   transform-origin: 50% 55%;
 }
@@ -1541,6 +1551,10 @@ body {
 
 .dashboard-landing {
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .dashboard-landing-title {
@@ -2300,32 +2314,41 @@ body {
 
 .dashboard-widget-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .dashboard-widget-grid--landing {
   --landing-panel-height: 300px;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 14px;
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .dashboard-widget-grid--landing .dashboard-widget-slot {
   display: flex;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dashboard-widget-grid--landing .dashboard-widget-slot > article {
   flex: 1;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .dashboard-widget-grid--landing .dashboard-widget-slot--full {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 /* Landing widget header — shared title / FY subtitle / toolbar alignment */
@@ -2659,6 +2682,29 @@ body {
 .dashboard-recovery-panel-body--region {
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-recovery-panel-body--region::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-widget-card--regional .dashboard-recovery-panel-body--bank {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-widget-card--regional .dashboard-recovery-panel-body--bank::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-widget-card--regional .dashboard-bank-pie-wrap,
+.dashboard-widget-card--regional .dashboard-bank-pie-body {
+  height: auto;
+  overflow: visible;
 }
 
 .dashboard-region-bars .dashboard-bars-list {
@@ -2892,6 +2938,9 @@ body {
   border-radius: 10px;
   background: var(--panel);
   padding: 12px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dashboard-widget-card-header .dashboard-widget-card-title {
@@ -3062,14 +3111,18 @@ body {
 }
 
 @media (max-width: 980px) {
-  .dashboard-widget-grid,
-  .dashboard-widget-grid--landing {
-    grid-template-columns: 1fr;
+  .flux-content {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
-  .dashboard-widget-grid--landing .dashboard-widget-card:first-child,
-  .dashboard-widget-grid--landing .dashboard-widget-slot:first-child {
-    grid-column: span 1;
+  .dashboard-widget-grid,
+  .dashboard-widget-grid--landing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-widget-grid--landing .dashboard-widget-slot--full {
+    grid-column: 1 / -1;
   }
 
   .dashboard-unit-split {
@@ -6484,6 +6537,20 @@ button.master-child-icon-act:disabled {
 
   .topbar-weather-city {
     max-width: 7rem;
+  }
+
+  .flux-content {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .dashboard-landing,
+  .dashboard-widget-grid--landing,
+  .dashboard-widget-grid--landing .dashboard-widget-slot,
+  .dashboard-widget-grid--landing .dashboard-widget-slot > article,
+  .dashboard-widget-card {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
