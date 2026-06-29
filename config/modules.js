@@ -69,7 +69,8 @@
  *
  * Row scope on `user_permissions`: `view_scope`, `edit_scope`, `delete_scope` — each `own` | `unit` |
  * `all`. Create has no scope (`can_create` only). Enforced in `lib/rowScope.js` / `lib/rbac.js`. Requires `users.unit` for unit scope.
- * **Unit:** match logged-in `users.unit` to the **`users.unit`** of the account in **`createdBy`** (not row `unit` FKs).
+ * **Unit:** match logged-in `users.unit` to the **`users.unit`** of the account in **`createdBy`** (default).
+ * Optional **`rowScopeUnitField`** on a module (e.g. `new_case_inward`): unit scope compares that row FK to `users.unit` instead.
  *
  * Lookup fields (`type: "lookup"`):
  * - `lookup.module`, `valueField`, optional `labelField` (else referenced module’s `lookupDisplayField`).
@@ -395,7 +396,7 @@ export const modules = {
     icon: "👥",
     group: "HR",
     table: "unit_master",
-    lookupDisplayField: "unitCode",
+    lookupDisplayField: "unitName",
     fields: [
       { name: "unitCode", type: "text", label: "Unit code", required: true, showInView: true },
       { name: "unitName", type: "text", label: "Unit name", required: true, showInView: true },
@@ -889,6 +890,7 @@ export const modules = {
     table: "new_case_inward",
     lookupDisplayField: "caseNo",
     searchField: "caseNo",
+    rowScopeUnitField: "unit",
     postCreateAck: {
       field: "caseNo",
       title: "Case Number Assigned",

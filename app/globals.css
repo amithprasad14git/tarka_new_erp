@@ -637,12 +637,12 @@ body {
 .topbar-weather-icon--clear {
   color: color-mix(in srgb, #f59e0b 88%, #fbbf24 12%);
   filter: drop-shadow(0 0 8px color-mix(in srgb, #fbbf24 22%, transparent));
-  animation: topbarWxSun 52s linear infinite;
+  animation: topbarWxDrift 16s ease-in-out infinite alternate;
 }
 
 .topbar-weather-icon--partly {
   color: color-mix(in srgb, #f59e0b 35%, #94a3b8 65%);
-  animation: topbarWxSun 64s linear infinite;
+  animation: topbarWxDrift 16s ease-in-out infinite alternate;
 }
 
 .topbar-weather-icon--cloud,
@@ -665,12 +665,6 @@ body {
 .topbar-weather-icon--storm {
   color: color-mix(in srgb, #6366f1 45%, #94a3b8 55%);
   animation: topbarWxRain 4.8s ease-in-out infinite alternate;
-}
-
-@keyframes topbarWxSun {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes topbarWxDrift {

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.79% </span>
+                <span class="strong">84.42% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>103/116</span>
+                <span class='fraction'>103/122</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">72.41% </span>
+                <span class="strong">69.23% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>63/87</span>
+                <span class='fraction'>63/91</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.66% </span>
+                <span class="strong">73.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>11/12</span>
+                <span class='fraction'>11/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.74% </span>
+                <span class="strong">85.96% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>98/108</span>
+                <span class='fraction'>98/114</span>
             </div>
         
             
@@ -330,7 +330,27 @@
 <a name='L265'></a><a href='#L265'>265</a>
 <a name='L266'></a><a href='#L266'>266</a>
 <a name='L267'></a><a href='#L267'>267</a>
-<a name='L268'></a><a href='#L268'>268</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -354,7 +374,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -416,6 +436,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -685,6 +725,26 @@ export async function resolveReturnCaseCcToByCaseId(conn, caseId) {
   return { ccTo };
 }
 &nbsp;
+/**
+ * Active return reasons for new Return Case child grid preload.
+ * Authorized callers should gate on return_case permission, not case_return_reasons.
+ * @returns {{ data: { returnReason: string, sequence: number|null }[] }}
+ */
+export async function <span class="fstat-no" title="function not covered" >loadActiveReturnReasonsForPreload(</span>conn) {
+  const table = <span class="cstat-no" title="statement not covered" >escapeSqlTableIdForModuleConfig(modules.case_return_reasons);</span>
+  const [rows] = <span class="cstat-no" title="statement not covered" >await conn.query(</span>
+    `SELECT returnReason, \`sequence\` FROM ${table} WHERE active = ? ORDER BY \`sequence\` ASC, id ASC`,
+    ["Yes"]
+  );
+  const data = <span class="cstat-no" title="statement not covered" >(rows || [])</span>
+    .map(<span class="fstat-no" title="function not covered" >(r</span>ow) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
+      returnReason: String(rowValueForField(row, "returnReason") ?? "").trim(),
+      sequence: rowValueForField(row, "sequence")
+    }))
+    .filter(<span class="fstat-no" title="function not covered" >(r</span>ow) =&gt; <span class="cstat-no" title="statement not covered" >row.returnReason)</span>;
+<span class="cstat-no" title="statement not covered" >  return { data };</span>
+}
+&nbsp;
 function throwReturnCaseValidation(message) {
   throw Object.assign(new Error(message), { code: "RETURN_CASE_VALIDATION_FAILED" });
 }
@@ -871,7 +931,7 @@ export async function assignReturnCaseRefNo(conn, recordId) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-28T09:43:39.077Z
+                at 2026-06-29T01:34:59.569Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

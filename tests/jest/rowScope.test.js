@@ -58,6 +58,12 @@ const moduleCfg = {
   fields: [{ name: "id" }, { name: "createdBy" }]
 };
 
+const nciUnitScopeCfg = {
+  table: "new_case_inward",
+  rowScopeUnitField: "unit",
+  fields: [{ name: "id" }, { name: "createdBy" }, { name: "unit" }]
+};
+
 // Automated checks for: rowScope.
 describe("rowScope", () => {
   // Reset mocks and default stubs before each example runs.
@@ -147,6 +153,14 @@ describe("rowScope", () => {
       expect(whereParts).toEqual(["1=0"]);
       expect(whereValues).toEqual([]);
     });
+
+    test("unit scope with rowScopeUnitField filters by case unit not creator", () => {
+      const whereParts = [];
+      const whereValues = [];
+      appendRowScopeFilter(nciUnitScopeCfg, { id: 9, role: 2, unit: 2 }, "unit", whereParts, whereValues);
+      expect(whereParts).toEqual(["`unit` = ?"]);
+      expect(whereValues).toEqual([2]);
+    });
   });
 
 // Automated checks for: rowMatchesScope.
@@ -210,6 +224,16 @@ describe("rowScope", () => {
       await expect(
         rowMatchesScope(moduleCfg, { id: 7, role: 2, unit: 5 }, "unit", { createdBy: 99 })
       ).rejects.toThrow("unit query failed");
+    });
+
+    test("unit scope with rowScopeUnitField matches case unit not creator unit", async () => {
+      await expect(
+        rowMatchesScope(nciUnitScopeCfg, { id: 7, role: 2, unit: 2 }, "unit", { unit: 2, createdBy: 99 })
+      ).resolves.toBe(true);
+      await expect(
+        rowMatchesScope(nciUnitScopeCfg, { id: 7, role: 2, unit: 1 }, "unit", { unit: 2, createdBy: 99 })
+      ).resolves.toBe(false);
+      expect(pool.query).not.toHaveBeenCalled();
     });
   });
 
@@ -292,6 +316,23 @@ describe("rowScope", () => {
       expect(rows[0]._canDelete).toBe(true);
       expect(rows[1]._canDelete).toBe(true);
       expect(rows[2]._canDelete).toBe(true);
+    });
+
+    test("rowScopeUnitField edit unit scope uses case unit not creator batch lookup", async () => {
+      const rows = [
+        { id: 1, unit: 2, createdBy: 10 },
+        { id: 2, unit: 1, createdBy: 10 }
+      ];
+      getScopeForAction.mockResolvedValueOnce("unit").mockResolvedValueOnce("all");
+
+      await annotateRowsModifyAccess("new_case_inward", nciUnitScopeCfg, { id: 10, role: 2, unit: 2 }, rows, {
+        canEdit: true,
+        canDelete: false
+      });
+
+      expect(rows[0]._canEdit).toBe(true);
+      expect(rows[1]._canEdit).toBe(false);
+      expect(pool.query).not.toHaveBeenCalled();
     });
   });
 
