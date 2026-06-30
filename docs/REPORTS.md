@@ -34,6 +34,10 @@ Read-only reports are defined in **`config/reports.js`** — not in `config/modu
 
 Do **not** duplicate styling, column-picker UI, or export logic in per-report files.
 
+### Report dimension filters (unit and hierarchy)
+
+Optional header filters apply **only when the user selects them** in the report form. If Unit is left empty, the query does **not** filter by unit (all units). When Unit is selected, case-based reports use **`nci.unit`** on `new_case_inward`; account ledgers use that module’s voucher `unit` column.
+
 ### Pipeline (fixed)
 
 ```
@@ -308,7 +312,6 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Source:** `accounts_expense_voucher` joined to `unit_master`, `party_master`, `lookup_value_master`, `current_account_master`
 - **Data Type General:** flat date-ordered rows + footer total
 - **Payment Mode Wise / Expense Category Wise:** section header, detail rows, subtotal per group, grand total (HTML + Excel via extended `ReportOutputView` / `buildReportWorkbook`)
-- **Role 2:** results scoped to session unit
 - **Column hide:** filter-driven + `hideWhenDataType` hides grouping column when section header shows it
 
 ### Cash Deposit & Withdraw Ledger
@@ -319,7 +322,6 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Group:** Accounts Reports
 - **Filters:** Month (month picker, default current month), Transaction Type (required — Deposit or Withdraw), optional Payment Mode, NPA Current AC; report type HTML | Excel
 - **Source:** `accounts_cash_deposit_withdraw` joined to `unit_master`, `current_account_master`; date range on `date` (inclusive month bounds)
-- **Role 2:** results scoped to session unit (same convention as Cash Deposit & Withdraw CRUD)
 - **Columns:** Voucher No, Date, Unit, Transaction Type, Payment Mode, Remarks, NPA Current AC, Cheque No/Date, In Favour Of, Amount (total row)
 - **Column hide:** Transaction Type / Payment Mode / NPA Current AC hidden when matching filter is set
 
@@ -330,10 +332,10 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Layout:** standard table pipeline (`ReportOutputView` + `buildReportWorkbook`)
 - **Group:** Accounts Reports
 - **Filters:** Month on **received date** (default current month), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; report type HTML | Excel
-- **Source:** `invoices_received` joined to linked recovery/SARFAESI/vehicle invoice, `new_case_inward`, and bank hierarchy
-- **Role 2:** results scoped to session unit via case join
+- **Source:** `invoices_received` joined to linked recovery/SARFAESI/vehicle invoice, **LEFT JOIN** `new_case_inward` (optional case), and bank hierarchy; unit from invoice **Bill to Unit** (`inv.billToUnit` only)
 - **Columns:** Invoice Date, Invoice No, Received Date, Ref No, Case No, Borrower, Unit, Bank, Branch, NPA Current AC, Billed Amount, TDS Less %, TDS Amount, Received Amount, Round Off (money columns totaled in footer)
 - **Column hide:** Unit / Bank / Branch / NPA Current AC hidden when matching filter is set
+- **Note:** Case No, Borrower, Bank, and Branch are blank when the invoice has no linked case
 
 ### Invoice Ledger
 
@@ -342,13 +344,13 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Layout:** standard table pipeline (`ReportOutputView` + `buildReportWorkbook`)
 - **Group:** Accounts Reports
 - **Filters:** Month (default current month), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; **Data Type** (Show Active Invoices | Show Pending Invoices | Show Cancelled Invoices); report type HTML | Excel
-- **Source:** `recovery_invoice` UNION ALL `sarfaesi_invoice` UNION ALL `vehicle_invoice`, each joined to `new_case_inward` and bank hierarchy; month bounds on invoice `date`
+- **Source:** `recovery_invoice` UNION ALL `sarfaesi_invoice` UNION ALL `vehicle_invoice`, each **LEFT JOIN** `new_case_inward` (optional case) and bank hierarchy; month bounds on invoice `date`; unit from invoice **Bill to Unit** (`inv.billToUnit` only)
 - **Data Type Active:** `cancelledInvoice = No`
 - **Data Type Cancelled:** `cancelledInvoice = Yes`
 - **Data Type Pending:** `cancelledInvoice = No` and invoice not linked in `invoices_received` (matching recovery/sarfaesi/vehicle FK)
-- **Role 2:** results scoped to session unit via case join
 - **Columns:** Invoice Date, Invoice No, Case No, Borrower, Unit, Bank, Branch, NPA Current AC, Final Invoice, Grand Total (total row)
 - **Column hide:** Unit / Bank / Branch / NPA Current AC hidden when matching filter is set
+- **Note:** Case No, Borrower, Bank, and Branch are blank when the invoice has no linked case
 
 ### Suspense AC Ledger
 
@@ -380,7 +382,6 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Group:** Accounts Reports
 - **Filters:** As on Date (cumulative — entries on or before date), optional Unit, NPA Current AC, Transaction Type (All | Receipt | Payment), Payment Mode, Party; report type HTML | Excel
 - **Source:** `accounts_loan_ac` joined to `unit_master`, `party_master`, `current_account_master`; `DATE(date) <= asOnDate`
-- **Role 2:** results scoped to session unit (same convention as Loan Account CRUD)
 - **Columns:** Voucher No, Date, Unit, Transaction Type, Party, Remarks, Payment Mode, NPA Current AC, Cheque No/Date, In Favour Of, Receipt Amount, Payment Amount (separate columns by transaction type; both totaled in footer)
 - **Column hide:** Unit / Transaction Type / Party / Payment Mode / NPA Current AC hidden when matching filter is set
 
@@ -392,7 +393,6 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Group:** Accounts Reports
 - **Filters:** From/To Month (month pickers, default current month), optional Unit, Paid To, Payment Mode, NPA Current AC; report type HTML | Excel
 - **Source:** `accounts_assets_investments` joined to `unit_master`, `party_master`, `current_account_master`; date range on `date` (inclusive month bounds)
-- **Role 2:** results scoped to session unit (same convention as Assets & Investments CRUD)
 - **Columns:** Voucher No, Date, Unit, Paid To, Remarks, Payment Mode, NPA Current AC, Cheque No/Date, In Favour Of, Amount (total row)
 - **Column hide:** Unit / Paid To / Payment Mode / NPA Current AC hidden when matching filter is set
 

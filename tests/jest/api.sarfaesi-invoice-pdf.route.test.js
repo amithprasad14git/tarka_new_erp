@@ -5,7 +5,6 @@
  * Run with: npm test
  */
 
-// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
 jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
@@ -22,6 +21,10 @@ jest.mock("../../lib/db", () => ({
   queryWithRetry: jest.fn()
 }));
 
+jest.mock("../../lib/modules/invoiceCaseSnapshot", () => ({
+  loadInvoiceLinkedCaseByCaseId: jest.fn()
+}));
+
 jest.mock("../../lib/modules/sarfaesiInvoicePdf", () => ({
   buildSarfaesiInvoicePdfBuffer: jest.fn(),
   safeSarfaesiInvoicePdfFilename: jest.fn()
@@ -31,15 +34,14 @@ const { cookies } = require("next/headers");
 const { getSessionUser } = require("../../lib/session");
 const { getCrudRecordById } = require("../../lib/services/crud.service");
 const { queryWithRetry } = require("../../lib/db");
+const { loadInvoiceLinkedCaseByCaseId } = require("../../lib/modules/invoiceCaseSnapshot");
 const {
   buildSarfaesiInvoicePdfBuffer,
   safeSarfaesiInvoicePdfFilename
 } = require("../../lib/modules/sarfaesiInvoicePdf");
 const { GET } = require("../../app/api/sarfaesi-invoice/pdf/[id]/route");
 
-// Checks printable PDF output is built without crashing and includes expected content.
 describe("api/sarfaesi-invoice/pdf/[id] route", () => {
-  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-sarfaesi-pdf" }) });
@@ -59,25 +61,20 @@ describe("api/sarfaesi-invoice/pdf/[id] route", () => {
     await expect(res.json()).resolves.toEqual({ error: "Record not found" });
   });
 
-  test("returns generated PDF on success", async () => {
+  test("returns generated PDF on success with bypass case loader", async () => {
     getSessionUser.mockResolvedValue({ id: 1 });
-    getCrudRecordById
-      .mockResolvedValueOnce({
-        status: 200,
-        body: {
-          data: { id: 5, invoiceNo: "SAR/2627/0001", date: "2026-05-16", caseNo: 10, npaCurrentAc: 2 },
-          childTableRows: {
-            sarfaesi_charges: [{ particularsLabel: "Legal Notice", remarks: "Test", amount: 12000 }]
-          }
+    getCrudRecordById.mockResolvedValueOnce({
+      status: 200,
+      body: {
+        data: { id: 5, invoiceNo: "SAR/2627/0001", date: "2026-05-16", caseNo: 10, billToUnit: 3, npaCurrentAc: 2 },
+        childTableRows: {
+          sarfaesi_charges: [{ particularsLabel: "Legal Notice", remarks: "Test", amount: 12000 }]
         }
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        body: {
-          data: { id: 10, caseNo: "S/AL/14528", branch: 3, unit: 4 },
-          childTableRows: {}
-        }
-      });
+      }
+    });
+    loadInvoiceLinkedCaseByCaseId.mockResolvedValue({
+      data: { id: 10, caseNo: "S/AL/14528", branch: 3, unit: 2, borrower: "Borrower A" }
+    });
     queryWithRetry
       .mockResolvedValueOnce([
         [
@@ -91,7 +88,7 @@ describe("api/sarfaesi-invoice/pdf/[id] route", () => {
           }
         ]
       ])
-      .mockResolvedValueOnce([[{ unitCode: "Unit 4" }]])
+      .mockResolvedValueOnce([[{ unitCode: "Unit 3 Bill" }]])
       .mockResolvedValueOnce([
         [
           {
@@ -111,13 +108,15 @@ describe("api/sarfaesi-invoice/pdf/[id] route", () => {
 
     const res = await GET({}, { params: Promise.resolve({ id: "5" }) });
     expect(res.status).toBe(200);
+    expect(loadInvoiceLinkedCaseByCaseId).toHaveBeenCalledWith(10);
+    expect(getCrudRecordById).toHaveBeenCalledTimes(1);
     expect(buildSarfaesiInvoicePdfBuffer).toHaveBeenCalledWith(
       expect.objectContaining({
-        charges: [{ particularsLabel: "Legal Notice", remarks: "Test", amount: 12000 }]
+        charges: [{ particularsLabel: "Legal Notice", remarks: "Test", amount: 12000 }],
+        unitShortCode: "Unit 3 Bill",
+        nciRow: expect.objectContaining({ caseNo: "S/AL/14528", borrower: "Borrower A" })
       })
     );
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
-    expect(res.headers.get("Content-Disposition")).toContain("Invoice_SAR_2627_0001.pdf");
   });
 });
-

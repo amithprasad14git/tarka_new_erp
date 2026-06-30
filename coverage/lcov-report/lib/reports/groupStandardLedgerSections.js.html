@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/20</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">56.25% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/16</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>18/18</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -109,30 +109,30 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -145,31 +145,31 @@ import { parseNumericCellValue } from "../formatInrNumber";
  * @param {Array&lt;Record&lt;string, unknown&gt;&gt;} detailRows
  * @param {{ groupKey: string, sumKey?: string, headerPrefix?: string }} options
  */
-export function groupStandardLedgerSections(detailRows, { groupKey, sumKey = "amount", headerPrefix = <span class="branch-0 cbranch-no" title="branch not covered" >"" </span>}) {
-  const sections = [];
-  const sectionMap = new Map();
+export function <span class="fstat-no" title="function not covered" >groupStandardLedgerSections(</span>detailRows, { groupKey, sumKey = <span class="branch-0 cbranch-no" title="branch not covered" >"amount",</span> headerPrefix = <span class="branch-0 cbranch-no" title="branch not covered" >"" </span>}) {
+  const sections = <span class="cstat-no" title="statement not covered" >[];</span>
+  const sectionMap = <span class="cstat-no" title="statement not covered" >new Map();</span>
 &nbsp;
-  for (const row of detailRows || <span class="branch-1 cbranch-no" title="branch not covered" >[])</span> {
-    const rawLabel = String(row[groupKey] ?? <span class="branch-1 cbranch-no" title="branch not covered" >"")</span>.trim() || <span class="branch-1 cbranch-no" title="branch not covered" >"(Blank)";</span>
-    let section = sectionMap.get(rawLabel);
-    if (!section) {
-      const headerLabel = headerPrefix ? `${headerPrefix}: ${rawLabel}` : <span class="branch-1 cbranch-no" title="branch not covered" >rawLabel;</span>
-      section = { label: rawLabel, headerLabel, rows: [], subtotal: { [sumKey]: 0 } };
-      sectionMap.set(rawLabel, section);
-      sections.push(section);
+<span class="cstat-no" title="statement not covered" >  for (const row of detailRows || []) {</span>
+    const rawLabel = <span class="cstat-no" title="statement not covered" >String(row[groupKey] ?? "").trim() || "(Blank)";</span>
+    let section = <span class="cstat-no" title="statement not covered" >sectionMap.get(rawLabel);</span>
+<span class="cstat-no" title="statement not covered" >    if (!section) {</span>
+      const headerLabel = <span class="cstat-no" title="statement not covered" >headerPrefix ? `${headerPrefix}: ${rawLabel}` : rawLabel;</span>
+<span class="cstat-no" title="statement not covered" >      section = { label: rawLabel, headerLabel, rows: [], subtotal: { [sumKey]: 0 } };</span>
+<span class="cstat-no" title="statement not covered" >      sectionMap.set(rawLabel, section);</span>
+<span class="cstat-no" title="statement not covered" >      sections.push(section);</span>
     }
-    section.rows.push(row);
-    const n = parseNumericCellValue(row[sumKey]);
-    <span class="missing-if-branch" title="else path not taken" >E</span>if (n != null) section.subtotal[sumKey] += n;
+<span class="cstat-no" title="statement not covered" >    section.rows.push(row);</span>
+    const n = <span class="cstat-no" title="statement not covered" >parseNumericCellValue(row[sumKey]);</span>
+<span class="cstat-no" title="statement not covered" >    if (n != null) <span class="cstat-no" title="statement not covered" >section.subtotal[sumKey] += n;</span></span>
   }
 &nbsp;
-  let grandSum = 0;
-  for (const section of sections) {
-    section.rows = section.rows.map((r, idx) =&gt; ({ ...r, slNo: idx + 1 }));
-    grandSum += section.subtotal[sumKey] || <span class="branch-1 cbranch-no" title="branch not covered" >0;</span>
+  let grandSum = <span class="cstat-no" title="statement not covered" >0;</span>
+<span class="cstat-no" title="statement not covered" >  for (const section of sections) {</span>
+<span class="cstat-no" title="statement not covered" >    section.rows = section.rows.map(<span class="fstat-no" title="function not covered" >(r</span>, idx) =&gt; (<span class="cstat-no" title="statement not covered" >{ ...r, slNo: idx + 1 })</span>);</span>
+<span class="cstat-no" title="statement not covered" >    grandSum += section.subtotal[sumKey] || 0;</span>
   }
 &nbsp;
-  return {
+<span class="cstat-no" title="statement not covered" >  return {</span>
     sections,
     grandTotal: { [sumKey]: grandSum }
   };
@@ -181,7 +181,7 @@ export function groupStandardLedgerSections(detailRows, { groupKey, sumKey = "am
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-28T09:43:39.077Z
+                at 2026-06-29T17:32:47.614Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

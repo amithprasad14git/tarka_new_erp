@@ -4,7 +4,7 @@
 
 /**
  * Landing widget: recovery donut + totals | bank pie | KPI strip | month-wise recovery.
- * Recovery amounts use recoveredDate in active FY. Full-width dashboard-recovery-layout.
+ * Recovery amounts use cases settled in active FY (Unit Wise Cumulative rules). Full-width dashboard-recovery-layout.
  * Guide: docs/DASHBOARDS.md
  */
 

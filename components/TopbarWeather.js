@@ -125,8 +125,10 @@ export default function TopbarWeather() {
                 {GLYPH[kindFromCode(data.weatherCode)] ?? GLYPH.cloud}
               </span>
             </span>
-            <span className="topbar-weather-temp">{data.temperatureC}°C</span>
-            <span className="topbar-weather-city">{data.cityLabel}</span>
+            <span className="topbar-weather-meta">
+              <span className="topbar-weather-temp">{data.temperatureC}°C</span>
+              <span className="topbar-weather-city">{data.cityLabel}</span>
+            </span>
           </>
         )}
       </div>

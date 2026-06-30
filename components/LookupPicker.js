@@ -8,11 +8,25 @@
  * Columns: `lookup.pickerColumns` or default from lib/lookupUi.js.
  */
 import { useEffect, useMemo, useState } from "react";
+import { modules } from "../config/modules";
 import { appendLookupValueMasterLovParams } from "../lib/lookupLovQueryParams";
 import { getPickerColumns, getLookupPickerSearchPlaceholder } from "../lib/lookupUi";
 import { formatLookupRowLabel, resolveLookupLabelFieldName } from "../lib/lookupLabelField";
+import { formatViewCellValue } from "../lib/formatViewCellValue";
 import { formatUserFacingError, readApiErrorMessage } from "../lib/fetchClientError";
 import { apiUserMessage } from "../lib/apiUserMessages";
+
+function formatPickerCellValue(lookup, fieldName, rawValue) {
+  if (rawValue == null || rawValue === "") return "";
+  const modKey = String(lookup?.module ?? "").trim();
+  const refCfg = modKey ? modules[modKey] : null;
+  const fieldDef = refCfg?.fields?.find((f) => f.name === fieldName);
+  if (fieldDef) {
+    const formatted = formatViewCellValue(fieldDef, rawValue);
+    if (formatted !== "") return String(formatted);
+  }
+  return String(rawValue);
+}
 
 function appendExtraLovParams(query, lookup) {
   // Inject optional dependent filters (e.g., users by selected unit) into picker API calls.
@@ -322,7 +336,7 @@ export default function LookupPicker({
                         >
                           {columns.map((col) => (
                             <td key={col.field}>
-                              {row[col.field] != null && row[col.field] !== "" ? String(row[col.field]) : ""}
+                              {formatPickerCellValue(lookup, col.field, row[col.field])}
                             </td>
                           ))}
                         </tr>

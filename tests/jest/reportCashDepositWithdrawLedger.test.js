@@ -63,43 +63,30 @@ describe("buildCashDepositWithdrawLedgerWhereSql", () => {
     expect(whereSql).toContain("1=0");
   });
 
-  test("applies optional filters for admin user", () => {
-    const { whereSql, values } = buildCashDepositWithdrawLedgerWhereSql(
-      {
-        month: "2026-01",
-        transactionType: "Deposit",
-        paymentMode: "Cash",
-        npaCurrentAc: "7"
-      },
-      { role: 1 }
-    );
-    expect(whereSql).not.toContain("acdw.unit = ?");
+  test("applies optional filters when set in header", () => {
+    const { whereSql, values } = buildCashDepositWithdrawLedgerWhereSql({
+      month: "2026-01",
+      unit: "4",
+      transactionType: "Deposit",
+      paymentMode: "Cash",
+      npaCurrentAc: "7"
+    });
+    expect(whereSql).toContain("acdw.unit = ?");
     expect(whereSql).toContain("acdw.transactionType = ?");
     expect(whereSql).toContain("acdw.paymentMode = ?");
     expect(whereSql).toContain("acdw.npaCurrentAc = ?");
-    expect(values).toEqual(["2026-01-01", "2026-01-31", "Deposit", "Cash", 7]);
+    expect(values).toEqual(["2026-01-01", "2026-01-31", 4, "Deposit", "Cash", 7]);
   });
 
-  test("role 2 enforces session unit", () => {
-    const { whereSql, values } = buildCashDepositWithdrawLedgerWhereSql(
-      {
-        month: "2026-01",
-        transactionType: "Withdraw"
-      },
-      { role: 2, unit: 5 }
-    );
-    expect(whereSql).toContain("acdw.unit = ?");
+  test("does not apply unit filter when unit header is empty", () => {
+    const { whereSql, values } = buildCashDepositWithdrawLedgerWhereSql({
+      month: "2026-01",
+      transactionType: "Withdraw"
+    });
+    expect(whereSql).not.toContain("acdw.unit = ?");
+    expect(whereSql).not.toContain("1=0");
     expect(whereSql).toContain("acdw.transactionType = ?");
-    expect(values).toEqual(["2026-01-01", "2026-01-31", 5, "Withdraw"]);
-  });
-
-  test("role 2 with no session unit returns no rows", () => {
-    const { whereSql, values } = buildCashDepositWithdrawLedgerWhereSql(
-      { month: "2026-01", transactionType: "Deposit" },
-      { role: 2 }
-    );
-    expect(whereSql).toContain("1=0");
-    expect(values).toEqual(["2026-01-01", "2026-01-31", "Deposit"]);
+    expect(values).toEqual(["2026-01-01", "2026-01-31", "Withdraw"]);
   });
 });
 

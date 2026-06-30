@@ -15,9 +15,9 @@ When you log in and open **Dashboard** (home), you may see one or more widgets i
 | **My Reminders** | Your upcoming personal reminders |
 | **Search Bank & Branch** | Quick lookup of branch codes and names across banks |
 | **Invoice Collections** | FY billed vs received invoices, pending amount, by-bank share |
-| **Regional Performance** | FY settled cases — summary KPIs, loan type pie, region bars, month-wise settlement trend |
+| **Regional Performance** | FY settled cases — summary KPIs, loan type pie, region bars |
 
-**Full-width rows:** Unit Wise Recovery Target and Regional Performance span the whole row (four panels side by side).
+**Full-width rows:** Unit Wise Recovery Target (four panels) and Regional Performance (three panels) span the whole row.
 
 If you do not see a widget, an administrator must grant the matching **Dashboards** permission in **User Permissions**.
 
@@ -88,8 +88,9 @@ Unit Wise Recovery Target uses similar rules inside its own `run.js`.
 
 - **Folder:** `lib/dashboards/unit_wise_recovery_target/run.js`
 - **UI:** `components/dashboards/unit_wise_recovery_target/UnitWiseRecoveryTargetWidget.js`
-- **Recovery amount:** Sum of `new_case_inward_amount_recovered.recoveredAmount` where `recoveredDate` is in active FY.
-- **Month chart:** Groups by recovery date month (when cash was recovered).
+- **Achieved amount (Recovery Progress):** Same rules as **Unit Wise Cumulative** report — cases with final settled status (excluding Returned), `caseStatusUpdatedDate` in active FY, lifetime sum of `new_case_inward_amount_recovered.recoveredAmount` per case (not FY-filtered recovery dates). Bank pie groups that total by bank (no `bank.active` filter).
+- **Settled Cases (FY) KPI:** Count of those settled cases with cash recovered > 0.
+- **Month chart:** Groups by **settlement month** (`caseStatusUpdatedDate`), not recovery date.
 
 ### Invoice Collections
 
@@ -104,8 +105,8 @@ Unit Wise Recovery Target uses similar rules inside its own `run.js`.
 - **Folder:** `lib/dashboards/regional_performance/`
 - **UI:** `components/dashboards/regional_performance/RegionalPerformanceWidget.js`
 - **Cases included:** Final settled statuses (excluding Returned), `caseStatusUpdatedDate` in active FY, lifetime cash recovered > 0.
-- **Panels:** Summary KPIs | loan **type** pie | RBO region bars | month-wise settled (by settlement date).
-- **Note:** Month chart uses **settlement date**, not recovery date — complementary to Recovery Target.
+- **Panels:** Summary KPIs | loan **type** pie | RBO region bars.
+- **Note:** Month chart uses **settlement date**, not recovery date — aligned with Recovery Target achieved rules.
 
 ### Search Bank & Branch
 

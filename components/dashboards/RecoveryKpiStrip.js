@@ -32,7 +32,7 @@ export default function RecoveryKpiStrip({
     <div className="dashboard-recovery-kpi-layout">
       <div className={gridClass}>
         <article className="dashboard-kpi-card">
-          <p className="dashboard-kpi-label">Recovered Cases (FY)</p>
+          <p className="dashboard-kpi-label">Settled Cases (FY)</p>
           <p className="dashboard-kpi-value">
             {formatInrNumberForDisplay(recoveredCaseCount, { integerOnly: true })}
           </p>

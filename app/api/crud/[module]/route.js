@@ -45,7 +45,12 @@ import { appendSarfaesiCaseStatusUpdateCasePickerFilter } from "../../../../lib/
 import {
   appendInvoicesReceivedRecoveryInvoicePickerFilter,
   appendInvoicesReceivedSarfaesiInvoicePickerFilter,
-  appendInvoicesReceivedVehicleInvoicePickerFilter
+  appendInvoicesReceivedVehicleInvoicePickerFilter,
+  enrichInvoicesReceivedInvoicePickerRows,
+  INVOICES_RECEIVED_MODULE_KEY,
+  invoicesReceivedInvoicePickerJoinParts,
+  isInvoicesReceivedInvoicePickerList,
+  normalizeInvoicesReceivedInvoiceFkFields
 } from "../../../../lib/modules/invoicesReceived";
 import { appendVehicleInvoiceCasePickerLoanCategoryFilter } from "../../../../lib/modules/vehicleInvoice";
 import { enrichAuditLogRecordLabels } from "../../../../lib/modules/auditLogsEnrich";
@@ -454,15 +459,31 @@ export async function GET(req, { params }) {
 
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
     const countSql = `SELECT COUNT(*) AS total FROM ${mt} ${whereSql}`;
-    const selectList = buildListSelectClause(m);
+    const irInvoicePicker =
+      forLookup && isInvoicesReceivedInvoicePickerList(module, listUrl.searchParams);
+    let selectList = buildListSelectClause(m);
+    let fromSql = mt;
+    if (irInvoicePicker) {
+      const joinParts = invoicesReceivedInvoicePickerJoinParts(mt);
+      selectList += joinParts.selectExtra;
+      fromSql = `${mt}${joinParts.fromJoin}`;
+    }
     const orderByExpr = buildListOrderByExpr(m, sortBy);
-    const dataSql = `SELECT ${selectList} FROM ${mt} ${whereSql} ORDER BY ${orderByExpr} ${sortDir} LIMIT ? OFFSET ?`;
+    const dataSql = `SELECT ${selectList} FROM ${fromSql} ${whereSql} ORDER BY ${orderByExpr} ${sortDir} LIMIT ? OFFSET ?`;
 
     const [countRows] = await queryWithRetry(countSql, whereValues);
     const total = countRows[0]?.total || 0;
     const [rows] = await queryWithRetry(dataSql, [...whereValues, limit, offset]);
 
+    if (module === INVOICES_RECEIVED_MODULE_KEY && rows.length) {
+      for (const row of rows) normalizeInvoicesReceivedInvoiceFkFields(row);
+    }
+
     await enrichLookupDisplayRows(m, rows);
+
+    if (irInvoicePicker && rows.length) {
+      await enrichInvoicesReceivedInvoicePickerRows(rows);
+    }
 
     if (module === "audit_logs" && rows.length) {
       await enrichAuditLogRecordLabels(rows);

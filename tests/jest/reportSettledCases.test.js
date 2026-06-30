@@ -55,8 +55,7 @@ describe("report_settled_cases config", () => {
 
 describe("buildSettledCasesReportWhereSql", () => {
   test("filters on settled date range, not entrustment date", async () => {
-    const { whereSql, values } = await buildSettledCasesReportWhereSql(
-      { id: 1, role: 1 },
+    const { whereSql, values } = buildSettledCasesReportWhereSql(
       { fromDate: "2026-06-01", toDate: "2026-06-30" }
     );
     expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) >= ?");
@@ -66,8 +65,7 @@ describe("buildSettledCasesReportWhereSql", () => {
   });
 
   test("includes all final statuses except Returned", async () => {
-    const { whereSql, values } = await buildSettledCasesReportWhereSql(
-      { id: 1, role: 1 },
+    const { whereSql, values } = buildSettledCasesReportWhereSql(
       { fromDate: "2026-06-01", toDate: "2026-06-30" }
     );
     const status = buildSettledCaseStatusWhereSql();

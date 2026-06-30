@@ -72,7 +72,9 @@ const {
   isNewCaseInwardFinalStatusById,
   applyRole2FinalStageEditLock,
   assignNewCaseInwardCaseNo,
-  validateNewCaseInwardBeforeWrite
+  validateNewCaseInwardBeforeWrite,
+  buildCaseNoSequencePrefix,
+  normalizeCaseNoBankPrefix
 } = require("../../lib/modules/newCaseInward");
 
 // Helper used by tests: createConn.
@@ -672,6 +674,8 @@ describe("newCaseInward module", () => {
   describe("assignNewCaseInwardCaseNo", () => {
     const chainQueryMatch = (sql) =>
       sql.includes("loanCategoryLabel") && sql.includes("caseNoPrefix");
+    const sequenceNormalizeLockMatch = (sql) =>
+      sql.includes("module_number_sequence") && sql.includes("CHAR(13)") && sql.includes("FOR UPDATE");
 
     test("assigns next case number with mapped loan category code", async () => {
       const conn = createConn([
@@ -680,12 +684,8 @@ describe("newCaseInward module", () => {
           reply: [[{ loanCategoryLabel: "Collateral Free", caseNoPrefix: "SBI" }]]
         },
         {
-          when: (sql) => sql.includes("INSERT INTO module_number_sequence"),
-          reply: [{ affectedRows: 1 }]
-        },
-        {
-          when: (sql) => sql.includes("SELECT lastNumber FROM module_number_sequence") && sql.includes("FOR UPDATE"),
-          reply: [[{ lastNumber: 9 }]]
+          when: (sql) => sequenceNormalizeLockMatch(sql),
+          reply: [[{ module: "new_case_inward", prefix: "SBI/CF", lastNumber: 9 }]]
         },
         {
           when: (sql) => sql.includes("UPDATE module_number_sequence SET lastNumber = ?"),
@@ -705,6 +705,41 @@ describe("newCaseInward module", () => {
       expect(finalUpdate).toBeTruthy();
       expect(finalUpdate[1][0]).toBe("SBI/CF/00010");
       expect(finalUpdate[1][1]).toBe(101);
+    });
+
+    test("resolves sequence row when stored keys have trailing CRLF", async () => {
+      const conn = createConn([
+        {
+          when: (sql) => chainQueryMatch(sql),
+          reply: [[{ loanCategoryLabel: "Agricultural Loan", caseNoPrefix: "S" }]]
+        },
+        {
+          when: (sql) => sequenceNormalizeLockMatch(sql),
+          reply: [[{ module: "new_case_inward\r\n", prefix: "S/AL\r\n", lastNumber: 14742 }]]
+        },
+        {
+          when: (sql) => sql.includes("UPDATE module_number_sequence SET lastNumber = ?"),
+          reply: [{ affectedRows: 1 }]
+        },
+        {
+          when: (sql) => sql.includes("UPDATE new_case_inward SET caseNo = ? WHERE id = ?"),
+          reply: [{ affectedRows: 1 }]
+        }
+      ]);
+
+      await expect(assignNewCaseInwardCaseNo(conn, 202)).resolves.toBeUndefined();
+
+      const seqUpdate = conn.query.mock.calls.find(([sql]) =>
+        sql.includes("UPDATE module_number_sequence SET lastNumber = ?")
+      );
+      expect(seqUpdate[1][0]).toBe(14743);
+      expect(seqUpdate[1][1]).toBe("new_case_inward\r\n");
+      expect(seqUpdate[1][2]).toBe("S/AL\r\n");
+
+      const finalUpdate = conn.query.mock.calls.find(([sql]) =>
+        sql.includes("UPDATE new_case_inward SET caseNo = ? WHERE id = ?")
+      );
+      expect(finalUpdate[1][0]).toBe("S/AL/14743");
     });
 
     test("fails when loan category is missing on inserted row", async () => {
@@ -778,15 +813,22 @@ describe("newCaseInward module", () => {
           reply: [[{ loanCategoryLabel: "Vehicle Loan", caseNoPrefix: "CAN" }]]
         },
         {
-          when: (sql) => sql.includes("INSERT INTO module_number_sequence"),
-          reply: [{ affectedRows: 1 }]
+          when: (sql) => sequenceNormalizeLockMatch(sql),
+          reply: [[]]
         },
         {
-          when: (sql) => sql.includes("SELECT lastNumber FROM module_number_sequence") && sql.includes("FOR UPDATE"),
-          reply: [[]]
+          when: (sql) => sql.includes("INSERT INTO module_number_sequence"),
+          reply: [{ affectedRows: 1 }]
         }
       ]);
       await expect(assignNewCaseInwardCaseNo(conn, 5)).rejects.toMatchObject({ code: "CASE_NO_SEQUENCE_ROW" });
+    });
+  });
+
+  describe("case number helpers", () => {
+    test("normalizeCaseNoBankPrefix trims and removes trailing slashes", () => {
+      expect(normalizeCaseNoBankPrefix(" S/ ")).toBe("S");
+      expect(buildCaseNoSequencePrefix("S/", "AL")).toBe("S/AL");
     });
   });
 });

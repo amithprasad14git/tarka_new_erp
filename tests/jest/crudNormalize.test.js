@@ -60,6 +60,11 @@ describe("crudNormalize.normalizeCrudPayload", () => {
     expect(typeof out.branch).toBe("number");
   });
 
+  test("lookup field normalization: zero becomes null", () => {
+    expect(normalizeCrudPayload({ branch: 0 }, moduleConfig()).branch).toBeNull();
+    expect(normalizeCrudPayload({ branch: "0" }, moduleConfig()).branch).toBeNull();
+  });
+
   test("numeric field preservation: number fields are unchanged by normalizer", () => {
     const out = normalizeCrudPayload({ amount: "123.45" }, moduleConfig());
     expect(out.amount).toBe("123.45");

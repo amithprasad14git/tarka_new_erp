@@ -12,12 +12,22 @@ import { getSessionUser } from "../../../../../lib/session";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
+import { loadInvoiceLinkedCaseByCaseId } from "../../../../../lib/modules/invoiceCaseSnapshot";
 import {
   buildRecoveryInvoicePdfBuffer,
   safeRecoveryInvoicePdfFilename
 } from "../../../../../lib/modules/recoveryInvoicePdf";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-import mysql from "mysql2";
+
+const EMPTY_RECOVERY_NCI_ROW = {
+  caseNo: "",
+  entrustmentDate: "",
+  borrower: "",
+  loanAccountNo: "",
+  loanTypeLabel: "",
+  npaDate: "",
+  caseStatusLabel: ""
+};
 
 // Session cookie → logged-in user (same pattern as other PDF routes).
 async function getRequestUser() {
@@ -131,29 +141,20 @@ export async function GET(_req, { params }) {
     let unitShortCode = "";
 
     if (Number.isFinite(caseId) && caseId > 0) {
-      const nciRes = await getCrudRecordById(user, "new_case_inward", caseId);
-      if (nciRes.status === 200 && nciRes.body?.data) {
-        nciRow = nciRes.body.data;
-        amountRecoveredRows = Array.isArray(nciRes.body.childTableRows?.amount_recovered)
-          ? nciRes.body.childTableRows.amount_recovered
+      const linked = await loadInvoiceLinkedCaseByCaseId(caseId, { childKeys: ["amount_recovered"] });
+      if (linked?.data) {
+        nciRow = linked.data;
+        amountRecoveredRows = Array.isArray(linked.childTableRows?.amount_recovered)
+          ? linked.childTableRows.amount_recovered
           : [];
         const branchId = Number(rowValueForField(nciRow, "branch"));
         branchContext = await loadBranchChainForRecoveryPdf(branchId);
-        const unitId = Number(rowValueForField(nciRow, "unit"));
-        unitShortCode = await loadUnitShortCode(unitId);
       }
     }
 
-    if (!nciRow) {
-      nciRow = {
-        caseNo: String(rowValueForField(data, "caseNoLabel") ?? "").trim() || String(caseId || ""),
-        entrustmentDate: "",
-        borrower: "",
-        loanAccountNo: "",
-        loanTypeLabel: "",
-        npaDate: "",
-        caseStatusLabel: ""
-      };
+    const billToUnitId = Number(rowValueForField(data, "billToUnit"));
+    if (Number.isFinite(billToUnitId) && billToUnitId > 0) {
+      unitShortCode = await loadUnitShortCode(billToUnitId);
     }
 
     const caId = Number(rowValueForField(data, "npaCurrentAc"));
@@ -163,7 +164,7 @@ export async function GET(_req, { params }) {
     const buffer = await buildRecoveryInvoicePdfBuffer({
       invoice: data,
       charges,
-      nciRow,
+      nciRow: nciRow || EMPTY_RECOVERY_NCI_ROW,
       amountRecoveredRows,
       branchContext,
       unitShortCode,

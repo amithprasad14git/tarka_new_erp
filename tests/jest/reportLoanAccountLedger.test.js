@@ -68,18 +68,15 @@ describe("buildLoanAccountLedgerWhereSql", () => {
     expect(values).toEqual(["2026-06-15"]);
   });
 
-  test("applies optional filters for admin user", () => {
-    const { whereSql, values } = buildLoanAccountLedgerWhereSql(
-      {
-        asOnDate: "2026-01-31",
-        unit: "3",
-        npaCurrentAc: "7",
-        transactionType: "Receipt",
-        paymentMode: "Cash",
-        party: "12"
-      },
-      { role: 1 }
-    );
+  test("applies optional filters when set in header", () => {
+    const { whereSql, values } = buildLoanAccountLedgerWhereSql({
+      asOnDate: "2026-01-31",
+      unit: "3",
+      npaCurrentAc: "7",
+      transactionType: "Receipt",
+      paymentMode: "Cash",
+      party: "12"
+    });
     expect(whereSql).toContain("ala.unit = ?");
     expect(whereSql).toContain("ala.npaCurrentAc = ?");
     expect(whereSql).toContain("ala.transactionType = ?");
@@ -88,23 +85,15 @@ describe("buildLoanAccountLedgerWhereSql", () => {
     expect(values).toEqual(["2026-01-31", 3, 7, "Receipt", "Cash", 12]);
   });
 
-  test("role 2 enforces session unit", () => {
-    const { whereSql, values } = buildLoanAccountLedgerWhereSql(
-      { asOnDate: "2026-04-01", transactionType: "Payment" },
-      { role: 2, unit: 5 }
-    );
-    expect(whereSql).toContain("ala.unit = ?");
+  test("does not apply unit filter when unit header is empty", () => {
+    const { whereSql, values } = buildLoanAccountLedgerWhereSql({
+      asOnDate: "2026-04-01",
+      transactionType: "Payment"
+    });
+    expect(whereSql).not.toContain("ala.unit = ?");
+    expect(whereSql).not.toContain("1=0");
     expect(whereSql).toContain("ala.transactionType = ?");
-    expect(values).toEqual(["2026-04-01", 5, "Payment"]);
-  });
-
-  test("role 2 with no session unit returns no rows", () => {
-    const { whereSql, values } = buildLoanAccountLedgerWhereSql(
-      { asOnDate: "2026-04-01" },
-      { role: 2 }
-    );
-    expect(whereSql).toContain("1=0");
-    expect(values).toEqual(["2026-04-01"]);
+    expect(values).toEqual(["2026-04-01", "Payment"]);
   });
 });
 

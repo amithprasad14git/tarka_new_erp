@@ -12,6 +12,7 @@ import { getSessionUser } from "../../../../../lib/session";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
+import { loadInvoiceLinkedCaseByCaseId } from "../../../../../lib/modules/invoiceCaseSnapshot";
 import {
   buildVehicleInvoicePdfBuffer,
   safeVehicleInvoicePdfFilename
@@ -130,14 +131,17 @@ export async function GET(_req, { params }) {
     let unitShortCode = "";
 
     if (Number.isFinite(caseId) && caseId > 0) {
-      const nciRes = await getCrudRecordById(user, "new_case_inward", caseId);
-      if (nciRes.status === 200 && nciRes.body?.data) {
-        nciRow = nciRes.body.data;
+      const linked = await loadInvoiceLinkedCaseByCaseId(caseId);
+      if (linked?.data) {
+        nciRow = linked.data;
         const branchId = Number(rowValueForField(nciRow, "branch"));
         branchContext = await loadBranchChainForPdf(branchId);
-        const unitId = Number(rowValueForField(nciRow, "unit"));
-        unitShortCode = await loadUnitShortCode(unitId);
       }
+    }
+
+    const billToUnitId = Number(rowValueForField(data, "billToUnit"));
+    if (Number.isFinite(billToUnitId) && billToUnitId > 0) {
+      unitShortCode = await loadUnitShortCode(billToUnitId);
     }
 
     if (!nciRow) {

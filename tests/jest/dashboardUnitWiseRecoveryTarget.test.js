@@ -1,7 +1,7 @@
 // Test file — Unit Wise Recovery Target dashboard (FY, SQL, scoping, permissions).
 
 /**
- * Verifies recovery target registration, SQL uses recoveredDate in FY, and unit scoping.
+ * Verifies recovery target registration, settled-in-FY SQL (Unit Wise Cumulative rules), and unit scoping.
  * Guide: docs/DASHBOARDS.md
  */
 
@@ -113,19 +113,21 @@ describe("loadActiveFinancialYear", () => {
 });
 
 describe("buildBankWiseRecoveryAggregationSql", () => {
-  test("filters by recoveredDate within FY bounds and groups by bank", () => {
+  test("aggregates settled-in-FY lifetime recovery grouped by bank", () => {
     const sql = buildBankWiseRecoveryAggregationSql(1);
-    expect(sql).toContain("DATE(ar.recoveredDate) >= ?");
-    expect(sql).toContain("DATE(ar.recoveredDate) <= ?");
-    expect(sql).not.toContain("caseStatusUpdatedDate");
-    expect(sql).toContain("bank_master");
-    expect(sql).toContain("GROUP BY bank.id");
+    expect(sql).toContain("caseStatusUpdatedDate >= ?");
+    expect(sql).toContain("caseStatusUpdatedDate <= ?");
+    expect(sql).toContain("LOWER(TRIM(cs.lookupValue)) IN");
+    expect(sql).toContain("amount_recovered > 0");
+    expect(sql).not.toContain("DATE(ar.recoveredDate)");
+    expect(sql).not.toContain("bank.active");
+    expect(sql).toContain("GROUP BY x.bankId");
     expect(sql).toContain("HAVING amountRecovered > 0");
   });
 
-  test("scopes cases to unit IN clause", () => {
+  test("scopes settled cases to unit IN clause", () => {
     const sql = buildBankWiseRecoveryAggregationSql(3);
-    expect(sql).toContain("WHERE nci.unit IN (?, ?, ?)");
+    expect(sql).toContain("nci.unit IN (?, ?, ?)");
   });
 });
 
@@ -138,10 +140,11 @@ describe("buildUnitRecoveryTargetSql", () => {
 });
 
 describe("companion widget SQL helpers", () => {
-  test("buildRecoveredCaseCountSql counts distinct cases in FY", () => {
+  test("buildRecoveredCaseCountSql counts settled cases in FY", () => {
     const sql = buildRecoveredCaseCountSql(1);
-    expect(sql).toContain("COUNT(DISTINCT nci.id)");
-    expect(sql).toContain("DATE(ar.recoveredDate) >= ?");
+    expect(sql).toContain("SUM(x.no_of_cases)");
+    expect(sql).toContain("caseStatusUpdatedDate >= ?");
+    expect(sql).not.toContain("DATE(ar.recoveredDate)");
   });
 
   test("buildPartRecoveredCaseCountSql uses open case and recovered > 0 filters", () => {
@@ -151,11 +154,11 @@ describe("companion widget SQL helpers", () => {
     expect(sql).toContain("SUM(ar.recoveredAmount)");
   });
 
-  test("buildMonthWiseRecoverySql groups by month", () => {
+  test("buildMonthWiseRecoverySql groups by settlement month", () => {
     const sql = buildMonthWiseRecoverySql(2);
-    expect(sql).toContain("DATE_FORMAT(ar.recoveredDate, '%Y-%m')");
-    expect(sql).toContain("GROUP BY monthKey");
-    expect(sql).toContain("WHERE nci.unit IN (?, ?)");
+    expect(sql).toContain("DATE_FORMAT(nci.caseStatusUpdatedDate, '%Y-%m')");
+    expect(sql).toContain("GROUP BY x.monthKey");
+    expect(sql).toContain("nci.unit IN (?, ?)");
   });
 
   test("buildPendingCaseStatusCountSql groups pending cases on hand by case status", () => {

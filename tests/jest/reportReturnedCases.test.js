@@ -58,8 +58,7 @@ describe("report_returned_cases config", () => {
 
 describe("buildReturnedCasesReportWhereSql", () => {
   test("filters on return date range, not entrustment date", async () => {
-    const { whereSql, values } = await buildReturnedCasesReportWhereSql(
-      { id: 1, role: 1 },
+    const { whereSql, values } = buildReturnedCasesReportWhereSql(
       { fromDate: "2026-06-01", toDate: "2026-06-30" }
     );
     expect(whereSql).toContain("DATE(nci.caseStatusUpdatedDate) >= ?");
@@ -69,8 +68,7 @@ describe("buildReturnedCasesReportWhereSql", () => {
   });
 
   test("includes returned status filter only", async () => {
-    const { whereSql, values } = await buildReturnedCasesReportWhereSql(
-      { id: 1, role: 1 },
+    const { whereSql, values } = buildReturnedCasesReportWhereSql(
       { fromDate: "2026-06-01", toDate: "2026-06-30" }
     );
     const status = buildReturnedCaseStatusWhereSql();

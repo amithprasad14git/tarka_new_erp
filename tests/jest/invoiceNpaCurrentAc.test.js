@@ -3,6 +3,7 @@
 jest.mock("../../config/modules", () => ({
   modules: {
     new_case_inward: { table: "new_case_inward", fields: [{ name: "unit" }] },
+    unit_master: { table: "unit_master", fields: [{ name: "unitName" }] },
     current_account_master: { table: "current_account_master", fields: [{ name: "branch" }] }
   }
 }));
@@ -51,6 +52,10 @@ describe("invoiceNpaCurrentAc", () => {
         reply: [[{ unit: 2 }]]
       },
       {
+        when: (sql, params) => sql.includes("unit_master") && params?.[0] === 2,
+        reply: [[{ unitName: "Unit Two" }]]
+      },
+      {
         when: (sql, params) => sql.includes("current_account_master") && params?.[0] === 2,
         reply: [[{ id: 2, branch: "SBI Siddartha Nagar, Mysore" }]]
       }
@@ -58,7 +63,9 @@ describe("invoiceNpaCurrentAc", () => {
 
     await expect(resolveInvoiceNpaCurrentAcByCaseId(conn, 100)).resolves.toEqual({
       npaCurrentAc: "2",
-      npaCurrentAcLabel: "SBI Siddartha Nagar, Mysore"
+      npaCurrentAcLabel: "SBI Siddartha Nagar, Mysore",
+      billToUnit: "2",
+      billToUnitLabel: "Unit Two"
     });
     expect(rowValueForField).toHaveBeenCalled();
   });
@@ -70,6 +77,10 @@ describe("invoiceNpaCurrentAc", () => {
         reply: [[{ unit: 1 }]]
       },
       {
+        when: (sql, params) => sql.includes("unit_master") && params?.[0] === 1,
+        reply: [[{ unitName: "Unit One" }]]
+      },
+      {
         when: (sql, params) => sql.includes("current_account_master") && params?.[0] === 1,
         reply: [[{ id: 1, branch: "SBI Siddartha Layout, Mysore" }]]
       }
@@ -77,7 +88,9 @@ describe("invoiceNpaCurrentAc", () => {
 
     await expect(resolveInvoiceNpaCurrentAcByCaseId(conn, 50)).resolves.toEqual({
       npaCurrentAc: "1",
-      npaCurrentAcLabel: "SBI Siddartha Layout, Mysore"
+      npaCurrentAcLabel: "SBI Siddartha Layout, Mysore",
+      billToUnit: "1",
+      billToUnitLabel: "Unit One"
     });
   });
 
@@ -85,7 +98,9 @@ describe("invoiceNpaCurrentAc", () => {
     const conn = createConn([]);
     await expect(resolveInvoiceNpaCurrentAcByCaseId(conn, 0)).resolves.toEqual({
       npaCurrentAc: "",
-      npaCurrentAcLabel: ""
+      npaCurrentAcLabel: "",
+      billToUnit: "",
+      billToUnitLabel: ""
     });
     expect(conn.query).not.toHaveBeenCalled();
   });
@@ -100,13 +115,19 @@ describe("recoveryInvoice NPA re-export", () => {
         reply: [[{ unit: 2 }]]
       },
       {
+        when: (sql, params) => sql.includes("unit_master") && params?.[0] === 2,
+        reply: [[{ unitName: "Unit Two" }]]
+      },
+      {
         when: (sql, params) => sql.includes("current_account_master") && params?.[0] === 2,
         reply: [[{ id: 2, branch: "SBI Siddartha Nagar, Mysore" }]]
       }
     ]);
     await expect(resolveRecoveryInvoiceNpaCurrentAcByCaseId(conn, 10)).resolves.toEqual({
       npaCurrentAc: "2",
-      npaCurrentAcLabel: "SBI Siddartha Nagar, Mysore"
+      npaCurrentAcLabel: "SBI Siddartha Nagar, Mysore",
+      billToUnit: "2",
+      billToUnitLabel: "Unit Two"
     });
   });
 });

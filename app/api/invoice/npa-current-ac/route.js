@@ -8,22 +8,10 @@ import pool from "../../../../lib/db";
 import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import {
-  INVOICE_MODULE_KEYS_WITH_NPA_AUTO_FILL,
+  canAccessAnyInvoiceModule,
   resolveInvoiceNpaCurrentAcByCaseId
 } from "../../../../lib/modules/invoiceNpaCurrentAc";
 import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
-
-async function canAccessAnyInvoiceModule(user) {
-  for (const moduleKey of INVOICE_MODULE_KEYS_WITH_NPA_AUTO_FILL) {
-    const [canView, canCreate, canEdit] = await Promise.all([
-      hasModulePermission(user, moduleKey, "view"),
-      hasModulePermission(user, moduleKey, "create"),
-      hasModulePermission(user, moduleKey, "edit")
-    ]);
-    if (canView || canCreate || canEdit) return true;
-  }
-  return false;
-}
 
 export async function GET(req) {
   try {
@@ -39,7 +27,12 @@ export async function GET(req) {
     const url = new URL(req.url);
     const caseId = Number(url.searchParams.get("caseId"));
     if (!Number.isFinite(caseId) || caseId <= 0) {
-      return Response.json({ npaCurrentAc: "", npaCurrentAcLabel: "" });
+      return Response.json({
+        npaCurrentAc: "",
+        npaCurrentAcLabel: "",
+        billToUnit: "",
+        billToUnitLabel: ""
+      });
     }
 
     const conn = await pool.getConnection();

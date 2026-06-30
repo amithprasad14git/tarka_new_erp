@@ -68,18 +68,15 @@ describe("buildExpenseLedgerWhereSql", () => {
     expect(values).toEqual(["2026-03-01", "2026-03-31"]);
   });
 
-  test("applies optional filters for admin", () => {
-    const { whereSql, values } = buildExpenseLedgerWhereSql(
-      {
-        month: "2026-01",
-        unit: "2",
-        npaCurrentAc: "5",
-        paymentMode: "Cash",
-        paidTo: "10",
-        expenseCategory: "3"
-      },
-      { role: 1 }
-    );
+  test("applies optional filters when set in header", () => {
+    const { whereSql, values } = buildExpenseLedgerWhereSql({
+      month: "2026-01",
+      unit: "2",
+      npaCurrentAc: "5",
+      paymentMode: "Cash",
+      paidTo: "10",
+      expenseCategory: "3"
+    });
     expect(whereSql).toContain("aev.unit = ?");
     expect(whereSql).toContain("aev.npaCurrentAc = ?");
     expect(whereSql).toContain("aev.paymentMode = ?");
@@ -88,13 +85,10 @@ describe("buildExpenseLedgerWhereSql", () => {
     expect(values).toEqual(["2026-01-01", "2026-01-31", 2, 5, "Cash", 10, 3]);
   });
 
-  test("role 2 enforces session unit", () => {
-    const { whereSql, values } = buildExpenseLedgerWhereSql(
-      { month: "2026-01", unit: "99" },
-      { role: 2, unit: 7 }
-    );
-    expect(whereSql).toContain("aev.unit = ?");
-    expect(values).toEqual(["2026-01-01", "2026-01-31", 7]);
+  test("does not apply unit filter when unit header is empty", () => {
+    const { whereSql, values } = buildExpenseLedgerWhereSql({ month: "2026-01" });
+    expect(whereSql).not.toContain("aev.unit = ?");
+    expect(values).toEqual(["2026-01-01", "2026-01-31"]);
   });
 });
 

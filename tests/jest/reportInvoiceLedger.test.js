@@ -115,20 +115,17 @@ describe("buildInvoiceLedgerDimensionWhereSql", () => {
     expect(values).toEqual(["2026-03-01", "2026-03-31"]);
   });
 
-  test("applies optional dimension filters for admin user", () => {
-    const { parts, values } = buildInvoiceLedgerDimensionWhereSql(
-      {
-        month: "2026-01",
-        unit: "2",
-        npaCurrentAc: "5",
-        bank: "1",
-        ho_zo: "3",
-        rbo_ro: "4",
-        branch: "6"
-      },
-      { role: 1 }
-    );
-    expect(parts).toContain("nci.unit = ?");
+  test("applies optional dimension filters when set in header", () => {
+    const { parts, values } = buildInvoiceLedgerDimensionWhereSql({
+      month: "2026-01",
+      unit: "2",
+      npaCurrentAc: "5",
+      bank: "1",
+      ho_zo: "3",
+      rbo_ro: "4",
+      branch: "6"
+    });
+    expect(parts).toContain("inv.billToUnit = ?");
     expect(parts).toContain("inv.npaCurrentAc = ?");
     expect(parts).toContain("bank.id = ?");
     expect(parts).toContain("hz.id = ?");
@@ -137,22 +134,20 @@ describe("buildInvoiceLedgerDimensionWhereSql", () => {
     expect(values).toEqual(["2026-01-01", "2026-01-31", 2, 5, 1, 3, 4, 6]);
   });
 
-  test("role 2 enforces session unit via case join", () => {
-    const { parts, values } = buildInvoiceLedgerDimensionWhereSql(
-      { month: "2026-02" },
-      { role: 2, unit: 7 }
-    );
-    expect(parts).toContain("nci.unit = ?");
-    expect(values).toEqual(["2026-02-01", "2026-02-28", 7]);
+  test("does not apply unit filter when unit header is empty", () => {
+    const { parts, values } = buildInvoiceLedgerDimensionWhereSql({ month: "2026-02" });
+    expect(parts).not.toContain("inv.billToUnit = ?");
+    expect(parts).not.toContain("1=0");
+    expect(values).toEqual(["2026-02-01", "2026-02-28"]);
   });
 
-  test("role 2 with no session unit returns no rows", () => {
-    const { parts, values } = buildInvoiceLedgerDimensionWhereSql(
-      { month: "2026-02" },
-      { role: 2 }
-    );
-    expect(parts).toContain("1=0");
-    expect(values).toEqual(["2026-02-01", "2026-02-28"]);
+  test("applies inv.billToUnit when unit is selected in header", () => {
+    const { parts, values } = buildInvoiceLedgerDimensionWhereSql({
+      month: "2026-02",
+      unit: "7"
+    });
+    expect(parts).toContain("inv.billToUnit = ?");
+    expect(values).toEqual(["2026-02-01", "2026-02-28", 7]);
   });
 });
 

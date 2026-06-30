@@ -182,6 +182,19 @@ const STANDARD_ROW_AUDIT_FIELDS = [
 /** All new_case_inward Case No popup pickers: newest record first. */
 const NCI_CASE_NO_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
 
+/** Invoices Received — recovery / SARFAESI / vehicle invoice pickers. */
+const INVOICES_RECEIVED_INVOICE_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
+const INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS = [
+  { field: "date", header: "Date" },
+  { field: "invoiceNo", header: "Invoice No" },
+  { field: "caseNoLabel", header: "Case No" },
+  { field: "borrower", header: "Borrower" },
+  { field: "billToUnitLabel", header: "Bill to Unit" },
+  { field: "npaCurrentAcLabel", header: "NPA Current AC" },
+  { field: "finalInvoice", header: "Final Invoice" },
+  { field: "grandTotal", header: "Invoice Amount" }
+];
+
 // All screens/modules the ERP knows about. Key = internal name; value = settings + fields.
 // Each module value typically has: label, icon, group, table, fields[], and optional flags (readOnly, postCreateAck, …).
 export const modules = {
@@ -1947,7 +1960,7 @@ export const modules = {
         name: "caseNo",
         type: "lookup",
         label: "Case No",
-        required: true,
+        required: false,
         showInView: true,
         lookup: {
           module: "new_case_inward",
@@ -1965,6 +1978,14 @@ export const modules = {
             { field: "caseStatusLabel", header: "Case Status" },
           ]
         }
+      },
+      {
+        name: "billToUnit",
+        type: "lookup",
+        label: "Bill to Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "npaCurrentAc",
@@ -2083,6 +2104,14 @@ export const modules = {
             { field: "caseStatusLabel", header: "Case Status" },
           ]
         }
+      },
+      {
+        name: "billToUnit",
+        type: "lookup",
+        label: "Bill to Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "npaCurrentAc",
@@ -2209,6 +2238,14 @@ export const modules = {
         }
       },
       {
+        name: "billToUnit",
+        type: "lookup",
+        label: "Bill to Unit",
+        required: true,
+        showInView: true,
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
@@ -2320,14 +2357,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       {
@@ -2341,14 +2372,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       {
@@ -2362,14 +2387,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       { name: "billedAmount", type: "number", label: "Billed Amount", required: true, showInView: true },

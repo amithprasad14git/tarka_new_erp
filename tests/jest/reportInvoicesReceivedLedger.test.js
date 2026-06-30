@@ -63,20 +63,17 @@ describe("buildInvoicesReceivedLedgerWhereSql", () => {
     expect(values).toEqual(["2026-05-01", "2026-05-31"]);
   });
 
-  test("applies optional dimension filters for admin user", () => {
-    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql(
-      {
-        month: "2026-03",
-        unit: "2",
-        npaCurrentAc: "5",
-        bank: "1",
-        ho_zo: "3",
-        rbo_ro: "4",
-        branch: "6"
-      },
-      { role: 1 }
-    );
-    expect(whereSql).toContain("nci.unit = ?");
+  test("applies optional dimension filters when set in header", () => {
+    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql({
+      month: "2026-03",
+      unit: "2",
+      npaCurrentAc: "5",
+      bank: "1",
+      ho_zo: "3",
+      rbo_ro: "4",
+      branch: "6"
+    });
+    expect(whereSql).toContain("COALESCE(ri.billToUnit, si.billToUnit, vi.billToUnit) = ?");
     expect(whereSql).toContain("COALESCE(ri.npaCurrentAc, si.npaCurrentAc, vi.npaCurrentAc) = ?");
     expect(whereSql).toContain("bank.id = ?");
     expect(whereSql).toContain("hz.id = ?");
@@ -85,22 +82,20 @@ describe("buildInvoicesReceivedLedgerWhereSql", () => {
     expect(values).toEqual(["2026-03-01", "2026-03-31", 2, 5, 1, 3, 4, 6]);
   });
 
-  test("role 2 enforces session unit via case join", () => {
-    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql(
-      { month: "2026-02" },
-      { role: 2, unit: 7 }
-    );
-    expect(whereSql).toContain("nci.unit = ?");
-    expect(values).toEqual(["2026-02-01", "2026-02-28", 7]);
+  test("does not apply unit filter when unit header is empty", () => {
+    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql({ month: "2026-02" });
+    expect(whereSql).not.toContain("COALESCE(ri.billToUnit, si.billToUnit, vi.billToUnit) = ?");
+    expect(whereSql).not.toContain("1=0");
+    expect(values).toEqual(["2026-02-01", "2026-02-28"]);
   });
 
-  test("role 2 with no session unit returns no rows", () => {
-    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql(
-      { month: "2026-02" },
-      { role: 2 }
-    );
-    expect(whereSql).toContain("1=0");
-    expect(values).toEqual(["2026-02-01", "2026-02-28"]);
+  test("applies invoice billToUnit when unit is selected in header", () => {
+    const { whereSql, values } = buildInvoicesReceivedLedgerWhereSql({
+      month: "2026-02",
+      unit: "7"
+    });
+    expect(whereSql).toContain("COALESCE(ri.billToUnit, si.billToUnit, vi.billToUnit) = ?");
+    expect(values).toEqual(["2026-02-01", "2026-02-28", 7]);
   });
 });
 

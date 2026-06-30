@@ -33,10 +33,10 @@ One PDF file with **three pages** (same copy labels as Recovery Invoice):
 
 | Section | Source |
 |---------|--------|
-| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** |
+| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** (`caseNo`) |
 | Invoice date, invoice number | **sarfaesi_invoice** row |
-| Unit | Unit on the case |
-| Case number, borrower, loan type | Linked **New Case Inward** |
+| Unit | **`billToUnit`** on the invoice → `unit_master` (not the case unit) |
+| Case number, borrower, loan type | Linked **New Case Inward** via `caseNo` |
 | Charges table | Child rows in **sarfaesi_invoice_charges** (`sarfaesi_charges` key): SL, Particulars, Remarks, Amount |
 | Amount in words | Sum of charge **Amount** values |
 | GST number | **current_account_master** linked on the invoice |

@@ -58,8 +58,11 @@ Use the module guides below for invoice-specific details.
 Each PDF route:
 
 1. Loads the invoice row + child charge lines via `getCrudRecordById` (child lookups enriched → `particularsLabel`).
-2. Loads linked **New Case Inward** for borrower and branch chain (bank, branch, RBO, place, unit).
-3. Loads **current account** from `npaCurrentAc` for GST, account block, and bank name on the remittance table.
+2. Loads linked **New Case Inward** by `caseNo` via `loadInvoiceLinkedCaseByCaseId` (no NCI row scope — supports cross-unit billing) for borrower and branch chain (bank, branch, RBO, place).
+3. Loads **Unit** from `billToUnit` on the invoice (not from the case unit).
+4. Loads **current account** from `npaCurrentAc` for GST, account block, and bank name on the remittance table.
+
+Recovery invoice only: when `caseNo` is empty, case-linked header/borrower/recovery-details sections print blank.
 
 ### Vendor code (SBI only)
 

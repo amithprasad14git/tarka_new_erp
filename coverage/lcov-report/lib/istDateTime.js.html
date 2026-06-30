@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.85% </span>
+                <span class="strong">3.57% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/28</span>
+                <span class='fraction'>1/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">27.27% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/22</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">45.83% </span>
+                <span class="strong">4.16% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/24</span>
+                <span class='fraction'>1/24</span>
             </div>
         
             
@@ -144,16 +144,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">135x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -180,7 +180,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -188,11 +188,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -220,13 +220,13 @@
 const IST_TIMEZONE = "Asia/Kolkata";
 &nbsp;
 /** Pulls named parts out of Intl formatToParts (year, month, hour, etc.). */
-function partsByType(parts) {
+function <span class="fstat-no" title="function not covered" >partsByType(</span>parts) {
   /** @type {Record&lt;string, string&gt;} */
-  const out = {};
-  for (const p of parts) {
-    if (p.type !== "literal") out[p.type] = p.value;
+  const out = <span class="cstat-no" title="statement not covered" >{};</span>
+<span class="cstat-no" title="statement not covered" >  for (const p of parts) {</span>
+<span class="cstat-no" title="statement not covered" >    if (p.type !== "literal") <span class="cstat-no" title="statement not covered" >out[p.type] = p.value;</span></span>
   }
-  return out;
+<span class="cstat-no" title="statement not covered" >  return out;</span>
 }
 &nbsp;
 /** MySQL DATETIME string in IST: `YYYY-MM-DD HH:mm:ss` (row audit, audit_logs, permissions matrix). */
@@ -252,8 +252,8 @@ export function <span class="fstat-no" title="function not covered" >formatInsta
  * Calendar day YYYY-MM-DD in IST for an instant (fixes ISO strings whose UTC date ≠ IST calendar day).
  * Used by `toYyyyMmDdForSqlDateField`; call `getYmdISTFromInstant(new Date())` for today in IST.
  */
-export function getYmdISTFromInstant(date) {
-  const parts = partsByType(
+export function <span class="fstat-no" title="function not covered" >getYmdISTFromInstant(</span>date) {
+  const parts = <span class="cstat-no" title="statement not covered" >partsByType(</span>
     new Intl.DateTimeFormat("en-CA", {
       timeZone: IST_TIMEZONE,
       year: "numeric",
@@ -261,11 +261,11 @@ export function getYmdISTFromInstant(date) {
       day: "2-digit"
     }).formatToParts(date)
   );
-  const y = parts.year;
-  const mo = parts.month;
-  const d = parts.day;
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (!y || !mo || !d) <span class="cstat-no" title="statement not covered" >return "";</span>
-  return `${y}-${mo}-${d}`;
+  const y = <span class="cstat-no" title="statement not covered" >parts.year;</span>
+  const mo = <span class="cstat-no" title="statement not covered" >parts.month;</span>
+  const d = <span class="cstat-no" title="statement not covered" >parts.day;</span>
+<span class="cstat-no" title="statement not covered" >  if (!y || !mo || !d) <span class="cstat-no" title="statement not covered" >return "";</span></span>
+<span class="cstat-no" title="statement not covered" >  return `${y}-${mo}-${d}`;</span>
 }
 &nbsp;
 /** Subtract whole calendar days from a YYYY-MM-DD string (no DST in India). */
@@ -289,7 +289,7 @@ export function <span class="fstat-no" title="function not covered" >subtractCal
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-28T09:43:39.077Z
+                at 2026-06-29T17:45:41.461Z
             </div>
         <script src="../prettify.js"></script>
         <script>

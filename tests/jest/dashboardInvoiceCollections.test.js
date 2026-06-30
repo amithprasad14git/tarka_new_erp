@@ -141,6 +141,8 @@ describe("aggregateInvoiceCollections", () => {
       String(c[0]).includes("recovery_invoice") && String(c[0]).includes("SUM(inv.grandTotal)")
     );
     expect(billedCall).toBeTruthy();
+    expect(String(billedCall[0])).toContain("LEFT JOIN new_case_inward");
+    expect(String(billedCall[0])).toContain("inv.billToUnit IN");
     expect(String(billedCall[0])).toContain("cancelledInvoice");
     expect(String(billedCall[0])).toContain("DATE(inv.date) >=");
   });

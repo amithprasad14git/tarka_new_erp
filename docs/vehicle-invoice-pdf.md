@@ -33,10 +33,10 @@ One PDF file with **three pages** (same copy labels as Recovery / SARFAESI):
 
 | Section | Source |
 |---------|--------|
-| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** |
+| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** (`caseNo`) |
 | Invoice date, invoice number | **vehicle_invoice** row |
-| Unit | Unit on the case |
-| Case number, borrower, loan type | Linked **New Case Inward** |
+| Unit | **`billToUnit`** on the invoice → `unit_master` (not the case unit) |
+| Case number, borrower, loan type | Linked **New Case Inward** via `caseNo` |
 | Charges table | Child rows in **vehicle_invoice_charges** (`vehicle_charges` key): SL, Particulars, Remarks, Amount |
 | Amount in words | Sum of charge **Amount** values |
 | GST number | **current_account_master** linked on the invoice (`npaCurrentAc`) |
@@ -75,7 +75,7 @@ There is **no** merged title row above the charges table (headers start at SL. N
 | `lib/modules/vehicleInvoiceClient.js` | Browser download + Print button helpers |
 | `config/modules.js` | `vehicle_invoice.postCreateAck.showPrintPdf`, child `vehicle_charges` |
 
-Tests: `tests/jest/vehicleInvoicePdf.test.js`.
+Tests: `tests/jest/vehicleInvoicePdf.test.js`, `tests/jest/api.vehicle-invoice-pdf.route.test.js`.
 
 ---
 

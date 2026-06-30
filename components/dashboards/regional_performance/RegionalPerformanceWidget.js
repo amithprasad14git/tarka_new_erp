@@ -3,21 +3,20 @@
 // Dashboard widget UI — Regional Performance (full-width four-panel FY settled summary).
 
 /**
- * Landing widget: Summary KPIs | loan type pie | region bars | month-wise settled.
+ * Landing widget: Summary KPIs | loan type pie | region bars.
  * Data from GET /api/dashboard/regional_performance (see lib/dashboards/regional_performance/).
- * Layout reuses dashboard-recovery-layout (same grid as Unit Wise Recovery Target).
+ * Layout reuses dashboard-recovery-layout (three panels; region column fills remaining width).
  * Guide: docs/DASHBOARDS.md
  */
 
 import DashboardWidgetRefreshHeader from "../DashboardWidgetRefreshHeader";
 import DashboardSectionHeader from "../DashboardSectionHeader";
 import BankRecoveryPie from "../BankRecoveryPie";
-import MonthWiseRecoveryBars from "../MonthWiseRecoveryBars";
 import RegionalPerformanceKpis from "./RegionalPerformanceKpis";
 import RegionPerformanceBars from "./RegionPerformanceBars";
 
 /**
- * Full-width Regional Performance widget — four panels from API payload.
+ * Full-width Regional Performance widget — three panels from API payload.
  * @param {{
  *   data: object,
  *   loading?: boolean,
@@ -34,7 +33,6 @@ export default function RegionalPerformanceWidget({
   const totals = data?.totals || { caseCount: 0, amountRecovered: 0, npaReduced: 0 };
   const byLoanType = data?.byLoanType || [];
   const byRegion = data?.byRegion || [];
-  const monthWiseSettled = data?.monthWiseSettled || [];
   const fyLabel = data?.financialYear?.yearRangeLabel || data?.financialYear?.yearCode || "";
   const message = data?.message || "";
 
@@ -42,8 +40,7 @@ export default function RegionalPerformanceWidget({
     totals.caseCount > 0 ||
     totals.amountRecovered > 0 ||
     byLoanType.length > 0 ||
-    byRegion.length > 0 ||
-    monthWiseSettled.length > 0;
+    byRegion.length > 0;
 
   // BankRecoveryPie expects bankId/bankLabel — map loan type rows to that shape.
   const loanPieRows = (() => {
@@ -72,7 +69,7 @@ export default function RegionalPerformanceWidget({
       {message && !hasChartData ? (
         <p className="dashboard-widget-empty">{message}</p>
       ) : (
-        <div className="dashboard-recovery-layout">
+        <div className="dashboard-recovery-layout dashboard-recovery-layout--regional">
           {/* Panel 1 — settled case count, cash recovered, NPA reduced KPIs */}
           <div className="dashboard-recovery-col dashboard-recovery-col--kpis">
             <div className="dashboard-recovery-panel dashboard-recovery-panel--kpis">
@@ -100,22 +97,12 @@ export default function RegionalPerformanceWidget({
             </div>
           </div>
 
-          {/* Panel 3 — horizontal bars by RBO region */}
-          <div className="dashboard-recovery-col dashboard-recovery-col--donut">
+          {/* Panel 3 — horizontal bars by RBO region (fills remaining width) */}
+          <div className="dashboard-recovery-col dashboard-recovery-col--donut dashboard-recovery-col--region-stretch">
             <div className="dashboard-recovery-panel">
               <DashboardSectionHeader title="By Region" subtitle="RBO Cash Recovered" />
               <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--region">
                 <RegionPerformanceBars rows={byRegion} />
-              </div>
-            </div>
-          </div>
-
-          {/* Panel 4 — month-by-month settled case trend */}
-          <div className="dashboard-recovery-col dashboard-recovery-col--months">
-            <div className="dashboard-recovery-panel">
-              <DashboardSectionHeader title="Month-Wise Settled" subtitle="Settlement Timing (FY)" />
-              <div className="dashboard-recovery-panel-body dashboard-recovery-panel-body--months">
-                <MonthWiseRecoveryBars rows={monthWiseSettled} variant="inline" hideHeading />
               </div>
             </div>
           </div>

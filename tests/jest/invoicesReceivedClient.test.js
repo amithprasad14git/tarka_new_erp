@@ -6,6 +6,10 @@
  */
 
 const { computeInvoicesReceivedAmounts } = require("../../lib/modules/invoicesReceivedAmounts");
+const {
+  buildInvoicesReceivedDraftFromRow,
+  normalizeInvoiceFkId
+} = require("../../lib/modules/invoicesReceivedFk");
 
 // Checks money amounts convert to the correct words for invoices and letters.
 describe("computeInvoicesReceivedAmounts", () => {
@@ -45,6 +49,33 @@ describe("computeInvoicesReceivedAmounts", () => {
     });
     expect(r.tdsAmount).toBe(100);
     expect(r.receivedAmount).toBe(900);
+  });
+});
+
+describe("invoicesReceivedClient invoice FK normalization", () => {
+  test("normalizeInvoiceFkId treats 0 and empty as unset", () => {
+    expect(normalizeInvoiceFkId(0)).toBe("");
+    expect(normalizeInvoiceFkId("0")).toBe("");
+    expect(normalizeInvoiceFkId(null)).toBe("");
+    expect(normalizeInvoiceFkId("")).toBe("");
+    expect(normalizeInvoiceFkId(12)).toBe("12");
+    expect(normalizeInvoiceFkId("12")).toBe("12");
+  });
+
+  test("buildInvoicesReceivedDraftFromRow clears unused invoice slots with legacy 0", () => {
+    const draft = buildInvoicesReceivedDraftFromRow({
+      recoveryInvoice: 5,
+      recoveryInvoiceLabel: "RI/1",
+      sarfaesiInvoice: 0,
+      sarfaesiInvoiceLabel: "should-not-show",
+      vehicleInvoice: 0
+    });
+    expect(draft.recoveryInvoice).toBe("5");
+    expect(draft.recoveryInvoiceLabel).toBe("RI/1");
+    expect(draft.sarfaesiInvoice).toBe("");
+    expect(draft.sarfaesiInvoiceLabel).toBe("");
+    expect(draft.vehicleInvoice).toBe("");
+    expect(draft.vehicleInvoiceLabel).toBe("");
   });
 });
 

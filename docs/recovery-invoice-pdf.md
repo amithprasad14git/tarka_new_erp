@@ -38,10 +38,10 @@ The PDF is built from the saved Recovery Invoice and related master data:
 
 | Section | Main source |
 |---------|-------------|
-| Bank, branch, place, RBO/RO | Branch on the linked **New Case Inward** → branch master chain |
+| Bank, branch, place, RBO/RO | Branch on the linked **New Case Inward** (`caseNo`) → branch master chain; blank when no case |
 | Invoice date, invoice number | Recovery Invoice record |
-| Unit code | Unit on the case |
-| Case number, borrower, loan details | Linked **New Case Inward** |
+| Unit code | **`billToUnit`** on the invoice → `unit_master` (not the case unit) |
+| Case number, borrower, loan details | Linked **New Case Inward** via `caseNo`; blank when `caseNo` is empty |
 | Recovery details table | All **amount recovered** rows from that case |
 | Recovery charges table | **recovery_charges** child rows on the invoice |
 | Amount in words | Total of charge amounts (Indian wording) |
@@ -51,6 +51,10 @@ The PDF is built from the saved Recovery Invoice and related master data:
 | RCM note | Fixed legal text (GST under reverse charge) |
 
 There is **no** “Kindly transfer the invoice amount…” line on the PDF (removed by design).
+
+Recovery invoice allows an empty **Case No**. In that case, bank/branch/case/borrower/recovery-details sections print blank; date, invoice number, **Unit** (`billToUnit`), charges, and current account still appear.
+
+Cross-unit billing: the linked case is loaded by id for print even when New Case Inward grid row scope would hide that case.
 
 ---
 

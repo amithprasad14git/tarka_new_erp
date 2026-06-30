@@ -80,51 +80,29 @@ describe("buildAssetsInvestmentsLedgerWhereSql", () => {
     expect(values).toEqual(["2026-01-01", "2026-03-31"]);
   });
 
-  test("applies optional filters for admin user", () => {
-    const { whereSql, values } = buildAssetsInvestmentsLedgerWhereSql(
-      {
-        fromMonth: "2026-01",
-        toMonth: "2026-01",
-        unit: "3",
-        paidTo: "10",
-        paymentMode: "Cheque",
-        npaCurrentAc: "7"
-      },
-      { role: 1 }
-    );
+  test("applies optional filters when set in header", () => {
+    const { whereSql, values } = buildAssetsInvestmentsLedgerWhereSql({
+      fromMonth: "2026-01",
+      toMonth: "2026-01",
+      unit: "3",
+      paidTo: "10",
+      paymentMode: "Cheque",
+      npaCurrentAc: "7"
+    });
     expect(whereSql).toContain("aai.unit = ?");
     expect(whereSql).toContain("aai.paidTo = ?");
     expect(whereSql).toContain("aai.paymentMode = ?");
     expect(whereSql).toContain("aai.npaCurrentAc = ?");
-    expect(values).toEqual([
-      "2026-01-01",
-      "2026-01-31",
-      3,
-      10,
-      "Cheque",
-      7
-    ]);
+    expect(values).toEqual(["2026-01-01", "2026-01-31", 3, 10, "Cheque", 7]);
   });
 
-  test("role 2 enforces session unit and ignores unit filter", () => {
-    const { whereSql, values } = buildAssetsInvestmentsLedgerWhereSql(
-      {
-        fromMonth: "2026-01",
-        toMonth: "2026-01",
-        unit: "99"
-      },
-      { role: 2, unit: 5 }
-    );
-    expect(whereSql).toContain("aai.unit = ?");
-    expect(values).toEqual(["2026-01-01", "2026-01-31", 5]);
-  });
-
-  test("role 2 with no session unit returns no rows", () => {
-    const { whereSql, values } = buildAssetsInvestmentsLedgerWhereSql(
-      { fromMonth: "2026-01", toMonth: "2026-01" },
-      { role: 2 }
-    );
-    expect(whereSql).toContain("1=0");
+  test("does not apply unit filter when unit header is empty", () => {
+    const { whereSql, values } = buildAssetsInvestmentsLedgerWhereSql({
+      fromMonth: "2026-01",
+      toMonth: "2026-01"
+    });
+    expect(whereSql).not.toContain("aai.unit = ?");
+    expect(whereSql).not.toContain("1=0");
     expect(values).toEqual(["2026-01-01", "2026-01-31"]);
   });
 });
