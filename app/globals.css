@@ -3838,6 +3838,20 @@ button {
   line-height: 1.45;
 }
 
+.post-create-ack-value-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.post-create-ack-value-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .post-create-ack-value {
   font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
   font-size: 18px;
@@ -6665,10 +6679,6 @@ button.master-child-icon-act:disabled {
   min-width: 0;
 }
 
-.report-filters-collapsed-text .module-section-title {
-  margin-bottom: 0.25rem;
-}
-
 .report-filters-collapsed-summary {
   margin: 0;
   font-size: var(--report-filter-font-size, calc(0.85rem - 1pt));
@@ -6954,6 +6964,58 @@ button.master-child-icon-act:disabled {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--panel);
+}
+
+.report-output-table-wrap--fit {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.report-output-table-wrap--fit .report-output-table-scroll-outer,
+.report-output-table-wrap--fit .report-output-table-scroll {
+  width: auto;
+  max-width: 100%;
+}
+
+.report-output-table-wrap--fit .report-output-table {
+  width: auto;
+  table-layout: auto;
+}
+
+.report-output--centered .report-output-header {
+  text-align: center;
+  padding-right: 0;
+}
+
+.report-output--centered .report-output-logo--banner {
+  margin-inline: auto;
+}
+
+.report-output--centered .report-output-title {
+  text-align: center;
+}
+
+.report-output--centered.report-output:has(.report-output-toolbar) .report-output-filter-meta-row,
+.report-output--centered .report-output-filter-meta-row {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-right: 0;
+  text-align: center;
+}
+
+.report-output--centered .report-output-filter-meta-row .report-output-filter-summary {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0.35rem 0 0;
+  text-align: center;
+}
+
+.report-output--centered .report-output-meta {
+  display: inline-block;
+  margin: 0.35rem 0 0;
+  text-align: center;
 }
 
 .report-output-table-scroll-outer {

@@ -111,6 +111,7 @@ describe("accountsSuspenseEntry module", () => {
 
     expect(ACCOUNTS_SUSPENSE_ENTRY_MODULE_KEY).toBe("accounts_suspense_entry");
     expect(ACCOUNTS_SUSPENSE_ENTRY_POST_CREATE_ACK_CONFIG.field).toBe("voucherNo");
+    expect(ACCOUNTS_SUSPENSE_ENTRY_POST_CREATE_ACK_CONFIG.valueLabel).toBe("Voucher No");
   });
 
   test("assignAccountsSuspenseEntryVoucherNo rejects when row missing", async () => {

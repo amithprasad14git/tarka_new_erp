@@ -22,7 +22,8 @@ jest.mock("../../config/modules", () => ({
     recovery_invoice: { table: "recovery_invoice" },
     sarfaesi_invoice: { table: "sarfaesi_invoice" },
     vehicle_invoice: { table: "vehicle_invoice" },
-    lookup_value_master: { table: "lookup_value_master" }
+    lookup_value_master: { table: "lookup_value_master" },
+    lookup_type_master: { table: "lookup_type_master" }
   }
 }));
 
@@ -221,6 +222,85 @@ describe("FY freeze on accounts and invoice modules", () => {
       })
     ).resolves.toBeUndefined();
     expect(conn.query).not.toHaveBeenCalled();
+  });
+
+  const unlockOldRow = {
+    date: TEST_DATE,
+    caseNo: 1,
+    billToUnit: 2,
+    npaCurrentAc: 3,
+    cancelledInvoice: "No",
+    finalInvoice: "Yes",
+    grandTotal: 1000
+  };
+  const unlockMerged = { finalInvoice: "No", caseNo: 1 };
+  const nciLoanCategoryRoute = {
+    when: (sql) => sql.includes("new_case_inward") && sql.includes("loanCategory"),
+    reply: [[{ id: 1 }]]
+  };
+
+  test.each([
+    {
+      name: "recovery_invoice",
+      expectNoQueries: true,
+      run: (conn) =>
+        applyRecoveryInvoiceBeforeWrite(conn, {
+          oldRow: unlockOldRow,
+          merged: unlockMerged,
+          childTableRows: { recovery_charges: [{ amount: 1000 }] },
+          user: { role: 2 }
+        })
+    },
+    {
+      name: "sarfaesi_invoice",
+      expectNoQueries: false,
+      run: (conn) =>
+        applySarfaesiInvoiceBeforeWrite(conn, {
+          oldRow: unlockOldRow,
+          merged: unlockMerged,
+          childTableRows: { sarfaesi_charges: [{ amount: 1000 }] },
+          user: { role: 2 }
+        })
+    },
+    {
+      name: "vehicle_invoice",
+      expectNoQueries: false,
+      run: (conn) =>
+        applyVehicleInvoiceBeforeWrite(conn, {
+          oldRow: unlockOldRow,
+          merged: unlockMerged,
+          childTableRows: { vehicle_charges: [{ amount: 1000 }] },
+          user: { role: 2 }
+        })
+    }
+  ])(
+    "allows role 2 $name unlock edit (Final Yes to No only) when FY is frozen",
+    async ({ run, expectNoQueries }) => {
+      const conn = createConn([nciLoanCategoryRoute]);
+      await expect(run(conn)).resolves.toBeUndefined();
+      const fyCalls = conn.query.mock.calls.filter(([sql]) =>
+        String(sql).includes("freezeTransactions")
+      );
+      expect(fyCalls).toHaveLength(0);
+      if (expectNoQueries) {
+        expect(conn.query).not.toHaveBeenCalled();
+      }
+    }
+  );
+
+  test("still blocks role 2 recovery invoice when FY frozen and charges change", async () => {
+    const conn = createConn();
+    await expect(
+      applyRecoveryInvoiceBeforeWrite(conn, {
+        oldRow: unlockOldRow,
+        merged: unlockMerged,
+        childTableRows: { recovery_charges: [{ amount: 500 }] },
+        user: { role: 2 }
+      })
+    ).rejects.toMatchObject({
+      code: "RECOVERY_INVOICE_VALIDATION_FAILED",
+      message: FREEZE_TRANSACTIONS_LOCKED_MESSAGE
+    });
   });
 });
 

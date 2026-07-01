@@ -18,6 +18,7 @@ import { useEffect, useId, useState } from "react";
 export default function PostCreateAckModal({
   open,
   value,
+  valueLabel,
   title,
   hint,
   recordId,
@@ -42,6 +43,7 @@ export default function PostCreateAckModal({
   const hintText =
     hint != null && String(hint).trim() !== "" ? String(hint).trim() : "Note this reference before continuing.";
   const hasValue = !suppressValue && value != null && String(value).trim() !== "";
+  const valueLabelText = valueLabel != null && String(valueLabel).trim() !== "" ? String(valueLabel).trim() : "";
 
   async function handleCopy() {
     try {
@@ -77,8 +79,11 @@ export default function PostCreateAckModal({
         <div className="post-create-ack-modal-body">
           <p className="post-create-ack-hint">{hintText}</p>
           {hasValue ? (
-            <div className="post-create-ack-value" tabIndex={0}>
-              {value}
+            <div className="post-create-ack-value-wrap">
+              {valueLabelText ? <div className="post-create-ack-value-label">{valueLabelText}</div> : null}
+              <div className="post-create-ack-value" tabIndex={0}>
+                {value}
+              </div>
             </div>
           ) : null}
         </div>

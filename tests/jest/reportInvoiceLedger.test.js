@@ -149,6 +149,15 @@ describe("buildInvoiceLedgerDimensionWhereSql", () => {
     expect(parts).toContain("inv.billToUnit = ?");
     expect(values).toEqual(["2026-02-01", "2026-02-28", 7]);
   });
+
+  test("uses explicit date range override for annual scope", () => {
+    const { parts, values } = buildInvoiceLedgerDimensionWhereSql(
+      {},
+      "inv",
+      { from: "2025-04-01", to: "2026-03-31" }
+    );
+    expect(values).toEqual(["2025-04-01", "2026-03-31"]);
+  });
 });
 
 describe("buildFilterSummaryText month and data type labels", () => {

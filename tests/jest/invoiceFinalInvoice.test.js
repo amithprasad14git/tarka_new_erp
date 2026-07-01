@@ -16,6 +16,7 @@ const {
   anyInvoiceFinalYesForCase,
   recomputeNciFinalInvoiceForCase,
   normalizeFinalInvoiceFlag,
+  isInvoiceFinalInvoiceUnlockUpdate,
   appendInvoiceCasePickerExcludeFinalYesFilter
 } = require("../../lib/modules/invoiceFinalInvoice");
 
@@ -79,6 +80,56 @@ describe("invoiceFinalInvoice", () => {
       };
       await recomputeNciFinalInvoiceForCase(conn, 10);
       expect(conn.query.mock.calls[1][1]).toEqual(["No", 10]);
+    });
+  });
+
+  describe("isInvoiceFinalInvoiceUnlockUpdate", () => {
+    const oldRow = {
+      date: "2026-04-10",
+      caseNo: 1,
+      billToUnit: 2,
+      npaCurrentAc: 3,
+      cancelledInvoice: "No",
+      finalInvoice: "Yes",
+      grandTotal: 1000
+    };
+
+    it("returns true for Final Yes to No with unchanged fields and matching charges", () => {
+      expect(
+        isInvoiceFinalInvoiceUnlockUpdate(oldRow, { finalInvoice: "No" }, { childTotal: 1000 })
+      ).toBe(true);
+    });
+
+    it("returns false when final stays Yes", () => {
+      expect(
+        isInvoiceFinalInvoiceUnlockUpdate(oldRow, { finalInvoice: "Yes" }, { childTotal: 1000 })
+      ).toBe(false);
+    });
+
+    it("returns false when date changes", () => {
+      expect(
+        isInvoiceFinalInvoiceUnlockUpdate(
+          oldRow,
+          { finalInvoice: "No", date: "2026-05-01" },
+          { childTotal: 1000 }
+        )
+      ).toBe(false);
+    });
+
+    it("returns false when caseNo changes", () => {
+      expect(
+        isInvoiceFinalInvoiceUnlockUpdate(
+          oldRow,
+          { finalInvoice: "No", caseNo: 99 },
+          { childTotal: 1000 }
+        )
+      ).toBe(false);
+    });
+
+    it("returns false when charge total differs from stored grandTotal", () => {
+      expect(
+        isInvoiceFinalInvoiceUnlockUpdate(oldRow, { finalInvoice: "No" }, { childTotal: 500 })
+      ).toBe(false);
     });
   });
 

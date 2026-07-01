@@ -1095,6 +1095,17 @@ export const reports = {
         }
       },
       {
+        name: "dataType",
+        type: "select",
+        label: "Data Type",
+        required: true,
+        default: "Detailed",
+        options: [
+          { label: "Detailed", value: "Detailed" },
+          { label: "Summary", value: "Summary" }
+        ]
+      },
+      {
         name: "outputFormat",
         type: "select",
         label: "Report Type",
@@ -1118,11 +1129,39 @@ export const reports = {
     },
 
     reportStyle: {
-      totalRow: { labelColumn: "entrustmentDate" }
+      totalRow: { labelColumn: "slNo" }
     },
 
     columns: [
       { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
+      {
+        key: "bankLabel",
+        label: "BANK",
+        align: "left",
+        widthExcel: 12,
+        widthHtml: "6rem",
+        hideWhenDataType: "Detailed",
+        hideWhenFilterSet: "bank"
+      },
+      {
+        key: "rboRoLabel",
+        label: "RBO/RO",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenDataType: "Detailed",
+        hideWhenFilterSet: "rbo_ro"
+      },
+      {
+        key: "caseCount",
+        label: "NO. OF CASES",
+        type: "number",
+        align: "center",
+        sum: true,
+        widthExcel: 12,
+        widthHtml: "6rem",
+        hideWhenDataType: "Detailed"
+      },
       {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
@@ -1130,24 +1169,66 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "7rem"
+        widthHtml: "7rem",
+        hideWhenDataType: "Summary"
       },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
-      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
-      { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
-      { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem", hideWhenDataType: "Summary" },
+      {
+        key: "hoZoLabel",
+        label: "HO/ZO",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "6rem",
+        hideWhenFilterSet: "ho_zo",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "rboRoLabel",
+        label: "RBO/RO",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenFilterSet: "rbo_ro",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "branchLabel",
+        label: "BRANCH",
+        align: "left",
+        widthExcel: 28,
+        widthHtml: "12rem",
+        hideWhenFilterSet: "branch",
+        hideWhenDataType: "Summary"
+      },
       {
         key: "receivedFromLabel",
         label: "RECEIVED FROM",
         align: "left",
         widthExcel: 14,
         widthHtml: "6rem",
-        hideWhenFilterSet: "receivedFrom"
+        hideWhenFilterSet: "receivedFrom",
+        hideWhenDataType: "Summary"
       },
-      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
-      { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
-      { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
+      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem", hideWhenDataType: "Summary" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem", hideWhenDataType: "Summary" },
+      {
+        key: "loanTypeLabel",
+        label: "LOAN TYPE",
+        align: "left",
+        widthExcel: 14,
+        widthHtml: "7rem",
+        hideWhenFilterSet: "loanType",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "npaStatusLabel",
+        label: "NPA STATUS",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenFilterSet: "npaStatus",
+        hideWhenDataType: "Summary"
+      },
       {
         key: "npaDate",
         label: "NPA DATE",
@@ -1155,7 +1236,8 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "7rem"
+        widthHtml: "7rem",
+        hideWhenDataType: "Summary"
       },
       {
         key: "amountRecovered",
@@ -1182,9 +1264,17 @@ export const reports = {
         dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
-        widthHtml: "7rem"
+        widthHtml: "7rem",
+        hideWhenDataType: "Summary"
       },
-      { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" }
+      {
+        key: "caseStatusLabel",
+        label: "CASE STATUS",
+        align: "left",
+        widthExcel: 16,
+        widthHtml: "8rem",
+        hideWhenDataType: "Summary"
+      }
     ],
 
     maxRows: 50000
@@ -2472,6 +2562,238 @@ export const reports = {
         sum: true,
         widthExcel: 14,
         widthHtml: "10rem"
+      }
+    ],
+
+    maxRows: 50000
+  },
+
+  //**********************************************************************************************************/
+  // Annual Invoice Ledger — summary by NPA Current AC, grouped sections. SQL: lib/reports/report_annual_invoice_ledger.js
+
+  report_annual_invoice_ledger: {
+    label: "Annual Invoice Ledger",
+    icon: "📆",
+    group: "Annual Accounts Reports",
+
+    fields: [
+      {
+        name: "financialYear",
+        type: "lookup",
+        label: "Financial Year",
+        required: true,
+        lookup: { module: "financial_year_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "unit",
+        type: "lookup",
+        label: "Unit",
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "bank",
+        type: "lookup",
+        label: "Bank",
+        lookup: { module: "bank_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "ho_zo",
+        type: "lookup",
+        label: "HO/ZO",
+        lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "rbo_ro",
+        type: "lookup",
+        label: "RBO/RO",
+        lookup: { module: "rbo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "branch",
+        type: "lookup",
+        label: "Branch",
+        lookup: { module: "branch_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "dataType",
+        type: "select",
+        label: "Data Type",
+        required: true,
+        default: "Show Active Invoices",
+        options: [
+          { label: "Show Active Invoices", value: "Show Active Invoices" },
+          { label: "Show Pending Invoices", value: "Show Pending Invoices" },
+          { label: "Show Cancelled Invoices", value: "Show Cancelled Invoices" }
+        ]
+      },
+      {
+        name: "outputFormat",
+        type: "select",
+        label: "Report Type",
+        required: true,
+        default: "HTML",
+        options: [
+          { label: "HTML", value: "HTML" },
+          { label: "Excel", value: "Excel" }
+        ]
+      }
+    ],
+
+    filterCascade: [
+      { parent: "unit", child: "npaCurrentAc", lovParam: "f_unit" },
+      { parent: "bank", child: "ho_zo", lovParam: "f_bank" },
+      { parent: "ho_zo", child: "rbo_ro", lovParam: "f_ho_zo" },
+      { parent: "rbo_ro", child: "branch", lovParam: "f_rbo_ro" }
+    ],
+
+    reportLayout: {
+      title: "ANNUAL INVOICE LEDGER",
+      filterSummaryExcludeFields: ["outputFormat"],
+      contentAlign: "center",
+      tableFitContent: true
+    },
+
+    reportStyle: {
+      totalRow: { labelColumn: "monthLabel", label: "Total" },
+      sectionHeaderRow: { background: "#c6e6ec" },
+      sectionTotalRow: { labelColumn: "monthLabel", label: "Subtotal", background: "#f9f984" }
+    },
+
+    columns: [
+      { key: "monthLabel", label: "MONTH", align: "left", widthExcel: 16, widthHtml: "16rem" },
+      {
+        key: "amount",
+        label: "AMOUNT",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "15rem"
+      }
+    ],
+
+    maxRows: 50000
+  },
+
+  //**********************************************************************************************************/
+  // Annual Invoices Received Ledger — summary by NPA Current AC, grouped sections. SQL: lib/reports/report_annual_invoices_received_ledger.js
+
+  report_annual_invoices_received_ledger: {
+    label: "Annual Invoices Received Ledger",
+    icon: "📆",
+    group: "Annual Accounts Reports",
+
+    fields: [
+      {
+        name: "financialYear",
+        type: "lookup",
+        label: "Financial Year",
+        required: true,
+        lookup: { module: "financial_year_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "unit",
+        type: "lookup",
+        label: "Unit",
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "bank",
+        type: "lookup",
+        label: "Bank",
+        lookup: { module: "bank_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "ho_zo",
+        type: "lookup",
+        label: "HO/ZO",
+        lookup: { module: "ho_zo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "rbo_ro",
+        type: "lookup",
+        label: "RBO/RO",
+        lookup: { module: "rbo_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "branch",
+        type: "lookup",
+        label: "Branch",
+        lookup: { module: "branch_master", valueField: "id", ui: "picker", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "outputFormat",
+        type: "select",
+        label: "Report Type",
+        required: true,
+        default: "HTML",
+        options: [
+          { label: "HTML", value: "HTML" },
+          { label: "Excel", value: "Excel" }
+        ]
+      }
+    ],
+
+    filterCascade: [
+      { parent: "unit", child: "npaCurrentAc", lovParam: "f_unit" },
+      { parent: "bank", child: "ho_zo", lovParam: "f_bank" },
+      { parent: "ho_zo", child: "rbo_ro", lovParam: "f_ho_zo" },
+      { parent: "rbo_ro", child: "branch", lovParam: "f_rbo_ro" }
+    ],
+
+    reportLayout: {
+      title: "ANNUAL INVOICES RECEIVED LEDGER",
+      filterSummaryExcludeFields: ["outputFormat"],
+      contentAlign: "center",
+      tableFitContent: true
+    },
+
+    reportStyle: {
+      totalRow: { labelColumn: "monthLabel", label: "Total" },
+      sectionHeaderRow: { background: "#c6e6ec" },
+      sectionTotalRow: { labelColumn: "monthLabel", label: "Subtotal", background: "#f9f984" }
+    },
+
+    columns: [
+      { key: "monthLabel", label: "MONTH", align: "left", widthExcel: 16, widthHtml: "16rem" },
+      {
+        key: "billedAmount",
+        label: "BILLED AMOUNT",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "13rem"
+      },
+      {
+        key: "tdsAmount",
+        label: "TDS AMOUNT",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "13rem"
+      },
+      {
+        key: "receivedAmount",
+        label: "RECEIVED AMOUNT",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "13rem"
       }
     ],
 

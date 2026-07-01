@@ -342,6 +342,18 @@ describe("crud.service", () => {
       expect(result.body.postCreateAck).toEqual({ field: "refNo", value: "REF-001" });
     });
 
+    test("create returns postCreateAck when SELECT row uses lowercase column name", async () => {
+      hasModulePermission.mockResolvedValueOnce(true);
+      const conn = makeTxConn();
+      pool.getConnection.mockResolvedValueOnce(conn);
+      pool.query.mockResolvedValueOnce([[{ id: 124, name: "B", refno: "REF-002" }]]);
+      conn.query.mockResolvedValueOnce([{ insertId: 124 }]);
+
+      const result = await createCrudRecord(user, "ack_module", { name: "B" });
+      expect(result.status).toBe(200);
+      expect(result.body.postCreateAck).toEqual({ field: "refNo", value: "REF-002" });
+    });
+
     test("new_case_inward create forwards admin date-validation bypass flag", async () => {
       const admin = { id: 1, role: 1, unit: 1 };
       hasModulePermission.mockResolvedValueOnce(true);

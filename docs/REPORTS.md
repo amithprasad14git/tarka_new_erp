@@ -252,13 +252,14 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_settled_cases`
 - **SQL:** `lib/reports/report_settled_cases.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** Settled From/To Date (month defaults; filters on **Settled Date**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** Settled From/To Date (month defaults; filters on **Settled Date**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, **Data Type** (Detailed | Summary), report type HTML | Excel
+- **Data Type (default: Detailed):** **Detailed** — one row per settled case (case-level columns). **Summary** — one row per **Bank + RBO** with **NO. OF CASES**, **AMOUNT RECOVERED**, and **NPA REDUCED** (`closureBalance`); same settled-case filter set as Detailed
 - **Settled only:** case status in `FINAL_CASE_STATUSES` **except Returned** — `Closed`, `Settled under Compromise`, `Regularized/Upgraded`, `Auctioned`, `Settled Under RINN`, `Settled by Bank`, `Renewal/Restructure`; open/ongoing and **Returned** excluded
 - **Date range:** `DATE(caseStatusUpdatedDate)` (Settled Date) between Settled From and Settled To Date — same date field as Region/Unit cumulative reports and Regional Performance dashboard. **Settled To Date** defaults to **today** (not month-end).
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case (display column; no minimum required for inclusion)
-- **Settled Date:** `caseStatusUpdatedDate` on the case record
-- **Case Status:** lookup label on the case record
-- **Totals row:** sums Closure Balance and Amount Recovered
+- **Settled Date:** `caseStatusUpdatedDate` on the case record (Detailed only)
+- **Case Status:** lookup label on the case record (Detailed only)
+- **Totals row:** label in SL. NO. column; sums NO. OF CASES (Summary), Amount Recovered, and NPA Reduced
 
 ### Search Loan AC
 
@@ -351,6 +352,31 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Columns:** Invoice Date, Invoice No, Case No, Borrower, Unit, Bank, Branch, NPA Current AC, Final Invoice, Grand Total (total row)
 - **Column hide:** Unit / Bank / Branch / NPA Current AC hidden when matching filter is set
 - **Note:** Case No, Borrower, Bank, and Branch are blank when the invoice has no linked case
+
+### Annual Invoice Ledger
+
+- **Key:** `report_annual_invoice_ledger`
+- **SQL:** `lib/reports/report_annual_invoice_ledger.js`
+- **Layout:** narrow centered table (`tableFitContent`) — Month + Amount columns only
+- **Group:** Annual Accounts Reports
+- **Filters:** Financial Year (required), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; **Data Type** (Show Active Invoices | Show Pending Invoices | Show Cancelled Invoices); report type HTML | Excel
+- **Source:** same union as Invoice Ledger (`recovery_invoice` + `sarfaesi_invoice` + `vehicle_invoice`); date bounds on invoice `date` from FY start/end
+- **Data Type rules:** identical to Invoice Ledger (active / pending / cancelled)
+- **Grouping:** one section per **NPA Current AC**; each section has one row per **month** that has invoices (summed amount); section subtotal + grand total on **Amount**
+- **Columns:** Month, Amount — no invoice date, number, case, or borrower columns
+- **NPA Current AC** appears in the section header, not as a table column
+
+### Annual Invoices Received Ledger
+
+- **Key:** `report_annual_invoices_received_ledger`
+- **SQL:** `lib/reports/report_annual_invoices_received_ledger.js`
+- **Layout:** narrow centered table (`tableFitContent`) — Month + Billed Amount + TDS Amount + Received Amount columns
+- **Group:** Annual Accounts Reports
+- **Filters:** Financial Year (required), optional Unit, NPA Current AC, Bank, HO/ZO, RBO/RO, Branch; report type HTML | Excel
+- **Source:** same joins as Invoices Received Ledger (`invoices_received` → linked invoice → optional case → bank hierarchy); date bounds on **`receivedDate`** from FY start/end
+- **Grouping:** one section per **NPA Current AC**; each section has one row per **month** that has receipts (summed amounts); section subtotal + grand total on all three money columns
+- **Columns:** Month, Billed Amount, TDS Amount, Received Amount — no invoice date, number, case, or borrower columns
+- **NPA Current AC** appears in the section header, not as a table column
 
 ### Suspense AC Ledger
 

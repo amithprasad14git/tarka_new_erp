@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">6.66% </span>
+                <span class="strong">6.49% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>5/75</span>
+                <span class='fraction'>5/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>0/46</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">6.94% </span>
+                <span class="strong">6.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/72</span>
+                <span class='fraction'>5/74</span>
             </div>
         
             
@@ -280,7 +280,12 @@
 <a name='L215'></a><a href='#L215'>215</a>
 <a name='L216'></a><a href='#L216'>216</a>
 <a name='L217'></a><a href='#L217'>217</a>
-<a name='L218'></a><a href='#L218'>218</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -304,18 +309,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -333,6 +338,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -484,12 +490,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -512,6 +522,7 @@ import { escapeSqlTableId, escapeSqlTableIdForModuleConfig } from "../sqlModuleT
 import { toYyyyMmDdForSqlDateField } from "../sqlDateFieldValue";
 import {
   assertCaseEligibleForNewInvoice,
+  isInvoiceFinalInvoiceUnlockUpdate,
   normalizeFinalInvoiceFlag,
   syncNciFinalInvoiceAfterInvoiceWrite
 } from "./invoiceFinalInvoice";
@@ -700,14 +711,18 @@ export async function <span class="fstat-no" title="function not covered" >assig
 export async function <span class="fstat-no" title="function not covered" >applySarfaesiInvoiceBeforeWrite(</span>conn, { oldRow, merged, childTableRows, user }) {
   // Case must be SARFAESI loan category; totals and final-invoice flag applied on save.
   const parentData = <span class="cstat-no" title="statement not covered" >oldRow ? { ...oldRow, ...merged } : merged;</span>
-<span class="cstat-no" title="statement not covered" >  await assertSarfaesiInvoiceDateNotInFrozenFy(conn, parentData, user);</span>
+  const childTotal = <span class="cstat-no" title="statement not covered" >sumSarfaesiInvoiceChargesAmount(childTableRows);</span>
+  const unlockOnly =
+<span class="cstat-no" title="statement not covered" >    oldRow &amp;&amp; isInvoiceFinalInvoiceUnlockUpdate(oldRow, merged, { childTotal });</span>
+<span class="cstat-no" title="statement not covered" >  if (!unlockOnly) {</span>
+<span class="cstat-no" title="statement not covered" >    await assertSarfaesiInvoiceDateNotInFrozenFy(conn, parentData, user);</span>
+  }
 <span class="cstat-no" title="statement not covered" >  await assertCaseEligibleForNewInvoice(conn, merged?.caseNo, !oldRow);</span>
 <span class="cstat-no" title="statement not covered" >  await assertSarfaesiInvoiceCaseIsSarfaesiLoan(conn, merged?.caseNo);</span>
 <span class="cstat-no" title="statement not covered" >  if (merged &amp;&amp; "finalInvoice" in merged) {</span>
 <span class="cstat-no" title="statement not covered" >    merged.finalInvoice = normalizeFinalInvoiceFlag(merged.finalInvoice);</span>
   }
-  const total = <span class="cstat-no" title="statement not covered" >sumSarfaesiInvoiceChargesAmount(childTableRows);</span>
-<span class="cstat-no" title="statement not covered" >  merged.grandTotal = total;</span>
+<span class="cstat-no" title="statement not covered" >  merged.grandTotal = childTotal;</span>
 }
 &nbsp;
 /** After create/update — recompute `new_case_inward.finalInvoice` from all invoice modules. */
@@ -721,7 +736,7 @@ export async function <span class="fstat-no" title="function not covered" >after
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-29T17:32:47.614Z
+                at 2026-07-01T05:54:23.907Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

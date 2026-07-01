@@ -25,7 +25,7 @@ Quick map of every report-related source file. Behaviour and styling rules live 
 | `lib/reports/reportFilterValidation.js` | Validates filter form before SQL |
 | `lib/reports/reportFilterDefaults.js` | Default dates (month start/end, current month, today) for filter fields |
 | `lib/reports/monthFilterRange.js` | Month picker (`YYYY-MM`) → SQL date bounds and range validation |
-| `lib/reports/groupStandardLedgerSections.js` | Group flat ledger rows into sections with subtotals + grand total |
+| `lib/reports/groupStandardLedgerSections.js` | Group flat ledger rows into sections with subtotals + grand total; optional `sumKeys` for multi-column totals |
 | `lib/reports/applyReportExportTheme.js` | Merges `REPORT_EXPORT_THEME` into per-report config |
 
 ## Output building
@@ -83,6 +83,8 @@ Quick map of every report-related source file. Behaviour and styling rules live 
 | `report_current_ac_transfer_ledger` | `lib/reports/report_current_ac_transfer_ledger.js` |
 | `report_suspense_ac_ledger` | `lib/reports/report_suspense_ac_ledger.js` |
 | `report_invoice_ledger` | `lib/reports/report_invoice_ledger.js` |
+| `report_annual_invoice_ledger` | `lib/reports/report_annual_invoice_ledger.js` |
+| `report_annual_invoices_received_ledger` | `lib/reports/report_annual_invoices_received_ledger.js` |
 | `report_invoices_received_ledger` | `lib/reports/report_invoices_received_ledger.js` |
 
 ## UI

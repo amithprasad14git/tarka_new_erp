@@ -1665,6 +1665,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         setPostCreateAckOpen({
           id: Number(payload.id ?? editingRow?.id),
           value: String(pAck.value).trim(),
+          valueLabel: ackCfg.valueLabel,
           title: ackCfg.title,
           hint: ackCfg.hint,
           suppressValue: false,
@@ -1824,6 +1825,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
       <PostCreateAckModal
         open={postCreateAckOpen != null}
         value={postCreateAckOpen?.value}
+        valueLabel={postCreateAckOpen?.valueLabel}
         title={postCreateAckOpen?.title}
         hint={postCreateAckOpen?.hint}
         suppressValue={postCreateAckOpen?.suppressValue === true}

@@ -29,6 +29,7 @@ const groupIcons = {
   "Case Related Reports": "📊",
   "General Reports": "🗂️",
   "Accounts Reports": "📑",
+  "Annual Accounts Reports": "📆",
 };
 
 /**

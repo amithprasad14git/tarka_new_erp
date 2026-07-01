@@ -104,6 +104,7 @@
  * - `showPrintPdf` — if `true`, show a print button (handler is module-specific in MasterModuleClient); if `false`, hide it.
  * - `showCopyButton` — if `false`, hide Copy for the assigned reference (e.g. Public Notice: only Continue + print).
  * - `printButtonLabel` — optional label for the print button.
+ * - `valueLabel` — optional small label above the assigned value (e.g. "Voucher No", "Ref No").
  *
  * =============================================================================
  * MODULE-BY-MODULE VALIDATIONS (plain English summary)
@@ -1543,6 +1544,7 @@ export const modules = {
       field: "voucherNo",
       title: "Assets & Investments saved",
       hint: "Your voucher number is shown below. Continue to return to the list.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -1613,6 +1615,7 @@ export const modules = {
       field: "voucherNo",
       title: "Cash Deposit & Withdraw saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -1682,6 +1685,7 @@ export const modules = {
       field: "voucherNo",
       title: "Current AC Transfer saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -1727,6 +1731,7 @@ export const modules = {
       field: "voucherNo",
       title: "Expense Voucher saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -1808,6 +1813,7 @@ export const modules = {
       field: "voucherNo",
       title: "Loan entry saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -1895,6 +1901,7 @@ export const modules = {
       field: "voucherNo",
       title: "Suspense entry saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -2327,6 +2334,14 @@ export const modules = {
     group: "Invoice",
     table: "invoices_received",
     lookupDisplayField: "refNo",
+    postCreateAck: {
+      field: "refNo",
+      title: "Invoice Received saved",
+      hint: "Your reference number is shown below. Continue to enter another record.",
+      valueLabel: "Ref No",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
     fields: [
       {
         name: "refNo",

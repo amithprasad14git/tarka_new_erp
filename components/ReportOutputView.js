@@ -23,7 +23,23 @@ function cellAlignStyle(align) {
   return { textAlign: a };
 }
 
-function renderSumRowCells(columns, labelColKey, labelText, sumValues) {
+function htmlColumnMinWidth(widthHtml) {
+  const s = String(widthHtml ?? "").trim();
+  if (!s) return undefined;
+  if (/^calc\(/i.test(s) || /^[\d.]+\s*(rem|px|%)$/i.test(s)) return s;
+  return undefined;
+}
+
+function cellStyle(col, tableFitContent) {
+  const style = cellAlignStyle(col.align);
+  if (tableFitContent) {
+    const minWidth = htmlColumnMinWidth(col.widthHtml);
+    if (minWidth) style.minWidth = minWidth;
+  }
+  return style;
+}
+
+function renderSumRowCells(columns, labelColKey, labelText, sumValues, tableFitContent) {
   return columns.map((col) => {
     let content = "";
     if (col.key === labelColKey) content = labelText;
@@ -31,21 +47,21 @@ function renderSumRowCells(columns, labelColKey, labelText, sumValues) {
       content = formatReportAmountForDisplay(sumValues[col.key]);
     }
     return (
-      <td key={col.key} style={cellAlignStyle(col.align)}>
+      <td key={col.key} style={cellStyle(col, tableFitContent)}>
         {content}
       </td>
     );
   });
 }
 
-function renderDetailRow(columns, row, rowIndex) {
+function renderDetailRow(columns, row, rowIndex, tableFitContent) {
   return (
     <tr
       key={rowIndex}
       className={rowIndex % 2 === 0 ? "report-output-row-even" : "report-output-row-odd"}
     >
       {columns.map((col) => (
-        <td key={col.key} style={cellAlignStyle(col.align)}>
+        <td key={col.key} style={cellStyle(col, tableFitContent)}>
           {formatReportCellValue(col, row[col.key])}
         </td>
       ))}
@@ -91,6 +107,8 @@ export default function ReportOutputView({
 
   const colWidths = useMemo(() => htmlColumnWidthPercents(columns), [columns]);
   const htmlStyle = useMemo(() => getReportHtmlCssVars(fontPreset), [fontPreset]);
+  const centerContent = reportLayout.contentAlign === "center";
+  const tableFitContent = Boolean(reportLayout.tableFitContent);
 
   let zebraIndex = 0;
   const groupedBody = isGrouped
@@ -103,7 +121,7 @@ export default function ReportOutputView({
           </tr>
         ];
         for (const row of sectionRows) {
-          elements.push(renderDetailRow(columns, row, `section-${si}-row-${zebraIndex}`));
+          elements.push(renderDetailRow(columns, row, `section-${si}-row-${zebraIndex}`, tableFitContent));
           zebraIndex += 1;
         }
         if (columns.some((col) => col.sum) && section.subtotal) {
@@ -113,7 +131,8 @@ export default function ReportOutputView({
                 columns,
                 labelColKey,
                 sectionTotalRow.label || "Subtotal",
-                section.subtotal
+                section.subtotal,
+                tableFitContent
               )}
             </tr>
           );
@@ -124,7 +143,9 @@ export default function ReportOutputView({
 
   return (
     <section
-      className={`report-output card${fullscreen ? " report-output--fullscreen" : ""}`}
+      className={`report-output card${fullscreen ? " report-output--fullscreen" : ""}${
+        centerContent ? " report-output--centered" : ""
+      }`}
       aria-label="Report results"
       style={htmlStyle}
       data-font-preset={fontPreset}
@@ -161,25 +182,38 @@ export default function ReportOutputView({
       )}
 
       {hasTable ? (
-        <div className="report-output-table-wrap">
+        <div
+          className={`report-output-table-wrap${
+            tableFitContent ? " report-output-table-wrap--fit" : ""
+          }`}
+        >
           <ReportTableScrollRegion>
             <table className="report-output-table">
               <colgroup>
                 {columns.map((col, i) => (
-                  <col key={col.key} style={{ width: colWidths[i] }} />
+                  <col
+                    key={col.key}
+                    style={{
+                      width: tableFitContent
+                        ? htmlColumnMinWidth(col.widthHtml) || colWidths[i]
+                        : colWidths[i]
+                    }}
+                  />
                 ))}
               </colgroup>
               <thead>
                 <tr>
                   {columns.map((col) => (
-                    <th key={col.key}>{col.label}</th>
+                    <th key={col.key} style={cellStyle(col, tableFitContent)}>
+                      {col.label}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {isGrouped
                   ? groupedBody
-                  : rows.map((row, ri) => renderDetailRow(columns, row, ri))}
+                  : rows.map((row, ri) => renderDetailRow(columns, row, ri, tableFitContent))}
               </tbody>
               {showFlatTotals || showGrandTotal ? (
                 <tfoot>
@@ -188,7 +222,8 @@ export default function ReportOutputView({
                       columns,
                       labelColKey,
                       totalRow.label || "Total",
-                      isGrouped ? grandTotal : totals
+                      isGrouped ? grandTotal : totals,
+                      tableFitContent
                     )}
                   </tr>
                 </tfoot>

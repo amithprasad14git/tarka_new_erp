@@ -52,6 +52,7 @@ const {
   appendInvoicesReceivedRecoveryInvoicePickerFilter,
   enrichInvoicesReceivedInvoicePickerRows,
   invoicesReceivedInvoicePickerJoinParts,
+  INVOICES_RECEIVED_POST_CREATE_ACK_CONFIG,
   isInvoicesReceivedInvoicePickerList,
   normalizeInvoicesReceivedInvoiceFkFields,
   validateInvoicesReceivedBeforeWrite
@@ -214,6 +215,11 @@ describe("invoicesReceived module", () => {
         user: { role: 2 }
       })
     ).rejects.toThrow(FREEZE_TRANSACTIONS_LOCKED_MESSAGE);
+  });
+
+  test("postCreateAck config uses refNo with Ref No label", () => {
+    expect(INVOICES_RECEIVED_POST_CREATE_ACK_CONFIG.field).toBe("refNo");
+    expect(INVOICES_RECEIVED_POST_CREATE_ACK_CONFIG.valueLabel).toBe("Ref No");
   });
 });
 

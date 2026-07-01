@@ -232,9 +232,12 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
       <LoadingOverlay busy={excelLoading} label="Preparing Excel…" />
       <ToastNotice toast={toast} onClose={() => setToast(null)} />
 
+      <div className="master-module-header">
+        <h1 className="module-page-title">{config.label || reportKey}</h1>
+      </div>
+
       {filtersExpanded ? (
         <div className="card report-filters-card">
-          <h2 className="module-section-title">{config.label || reportKey}</h2>
           <DynamicForm
             key={formKey}
             formId={`report-filters-${reportKey}`}
@@ -260,7 +263,6 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
         <div className="card report-filters-card report-filters-card--collapsed">
           <div className="report-filters-collapsed-bar">
             <div className="report-filters-collapsed-text">
-              <h2 className="module-section-title">{config.label || reportKey}</h2>
               {collapsedFilterSummary ? (
                 <p className="report-filters-collapsed-summary">{collapsedFilterSummary}</p>
               ) : null}
