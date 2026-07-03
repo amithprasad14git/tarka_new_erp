@@ -85,6 +85,8 @@ Quick map of every report-related source file. Behaviour and styling rules live 
 | `report_invoice_ledger` | `lib/reports/report_invoice_ledger.js` |
 | `report_annual_invoice_ledger` | `lib/reports/report_annual_invoice_ledger.js` |
 | `report_annual_invoices_received_ledger` | `lib/reports/report_annual_invoices_received_ledger.js` |
+| `report_annual_expense_ledger` | `lib/reports/report_annual_expense_ledger.js` |
+| `report_annual_cash_deposit_withdraw_ledger` | `lib/reports/report_annual_cash_deposit_withdraw_ledger.js` |
 | `report_invoices_received_ledger` | `lib/reports/report_invoices_received_ledger.js` |
 
 ## UI

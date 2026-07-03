@@ -40,9 +40,10 @@ function cellStyle(col, tableFitContent) {
 }
 
 function renderSumRowCells(columns, labelColKey, labelText, sumValues, tableFitContent) {
+  const labelColExists = columns.some((col) => col.key === labelColKey);
   return columns.map((col) => {
     let content = "";
-    if (col.key === labelColKey) content = labelText;
+    if (col.key === labelColKey || (!labelColExists && columns[0]?.key === col.key)) content = labelText;
     else if (col.sum && sumValues?.[col.key] != null) {
       content = formatReportAmountForDisplay(sumValues[col.key]);
     }
@@ -76,7 +77,13 @@ function renderDetailRow(columns, row, rowIndex, tableFitContent) {
  *   columns?: object[],
  *   rows?: object[],
  *   totals?: Record<string, number>,
- *   groupedSections?: Array<{ headerLabel?: string, label?: string, rows?: object[], subtotal?: Record<string, number> }>,
+ *   groupedSections?: Array<{
+ *     headerLabel?: string,
+ *     label?: string,
+ *     rows?: object[],
+ *     monthGroups?: Array<{ headerLabel?: string, label?: string, rows?: object[], subtotal?: Record<string, number> }>,
+ *     subtotal?: Record<string, number>
+ *   }>,
  *   grandTotal?: Record<string, number>,
  *   filterSummary?: string,
  *   meta?: object
@@ -97,12 +104,20 @@ export default function ReportOutputView({
   const { fullscreen, setFullscreen } = useReportFullscreen();
   const totalRow = reportStyle?.totalRow || {};
   const sectionTotalRow = reportStyle?.sectionTotalRow || {};
+  const subgroupHeaderRow = reportStyle?.subgroupHeaderRow || {};
+  const subgroupTotalRow = reportStyle?.subgroupTotalRow || {};
   const labelColKey = totalRow.labelColumn || sectionTotalRow.labelColumn;
   const isGrouped = groupedSections.length > 0;
   const showFlatTotals = !isGrouped && columns.some((col) => col.sum) && Object.keys(totals).length > 0;
   const showGrandTotal =
     isGrouped && columns.some((col) => col.sum) && grandTotal && Object.keys(grandTotal).length > 0;
-  const groupedRowCount = groupedSections.reduce((n, s) => n + (s.rows?.length || 0), 0);
+  const groupedRowCount = groupedSections.reduce(
+    (n, s) =>
+      n +
+      (s.rows?.length || 0) +
+      (s.monthGroups || []).reduce((inner, g) => inner + (g.rows?.length || 0), 0),
+    0
+  );
   const hasTable = isGrouped ? groupedRowCount > 0 : rows.length > 0;
 
   const colWidths = useMemo(() => htmlColumnWidthPercents(columns), [columns]);
@@ -115,6 +130,7 @@ export default function ReportOutputView({
     ? groupedSections.flatMap((section, si) => {
         const headerText = section.headerLabel || section.label || "";
         const sectionRows = section.rows || [];
+        const monthGroups = section.monthGroups || [];
         const elements = [
           <tr key={`section-h-${si}`} className="report-output-section-header">
             <td colSpan={columns.length}>{headerText}</td>
@@ -123,6 +139,42 @@ export default function ReportOutputView({
         for (const row of sectionRows) {
           elements.push(renderDetailRow(columns, row, `section-${si}-row-${zebraIndex}`, tableFitContent));
           zebraIndex += 1;
+        }
+        for (let gi = 0; gi < monthGroups.length; gi++) {
+          const monthGroup = monthGroups[gi];
+          const subgroupText = monthGroup.headerLabel || monthGroup.label || "";
+          elements.push(
+            <tr
+              key={`section-${si}-group-h-${gi}`}
+              className="report-output-section-header"
+              style={subgroupHeaderRow.background ? { background: subgroupHeaderRow.background } : undefined}
+            >
+              <td colSpan={columns.length}>{subgroupText}</td>
+            </tr>
+          );
+          for (const row of monthGroup.rows || []) {
+            elements.push(
+              renderDetailRow(columns, row, `section-${si}-group-${gi}-row-${zebraIndex}`, tableFitContent)
+            );
+            zebraIndex += 1;
+          }
+          if (columns.some((col) => col.sum) && monthGroup.subtotal) {
+            elements.push(
+              <tr
+                key={`section-${si}-group-t-${gi}`}
+                className="report-output-section-total-row"
+                style={subgroupTotalRow.background ? { background: subgroupTotalRow.background } : undefined}
+              >
+                {renderSumRowCells(
+                  columns,
+                  subgroupTotalRow.labelColumn || labelColKey,
+                  subgroupTotalRow.label || "Subtotal",
+                  monthGroup.subtotal,
+                  tableFitContent
+                )}
+              </tr>
+            );
+          }
         }
         if (columns.some((col) => col.sum) && section.subtotal) {
           elements.push(

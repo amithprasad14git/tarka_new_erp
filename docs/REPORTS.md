@@ -378,6 +378,32 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Columns:** Month, Billed Amount, TDS Amount, Received Amount — no invoice date, number, case, or borrower columns
 - **NPA Current AC** appears in the section header, not as a table column
 
+### Annual Expense Ledger
+
+- **Key:** `report_annual_expense_ledger`
+- **SQL:** `lib/reports/report_annual_expense_ledger.js`
+- **Layout:** narrow centered grouped table (`tableFitContent`) with payment-mode amount columns
+- **Group:** Annual Accounts Reports
+- **Filters:** Financial Year (required), optional Unit, NPA Current AC, Payment Mode, Party, Expense Category; **Data Type** (Summary | Expense Category Wise); report type HTML | Excel
+- **Source:** `accounts_expense_voucher` joined to `unit_master`, `party_master`, `lookup_value_master`, `current_account_master`; date bounds on expense `date` from FY start/end
+- **Summary grouping:** one section per **NPA Current AC**; each section has one row per **month** with sums in **By Card / By Cheque / By Cash / By UPI**
+- **Expense Category Wise grouping:** one section per **NPA Current AC** with nested **month blocks**; each month block shows rows by **Expense Category** with the same four payment-mode columns
+- **Columns:** Summary => Month, By Card, By Cheque, By Cash, By UPI; Expense Category Wise => Expenditure Category, By Card, By Cheque, By Cash, By UPI
+- **Totals:** month-block subtotal (category-wise only), NPA section subtotal, grand total
+
+### Annual Cash Deposit & Withdraw Ledger
+
+- **Key:** `report_annual_cash_deposit_withdraw_ledger`
+- **SQL:** `lib/reports/report_annual_cash_deposit_withdraw_ledger.js`
+- **Layout:** narrow centered grouped table (`tableFitContent`) — Month + Amount columns
+- **Group:** Annual Accounts Reports
+- **Filters:** Financial Year (required), **Transaction Type** (Select | Withdraw | Deposit), optional NPA Current AC; report type HTML | Excel
+- **Source:** `accounts_cash_deposit_withdraw` joined to `unit_master`, `current_account_master`; FY date bounds on `date`
+- **Transaction Type rule:** only `Deposit` or `Withdraw` returns rows; `Select` intentionally yields no data
+- **Grouping:** one section per **NPA Current AC**; each section has one row per **month** with summed amount
+- **Columns:** Month, Amount
+- **Totals:** NPA section subtotal + grand total
+
 ### Suspense AC Ledger
 
 - **Key:** `report_suspense_ac_ledger`

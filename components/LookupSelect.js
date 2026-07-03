@@ -57,7 +57,7 @@ function normalizePreloadedOptions(options, lookup, labelField) {
   });
 }
 
-/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string) => void }} props */
+/** @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string, nextLabel?: string) => void }} props */
 export default function LookupSelect({
   name,
   id,
@@ -202,8 +202,15 @@ export default function LookupSelect({
         name={locked ? undefined : name}
         value={value}
         onChange={(e) => {
-          setValue(e.target.value);
-          if (typeof onValueChange === "function") onValueChange(e.target.value);
+          const nextValue = e.target.value;
+          setValue(nextValue);
+          if (typeof onValueChange === "function") {
+            const selectedRow = displayOptions.find(
+              (row) => String(row[lookup.valueField]) === String(nextValue)
+            );
+            const nextLabel = selectedRow ? formatLookupRowLabel(selectedRow, lookup) : "";
+            onValueChange(nextValue, nextLabel);
+          }
         }}
         required={!locked && Boolean(required)}
         disabled={loading || locked}

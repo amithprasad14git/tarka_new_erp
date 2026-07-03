@@ -101,6 +101,7 @@
  * - `field` — database column name (camelCase) on the parent row; must match what your after-create logic sets.
  * - `title` — modal heading (e.g. “Case number assigned”).
  * - `hint` — short line under the title (optional; sensible default in the UI).
+ * - `editTitle` / `editHint` — optional overrides when saving an existing record (e.g. invoice “saved” vs “generated”).
  * - `showPrintPdf` — if `true`, show a print button (handler is module-specific in MasterModuleClient); if `false`, hide it.
  * - `showCopyButton` — if `false`, hide Copy for the assigned reference (e.g. Public Notice: only Continue + print).
  * - `printButtonLabel` — optional label for the print button.
@@ -1761,7 +1762,7 @@ export const modules = {
         name: "expenseCategory", type: "lookup", label: "Expense Category", required: true, showInView: true,
         lookup: { module: "lookup_value_master", valueField: "id", filterLookupTypeName: "Payment Category", extraLovParams: { f_active: "Yes" } }
       },
-      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      { name: "remarks", type: "text", label: "Remarks", required: false, showInView: true },
       {
         name: "paymentMode",
         type: "select",
@@ -1948,6 +1949,8 @@ export const modules = {
       field: "invoiceNo",
       title: "Recovery Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "Recovery Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true,
       printButtonLabel: "Print"
     },
@@ -2074,6 +2077,8 @@ export const modules = {
       field: "invoiceNo",
       title: "SARFAESI Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "SARFAESI Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true,
       printButtonLabel: "Print"
     },
@@ -2207,6 +2212,8 @@ export const modules = {
       field: "invoiceNo",
       title: "Vehicle Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "Vehicle Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true
     },
     fields: [

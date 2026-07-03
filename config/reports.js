@@ -2801,6 +2801,250 @@ export const reports = {
   },
 
   //**********************************************************************************************************/
+  // Annual Expense Ledger — summary grouped by NPA Current AC with optional month blocks. SQL: lib/reports/report_annual_expense_ledger.js
+
+  report_annual_expense_ledger: {
+    label: "Annual Expense Ledger",
+    icon: "📆",
+    group: "Annual Accounts Reports",
+
+    fields: [
+      {
+        name: "financialYear",
+        type: "lookup",
+        label: "Financial Year",
+        required: true,
+        lookup: { module: "financial_year_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "unit",
+        type: "lookup",
+        label: "Unit",
+        lookup: { module: "unit_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "paymentMode",
+        type: "select",
+        label: "Payment Mode",
+        ui: { emptyOptionLabel: "All" },
+        options: [
+          { label: "Card", value: "Card" },
+          { label: "Cheque", value: "Cheque" },
+          { label: "Cash", value: "Cash" },
+          { label: "UPI", value: "UPI" }
+        ]
+      },
+      {
+        name: "paidTo",
+        type: "lookup",
+        label: "Party",
+        lookup: {
+          module: "party_master",
+          valueField: "id",
+          ui: "popup",
+          pickerLimit: 25,
+          pickerSortBy: "partyName",
+          extraLovParams: { f_active: "Yes" },
+          pickerColumns: [
+            { field: "partyName", header: "Party Name" },
+            { field: "address", header: "Address" }
+          ]
+        }
+      },
+      {
+        name: "expenseCategory",
+        type: "lookup",
+        label: "Expense Category",
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          filterLookupTypeName: "Payment Category",
+          extraLovParams: { f_active: "Yes" }
+        }
+      },
+      {
+        name: "dataType",
+        type: "select",
+        label: "Data Type",
+        required: true,
+        default: "Summary",
+        options: [
+          { label: "Summary", value: "Summary" },
+          { label: "Expense Category Wise", value: "Expense Category Wise" }
+        ]
+      },
+      {
+        name: "outputFormat",
+        type: "select",
+        label: "Report Type",
+        required: true,
+        default: "HTML",
+        options: [
+          { label: "HTML", value: "HTML" },
+          { label: "Excel", value: "Excel" }
+        ]
+      }
+    ],
+
+    filterCascade: [{ parent: "unit", child: "npaCurrentAc", lovParam: "f_unit" }],
+
+    reportLayout: {
+      title: "ANNUAL EXPENSE LEDGER",
+      filterSummaryExcludeFields: ["outputFormat"],
+      contentAlign: "center",
+      tableFitContent: true
+    },
+
+    reportStyle: {
+      totalRow: { labelColumn: "monthLabel", label: "Total" },
+      sectionHeaderRow: { background: "#c6e6ec" },
+      sectionTotalRow: { labelColumn: "monthLabel", label: "Subtotal", background: "#f9f984" },
+      subgroupHeaderRow: { background: "#e8f4f7" },
+      subgroupTotalRow: { labelColumn: "expenseCategoryLabel", label: "Month Total", background: "#fff7c7" }
+    },
+
+    columns: [
+      {
+        key: "monthLabel",
+        label: "MONTH",
+        align: "left",
+        widthExcel: 16,
+        widthHtml: "14rem",
+        hideWhenDataType: "Expense Category Wise"
+      },
+      {
+        key: "expenseCategoryLabel",
+        label: "EXPENDITURE CATEGORY",
+        align: "left",
+        widthExcel: 22,
+        widthHtml: "16rem",
+        hideWhenFilterSet: "expenseCategory",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "byCard",
+        label: "BY CARD",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "12rem"
+      },
+      {
+        key: "byCheque",
+        label: "BY CHEQUE",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "12rem"
+      },
+      {
+        key: "byCash",
+        label: "BY CASH",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "12rem"
+      },
+      {
+        key: "byUpi",
+        label: "BY UPI",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "12rem"
+      }
+    ],
+
+    maxRows: 50000
+  },
+
+  //**********************************************************************************************************/
+  // Annual Cash Deposit & Withdraw Ledger — summary by NPA Current AC, grouped sections. SQL: lib/reports/report_annual_cash_deposit_withdraw_ledger.js
+
+  report_annual_cash_deposit_withdraw_ledger: {
+    label: "Annual Cash Deposit & Withdraw Ledger",
+    icon: "📆",
+    group: "Annual Accounts Reports",
+
+    fields: [
+      {
+        name: "financialYear",
+        type: "lookup",
+        label: "Financial Year",
+        required: true,
+        lookup: { module: "financial_year_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
+      },
+      {
+        name: "transactionType",
+        type: "select",
+        label: "Transaction Type",
+        required: true,
+        default: "",
+        ui: { emptyOptionLabel: "Select" },
+        options: [
+          { label: "Withdraw", value: "Withdraw" },
+          { label: "Deposit", value: "Deposit" }
+        ]
+      },
+      {
+        name: "npaCurrentAc",
+        type: "lookup",
+        label: "NPA Current AC",
+        lookup: { module: "current_account_master", valueField: "id" }
+      },
+      {
+        name: "outputFormat",
+        type: "select",
+        label: "Report Type",
+        required: true,
+        default: "HTML",
+        options: [
+          { label: "HTML", value: "HTML" },
+          { label: "Excel", value: "Excel" }
+        ]
+      }
+    ],
+
+    reportLayout: {
+      title: "ANNUAL CASH DEPOSIT & WITHDRAW LEDGER",
+      filterSummaryExcludeFields: ["outputFormat"],
+      contentAlign: "center",
+      tableFitContent: true
+    },
+
+    reportStyle: {
+      totalRow: { labelColumn: "monthLabel", label: "Total" },
+      sectionHeaderRow: { background: "#c6e6ec" },
+      sectionTotalRow: { labelColumn: "monthLabel", label: "Subtotal", background: "#f9f984" }
+    },
+
+    columns: [
+      { key: "monthLabel", label: "MONTH", align: "left", widthExcel: 16, widthHtml: "16rem" },
+      {
+        key: "amount",
+        label: "AMOUNT",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 14,
+        widthHtml: "15rem"
+      }
+    ],
+
+    maxRows: 50000
+  },
+
+  //**********************************************************************************************************/
   // Invoices Received Ledger — standard table layout. SQL: lib/reports/report_invoices_received_ledger.js
 
   report_invoices_received_ledger: {

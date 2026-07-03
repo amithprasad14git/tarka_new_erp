@@ -25,6 +25,7 @@ import {
   readJsonResponse
 } from "../lib/fetchClientError";
 import { apiUserMessage } from "../lib/apiUserMessages";
+import { resolvePostCreateAckModalCopy } from "../lib/postCreateAck";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import {
   downloadNciBranchCopyPdf,
@@ -56,7 +57,6 @@ import {
   getPublicNoticePrintTargetId,
   isPublicNoticeModule,
   publicNoticeRefHintFromRow,
-  shouldShowPublicNoticeAckOnEdit,
   usePublicNoticeClientModel
 } from "../lib/modules/publicNoticeClient";
 import { useCaseSnapshotModel } from "../lib/modules/caseSnapshotClient";
@@ -69,7 +69,6 @@ import {
   isRecoveryInvoiceModule,
   mergeRecoveryInvoiceEntryInitialValues,
   recoveryInvoiceRefHintFromRow,
-  shouldShowRecoveryInvoiceAckOnEdit,
   useRecoveryInvoiceClientModel,
   validateRecoveryInvoiceClientSubmit
 } from "../lib/modules/recoveryInvoiceClient";
@@ -81,7 +80,6 @@ import {
   isSarfaesiInvoiceModule,
   mergeSarfaesiInvoiceEntryInitialValues,
   sarfaesiInvoiceRefHintFromRow,
-  shouldShowSarfaesiInvoiceAckOnEdit,
   useSarfaesiInvoiceClientModel,
   validateSarfaesiInvoiceClientSubmit
 } from "../lib/modules/sarfaesiInvoiceClient";
@@ -92,7 +90,6 @@ import {
   getVehicleInvoicePrintTargetId,
   isVehicleInvoiceModule,
   mergeVehicleInvoiceEntryInitialValues,
-  shouldShowVehicleInvoiceAckOnEdit,
   useVehicleInvoiceClientModel,
   validateVehicleInvoiceClientSubmit,
   vehicleInvoiceRefHintFromRow
@@ -123,7 +120,6 @@ import {
   getReturnCasePrintTargetId,
   isReturnCaseModule,
   returnCaseRefHintFromRow,
-  shouldShowReturnCaseAckOnEdit,
   useReturnCaseClientModel
 } from "../lib/modules/returnCaseClient";
 import { useSarfaesiCaseStatusUpdateClientModel } from "../lib/modules/sarfaesiCaseStatusUpdateClient";
@@ -1043,24 +1039,24 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setToast({ kind, message: normalizeToastMessage(kind, message) });
   }
 
-  function handleEntryFieldValueChange(fieldName, value) {
+  function handleEntryFieldValueChange(fieldName, value, label) {
     // Let snapshot model observe caseNo changes first.
     caseSnapshot.handleCaseFieldValueChange(fieldName, value);
-    if (invoicesReceivedClient.handleFieldValueChange(fieldName, value)) return;
-    if (recoveryInvoiceClient.handleFieldValueChange(fieldName, value)) return;
-    if (sarfaesiInvoiceClient.handleFieldValueChange(fieldName, value)) return;
-    if (vehicleInvoiceClient.handleFieldValueChange(fieldName, value)) return;
-    if (nciClient.onFieldValueChange(fieldName, value)) {
+    if (invoicesReceivedClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (recoveryInvoiceClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (sarfaesiInvoiceClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (vehicleInvoiceClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (nciClient.onFieldValueChange(fieldName, value, label)) {
       return;
     }
-    if (accountsCurrentAcTransferClient.handleFieldValueChange(fieldName, value)) return;
-    if (accountsCashDwClient.handleFieldValueChange(fieldName, value)) return;
-    if (accountsAssetsClient.handleFieldValueChange(fieldName, value)) return;
-    if (accountsExpenseVoucherClient.handleFieldValueChange(fieldName, value)) return;
+    if (accountsCurrentAcTransferClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (accountsCashDwClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (accountsAssetsClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (accountsExpenseVoucherClient.handleFieldValueChange(fieldName, value, label)) return;
     // accounts_loan_ac: cash clears NPA lookup; non-cash refetches first current a/c for unit (see accountsLoanAcClient.js).
-    if (accountsLoanAcClient.handleFieldValueChange(fieldName, value)) return;
-    if (transferClient.handleFieldValueChange(fieldName, value)) return;
-    if (returnCaseClient.handleFieldValueChange(fieldName, value)) return;
+    if (accountsLoanAcClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (transferClient.handleFieldValueChange(fieldName, value, label)) return;
+    if (returnCaseClient.handleFieldValueChange(fieldName, value, label)) return;
   }
 
   const loadRecords = async () => {
@@ -1651,23 +1647,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         pAck?.value != null &&
         String(pAck.value).trim() !== "" &&
         (!pAck.field || !ackCfg.field || pAck.field === ackCfg.field);
-      // New Case Inward: acknowledgement only on create. Public Notice: create and update.
-      const wantsAck =
-        Boolean(pAckValid) &&
-        (!editingRow ||
-          shouldShowPublicNoticeAckOnEdit(moduleKey, editingRow) ||
-          shouldShowRecoveryInvoiceAckOnEdit(moduleKey, editingRow) ||
-          shouldShowSarfaesiInvoiceAckOnEdit(moduleKey, editingRow) ||
-          shouldShowVehicleInvoiceAckOnEdit(moduleKey, editingRow) ||
-          shouldShowReturnCaseAckOnEdit(moduleKey, editingRow));
+      // Create: any module with postCreateAck. Edit: PDF-print modules (not routine NCI edits).
+      const wantsAckOnEdit =
+        Boolean(editingRow) &&
+        ackCfg?.showPrintPdf === true &&
+        moduleKey !== "new_case_inward";
+      const wantsAck = Boolean(pAckValid) && (!editingRow || wantsAckOnEdit);
 
       if (wantsAck) {
+        const { title, hint } = resolvePostCreateAckModalCopy(ackCfg, Boolean(editingRow));
         setPostCreateAckOpen({
           id: Number(payload.id ?? editingRow?.id),
           value: String(pAck.value).trim(),
           valueLabel: ackCfg.valueLabel,
-          title: ackCfg.title,
-          hint: ackCfg.hint,
+          title,
+          hint,
           suppressValue: false,
           showPrintPdf: ackCfg.showPrintPdf === true,
           showCopyButton: ackCfg.showCopyButton !== false,

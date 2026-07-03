@@ -47,6 +47,14 @@ jest.mock("../../config/modules", () => ({
         { name: "refNo", type: "text", required: false, excludeFromForm: true }
       ]
     },
+    pdf_ack_module: {
+      table: "pdf_ack_table",
+      postCreateAck: { field: "refNo", showPrintPdf: true },
+      fields: [
+        { name: "name", type: "text", required: true },
+        { name: "refNo", type: "text", required: false, excludeFromForm: true }
+      ]
+    },
     new_case_inward: {
       table: "nci",
       fields: [{ name: "loanAccountNo", type: "text", required: true }],
@@ -386,10 +394,39 @@ describe("crud.service", () => {
       canUserModifyRow.mockResolvedValueOnce(true);
 
       const result = await updateCrudRecord(user, "sample_module", 1, async () => ({ name: "New", amount: 100 }));
-      expect(result).toEqual({ status: 200, body: { ok: true } });
+      expect(result).toEqual({ status: 200, body: { ok: true, id: 1 } });
       expect(writeAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({ action: "update", moduleName: "sample_module", recordId: 1 })
       );
+    });
+
+    test("update returns postCreateAck when showPrintPdf is configured", async () => {
+      hasModulePermission.mockResolvedValueOnce(true);
+      pool.query
+        .mockResolvedValueOnce([[{ id: 42, name: "Old", refNo: "RC/FY26/0001" }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 42, name: "New", refNo: "RC/FY26/0001" }]]);
+      canUserModifyRow.mockResolvedValueOnce(true);
+
+      const result = await updateCrudRecord(user, "pdf_ack_module", 42, async () => ({ name: "New" }));
+      expect(result.status).toBe(200);
+      expect(result.body).toEqual({
+        ok: true,
+        id: 42,
+        postCreateAck: { field: "refNo", value: "RC/FY26/0001" }
+      });
+    });
+
+    test("update does not return postCreateAck when showPrintPdf is false", async () => {
+      hasModulePermission.mockResolvedValueOnce(true);
+      pool.query
+        .mockResolvedValueOnce([[{ id: 5, name: "Old", refNo: "REF-001" }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 5, name: "New", refNo: "REF-001" }]]);
+      canUserModifyRow.mockResolvedValueOnce(true);
+
+      const result = await updateCrudRecord(user, "ack_module", 5, async () => ({ name: "New" }));
+      expect(result).toEqual({ status: 200, body: { ok: true, id: 5 } });
     });
 
     test("row scope denied", async () => {
@@ -499,7 +536,7 @@ describe("crud.service", () => {
 
       const result = await updateCrudRecord(role2, "new_case_inward", 1, async () => ({ loanAccountNo: "123" }));
 
-      expect(result).toEqual({ status: 200, body: { ok: true } });
+      expect(result).toEqual({ status: 200, body: { ok: true, id: 1 } });
       expect(applyNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
         txConn,
         expect.objectContaining({
@@ -524,7 +561,7 @@ describe("crud.service", () => {
 
       const result = await updateCrudRecord(admin, "new_case_inward", 1, async () => ({ loanAccountNo: "123" }));
 
-      expect(result).toEqual({ status: 200, body: { ok: true } });
+      expect(result).toEqual({ status: 200, body: { ok: true, id: 1 } });
       expect(applyNewCaseInwardBeforeWrite).toHaveBeenCalledWith(
         txConn,
         expect.objectContaining({

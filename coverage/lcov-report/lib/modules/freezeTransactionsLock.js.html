@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.25% </span>
+                <span class="strong">6.25% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>13/16</span>
+                <span class='fraction'>1/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>5/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">7.69% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/13</span>
+                <span class='fraction'>1/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -140,44 +140,44 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Financial year “transaction freeze” — shared helper for many modules.
@@ -201,13 +201,13 @@ export const FREEZE_TRANSACTIONS_LOCKED_MESSAGE =
   "Transactions are locked for the selected financial year. Please contact the administrator.";
 &nbsp;
 /** Role 2 = unit operators; role 1 (admin) and other roles are not blocked by FY freeze. */
-export function shouldEnforceFreezeTransactionsForUser(user) {
+export function <span class="fstat-no" title="function not covered" >shouldEnforceFreezeTransactionsForUser(</span>user) {
   // Only branch/unit operators (role 2) are stopped; admins can override frozen years.
-  return Number(user?.role) === 2;
+<span class="cstat-no" title="statement not covered" >  return Number(user?.role) === 2;</span>
 }
 &nbsp;
-function normalizeAllowFlag(value) {
-  return String(value ?? <span class="branch-1 cbranch-no" title="branch not covered" >"")</span>
+function <span class="fstat-no" title="function not covered" >normalizeAllowFlag(</span>value) {
+<span class="cstat-no" title="statement not covered" >  return String(value ?? "")</span>
     .trim()
     .toLowerCase();
 }
@@ -215,27 +215,27 @@ function normalizeAllowFlag(value) {
 /**
  * @param {{ onBlocked: () =&gt; never }} options
  */
-export async function assertDateNotInFrozenFinancialYear(conn, date, { onBlocked }) {
-  const ymd = toYyyyMmDdForSqlDateField(date);
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (!ymd) <span class="cstat-no" title="statement not covered" >return;</span>
+export async function <span class="fstat-no" title="function not covered" >assertDateNotInFrozenFinancialYear(</span>conn, date, { onBlocked }) {
+  const ymd = <span class="cstat-no" title="statement not covered" >toYyyyMmDdForSqlDateField(date);</span>
+<span class="cstat-no" title="statement not covered" >  if (!ymd) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
   // No FY master configured — skip check rather than block every save.
-  const fy = modules.financial_year_master;
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (!fy?.table) <span class="cstat-no" title="statement not covered" >return;</span>
+  const fy = <span class="cstat-no" title="statement not covered" >modules.financial_year_master;</span>
+<span class="cstat-no" title="statement not covered" >  if (!fy?.table) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
-  const t = escapeSqlTableIdForModuleConfig(fy);
-  const [rows] = await conn.query(
+  const t = <span class="cstat-no" title="statement not covered" >escapeSqlTableIdForModuleConfig(fy);</span>
+  const [rows] = <span class="cstat-no" title="statement not covered" >await conn.query(</span>
     `SELECT freezeTransactions FROM ${t} WHERE ? BETWEEN startDate AND endDate`,
     [ymd]
   );
 &nbsp;
-  const hasFrozenYear = Array.isArray(rows)
-    ? rows.some((r) =&gt; normalizeAllowFlag(rowValueForField(r, "freezeTransactions")) === "yes")
-    : <span class="branch-1 cbranch-no" title="branch not covered" >false;</span>
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (!hasFrozenYear) <span class="cstat-no" title="statement not covered" >return;</span>
+  const hasFrozenYear = <span class="cstat-no" title="statement not covered" >Array.isArray(rows)</span>
+    ? rows.some(<span class="fstat-no" title="function not covered" >(r</span>) =&gt; <span class="cstat-no" title="statement not covered" >normalizeAllowFlag(rowValueForField(r, "freezeTransactions")) === "yes")</span>
+    : false;
+<span class="cstat-no" title="statement not covered" >  if (!hasFrozenYear) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
   // Caller supplies the user-facing message (each module may use its own error code).
-  onBlocked();
+<span class="cstat-no" title="statement not covered" >  onBlocked();</span>
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -244,7 +244,7 @@ export async function assertDateNotInFrozenFinancialYear(conn, date, { onBlocked
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-01T05:54:23.907Z
+                at 2026-07-03T09:52:23.613Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -2719,7 +2719,26 @@
 <a name='L2654'></a><a href='#L2654'>2654</a>
 <a name='L2655'></a><a href='#L2655'>2655</a>
 <a name='L2656'></a><a href='#L2656'>2656</a>
-<a name='L2657'></a><a href='#L2657'>2657</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2657'></a><a href='#L2657'>2657</a>
+<a name='L2658'></a><a href='#L2658'>2658</a>
+<a name='L2659'></a><a href='#L2659'>2659</a>
+<a name='L2660'></a><a href='#L2660'>2660</a>
+<a name='L2661'></a><a href='#L2661'>2661</a>
+<a name='L2662'></a><a href='#L2662'>2662</a>
+<a name='L2663'></a><a href='#L2663'>2663</a>
+<a name='L2664'></a><a href='#L2664'>2664</a>
+<a name='L2665'></a><a href='#L2665'>2665</a>
+<a name='L2666'></a><a href='#L2666'>2666</a>
+<a name='L2667'></a><a href='#L2667'>2667</a>
+<a name='L2668'></a><a href='#L2668'>2668</a>
+<a name='L2669'></a><a href='#L2669'>2669</a>
+<a name='L2670'></a><a href='#L2670'>2670</a>
+<a name='L2671'></a><a href='#L2671'>2671</a>
+<a name='L2672'></a><a href='#L2672'>2672</a>
+<a name='L2673'></a><a href='#L2673'>2673</a>
+<a name='L2674'></a><a href='#L2674'>2674</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2904,8 +2923,23 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -5478,9 +5512,11 @@
  * - `field` — database column name (camelCase) on the parent row; must match what your after-create logic sets.
  * - `title` — modal heading (e.g. “Case number assigned”).
  * - `hint` — short line under the title (optional; sensible default in the UI).
+ * - `editTitle` / `editHint` — optional overrides when saving an existing record (e.g. invoice “saved” vs “generated”).
  * - `showPrintPdf` — if `true`, show a print button (handler is module-specific in MasterModuleClient); if `false`, hide it.
  * - `showCopyButton` — if `false`, hide Copy for the assigned reference (e.g. Public Notice: only Continue + print).
  * - `printButtonLabel` — optional label for the print button.
+ * - `valueLabel` — optional small label above the assigned value (e.g. "Voucher No", "Ref No").
  *
  * =============================================================================
  * MODULE-BY-MODULE VALIDATIONS (plain English summary)
@@ -5558,6 +5594,19 @@ const STANDARD_ROW_AUDIT_FIELDS = [
 &nbsp;
 /** All new_case_inward Case No popup pickers: newest record first. */
 const NCI_CASE_NO_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
+&nbsp;
+/** Invoices Received — recovery / SARFAESI / vehicle invoice pickers. */
+const INVOICES_RECEIVED_INVOICE_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
+const INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS = [
+  { field: "date", header: "Date" },
+  { field: "invoiceNo", header: "Invoice No" },
+  { field: "caseNoLabel", header: "Case No" },
+  { field: "borrower", header: "Borrower" },
+  { field: "billToUnitLabel", header: "Bill to Unit" },
+  { field: "npaCurrentAcLabel", header: "NPA Current AC" },
+  { field: "finalInvoice", header: "Final Invoice" },
+  { field: "grandTotal", header: "Invoice Amount" }
+];
 &nbsp;
 // All screens/modules the ERP knows about. Key = internal name; value = settings + fields.
 // Each module value typically has: label, icon, group, table, fields[], and optional flags (readOnly, postCreateAck, …).
@@ -6907,6 +6956,7 @@ export const modules = {
       field: "voucherNo",
       title: "Assets &amp; Investments saved",
       hint: "Your voucher number is shown below. Continue to return to the list.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -6977,6 +7027,7 @@ export const modules = {
       field: "voucherNo",
       title: "Cash Deposit &amp; Withdraw saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -7046,6 +7097,7 @@ export const modules = {
       field: "voucherNo",
       title: "Current AC Transfer saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -7091,6 +7143,7 @@ export const modules = {
       field: "voucherNo",
       title: "Expense Voucher saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -7120,7 +7173,7 @@ export const modules = {
         name: "expenseCategory", type: "lookup", label: "Expense Category", required: true, showInView: true,
         lookup: { module: "lookup_value_master", valueField: "id", filterLookupTypeName: "Payment Category", extraLovParams: { f_active: "Yes" } }
       },
-      { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
+      { name: "remarks", type: "text", label: "Remarks", required: false, showInView: true },
       {
         name: "paymentMode",
         type: "select",
@@ -7172,6 +7225,7 @@ export const modules = {
       field: "voucherNo",
       title: "Loan entry saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -7259,6 +7313,7 @@ export const modules = {
       field: "voucherNo",
       title: "Suspense entry saved",
       hint: "Your voucher number is shown below. Continue to enter another record.",
+      valueLabel: "Voucher No",
       showPrintPdf: false,
       showCopyButton: false
     },
@@ -7305,6 +7360,8 @@ export const modules = {
       field: "invoiceNo",
       title: "Recovery Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "Recovery Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true,
       printButtonLabel: "Print"
     },
@@ -7431,6 +7488,8 @@ export const modules = {
       field: "invoiceNo",
       title: "SARFAESI Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "SARFAESI Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true,
       printButtonLabel: "Print"
     },
@@ -7564,6 +7623,8 @@ export const modules = {
       field: "invoiceNo",
       title: "Vehicle Invoice Generated",
       hint: "Note this number for your reference before continuing.",
+      editTitle: "Vehicle Invoice saved",
+      editHint: "Your invoice number is shown below. Continue or print.",
       showPrintPdf: true
     },
     fields: [
@@ -7691,6 +7752,14 @@ export const modules = {
     group: "Invoice",
     table: "invoices_received",
     lookupDisplayField: "refNo",
+    postCreateAck: {
+      field: "refNo",
+      title: "Invoice Received saved",
+      hint: "Your reference number is shown below. Continue to enter another record.",
+      valueLabel: "Ref No",
+      showPrintPdf: false,
+      showCopyButton: false
+    },
     fields: [
       {
         name: "refNo",
@@ -7721,14 +7790,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       {
@@ -7742,14 +7805,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       {
@@ -7763,14 +7820,8 @@ export const modules = {
           valueField: "id",
           ui: "picker",
           pickerLimit: 25,
-          pickerSortBy: "invoiceNo",
-          pickerColumns: [
-            { field: "date", header: "Date" },
-            { field: "invoiceNo", header: "Invoice No" },
-            { field: "caseNoLabel", header: "Case No" },
-            { field: "npaCurrentAcLabel", header: "NPA Current AC" },
-            { field: "grandTotal", header: "Invoice Amount" },
-          ]
+          ...INVOICES_RECEIVED_INVOICE_PICKER_SORT,
+          pickerColumns: INVOICES_RECEIVED_INVOICE_PICKER_COLUMNS
         }
       },
       { name: "billedAmount", type: "number", label: "Billed Amount", required: true, showInView: true },
@@ -8038,7 +8089,7 @@ export const modules = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-29T17:45:51.802Z
+                at 2026-07-03T10:08:23.345Z
             </div>
         <script src="../prettify.js"></script>
         <script>

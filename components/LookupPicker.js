@@ -51,7 +51,7 @@ function MagnifyingGlassIcon() {
 
 /**
  * Large-dataset lookup: readonly display + search icon opens modal with Enter-based search and double-click select.
- * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string) => void }} props
+ * @param {{ name: string, id: string, fieldLabel: string, lookup: object, initialValue?: string|number, initialLabel?: string, required?: boolean, disabled?: boolean, onValueChange?: (nextValue: string, nextLabel?: string) => void }} props
  */
 export default function LookupPicker({
   name,
@@ -203,17 +203,18 @@ export default function LookupPicker({
   function selectRow(row) {
     const v = row[valueField];
     const nextValue = String(v);
+    const nextLabel = formatLookupRowLabel(row, lookup);
     // Double-click selection: store id, notify parent, close modal.
     setSelectedId(nextValue);
-    if (typeof onValueChange === "function") onValueChange(nextValue);
-    setSelectedLabel(formatLookupRowLabel(row, lookup));
+    if (typeof onValueChange === "function") onValueChange(nextValue, nextLabel);
+    setSelectedLabel(nextLabel);
     setOpen(false);
   }
 
   function clearSelection() {
     setSelectedId("");
     setSelectedLabel("");
-    if (typeof onValueChange === "function") onValueChange("");
+    if (typeof onValueChange === "function") onValueChange("", "");
   }
 
   const totalPages = Math.max(1, Number(meta.totalPages) || 1);

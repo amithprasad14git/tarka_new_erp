@@ -128,8 +128,10 @@ export default function DynamicForm({
             initialLabel={initialValues?.[getLookupRowLabelKey(f)]}
             required={required}
             disabled={fieldReadOnly}
-            onValueChange={(nextValue) => {
-              if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, nextValue);
+            onValueChange={(nextValue, nextLabel) => {
+              if (typeof onFieldValueChange === "function") {
+                onFieldValueChange(f.name, nextValue, nextLabel);
+              }
             }}
           />
         ) : f.type === "select" && Array.isArray(f.options) ? (
