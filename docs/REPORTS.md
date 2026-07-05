@@ -87,7 +87,7 @@ HTML and Excel always receive the **same** visible column list and totals.
 - **Borders:** horizontal row lines only (no vertical grid in body); sticky header with stronger bottom edge
 - **Table:** `width: 100%`, `table-layout: fixed`, sticky header, hidden scrollbars, cell wrap
 - **Font toolbar:** top-right of report card when rows present — **A− / A / A+** (session-only; min/max disabled)
-- **Filter panel:** collapses to a compact bar after HTML Generate (**Edit filters** / **Regenerate**)
+- **Filter panel:** remains visible after Generate; use **Generate** again to refresh output with changed filters
 - **Output meta:** inline with filter summary — filters left, `Generated On: DD/MM/YYYY, HH:mm · N records` right on the same row
 - **Loading:** skeleton placeholder in the output area while HTML runs (Excel still uses overlay)
 - **Table scroll:** hidden scrollbar; animated down-chevron while more rows below; animated up-chevron at bottom (click scrolls to top)

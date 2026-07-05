@@ -41,7 +41,7 @@ export default function TopbarGreeting() {
 
   return (
     <div className="topbar-greeting-slot">
-      <p className="topbar-greeting" role="status">
+      <p className="topbar-greeting" role="status" title={`${phrase}, ${displayName}`}>
         {phrase}, <span className="topbar-greeting-name">{displayName}</span>
       </p>
     </div>

@@ -39,7 +39,6 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
   const [toast, setToast] = useState(null);
   const [htmlResult, setHtmlResult] = useState(null);
   const [formKey, setFormKey] = useState(0);
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
   const [htmlLoading, setHtmlLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
 
@@ -200,7 +199,6 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
         throw new Error(formatApiErrorPayload(payload, apiUserMessage("runReport")));
       }
       setHtmlResult(payload);
-      setFiltersExpanded(false);
     } catch (err) {
       showToastMessage("error", formatUserFacingError(err, { fallback: apiUserMessage("runReport") }));
     } finally {
@@ -215,7 +213,6 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
     setFilterValues(getReportFilterInitialValues(config));
     setLookupLabels({});
     setHtmlResult(null);
-    setFiltersExpanded(true);
     setFormKey((k) => k + 1);
   }
 
@@ -224,8 +221,6 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
   }
 
   const pseudoConfig = useMemo(() => ({ fields: config?.fields || [] }), [config]);
-
-  const collapsedFilterSummary = htmlResult?.filterSummary || "";
 
   return (
     <div className="master-module-page report-module-page">
@@ -236,53 +231,28 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
         <h1 className="module-page-title">{config.label || reportKey}</h1>
       </div>
 
-      {filtersExpanded ? (
-        <div className="card report-filters-card">
-          <DynamicForm
-            key={formKey}
-            formId={`report-filters-${reportKey}`}
-            config={pseudoConfig}
-            initialValues={filterValues}
-            hideButtons
-            className=""
-            formRootStyle={{ marginBottom: 0 }}
-            fieldUiOverrides={fieldUiOverrides}
-            onFieldValueChange={handleFieldValueChange}
-            onSubmit={handleGenerate}
-          />
-          <div className="report-filter-actions">
-            <button type="button" className="btn-primary" disabled={busy} onClick={handleGenerate}>
-              Generate
-            </button>
-            <button type="button" className="master-btn master-btn-outline" disabled={busy} onClick={handleClear}>
-              Clear filters
-            </button>
-          </div>
+      <div className="card report-filters-card">
+        <DynamicForm
+          key={formKey}
+          formId={`report-filters-${reportKey}`}
+          config={pseudoConfig}
+          initialValues={filterValues}
+          hideButtons
+          className=""
+          formRootStyle={{ marginBottom: 0 }}
+          fieldUiOverrides={fieldUiOverrides}
+          onFieldValueChange={handleFieldValueChange}
+          onSubmit={handleGenerate}
+        />
+        <div className="report-filter-actions">
+          <button type="button" className="btn-primary" disabled={busy} onClick={handleGenerate}>
+            Generate
+          </button>
+          <button type="button" className="master-btn master-btn-outline" disabled={busy} onClick={handleClear}>
+            Clear filters
+          </button>
         </div>
-      ) : (
-        <div className="card report-filters-card report-filters-card--collapsed">
-          <div className="report-filters-collapsed-bar">
-            <div className="report-filters-collapsed-text">
-              {collapsedFilterSummary ? (
-                <p className="report-filters-collapsed-summary">{collapsedFilterSummary}</p>
-              ) : null}
-            </div>
-            <div className="report-filter-actions report-filters-collapsed-actions">
-              <button
-                type="button"
-                className="master-btn master-btn-outline"
-                disabled={busy}
-                onClick={() => setFiltersExpanded(true)}
-              >
-                Edit filters
-              </button>
-              <button type="button" className="btn-primary" disabled={busy} onClick={handleGenerate}>
-                Regenerate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {htmlLoading ? <ReportOutputSkeleton /> : null}
 
