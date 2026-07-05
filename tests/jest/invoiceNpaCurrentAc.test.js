@@ -94,6 +94,30 @@ describe("invoiceNpaCurrentAc", () => {
     });
   });
 
+  test("resolveInvoiceNpaCurrentAcByCaseId returns empty NPA when account is inactive", async () => {
+    const conn = createConn([
+      {
+        when: (sql) => sql.includes("new_case_inward") && sql.includes("unit"),
+        reply: [[{ unit: 1 }]]
+      },
+      {
+        when: (sql, params) => sql.includes("unit_master") && params?.[0] === 1,
+        reply: [[{ unitName: "Unit One" }]]
+      },
+      {
+        when: (sql, params) => sql.includes("current_account_master") && params?.[0] === 1,
+        reply: [[]]
+      }
+    ]);
+
+    await expect(resolveInvoiceNpaCurrentAcByCaseId(conn, 50)).resolves.toEqual({
+      npaCurrentAc: "",
+      npaCurrentAcLabel: "",
+      billToUnit: "1",
+      billToUnitLabel: "Unit One"
+    });
+  });
+
   test("resolveInvoiceNpaCurrentAcByCaseId returns empty for invalid case id", async () => {
     const conn = createConn([]);
     await expect(resolveInvoiceNpaCurrentAcByCaseId(conn, 0)).resolves.toEqual({

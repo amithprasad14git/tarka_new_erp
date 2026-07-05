@@ -4,10 +4,11 @@
  */
 
 import { cookies } from "next/headers";
-import pool from "../../../../../lib/db";
 import { getSessionUser } from "../../../../../lib/session";
-import { canAccessInvoiceLinkedSnapshot } from "../../../../../lib/modules/invoiceCaseSnapshot";
-import { loadInvoiceCaseSnapshotByCaseId } from "../../../../../lib/modules/invoiceCaseSnapshot";
+import {
+  canAccessInvoiceLinkedSnapshot,
+  loadInvoiceLinkedCaseByCaseId
+} from "../../../../../lib/modules/invoiceCaseSnapshot";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
 export async function GET(_req, { params }) {
@@ -27,16 +28,17 @@ export async function GET(_req, { params }) {
       return Response.json({ error: "Record not found" }, { status: 404 });
     }
 
-    const conn = await pool.getConnection();
-    try {
-      const data = await loadInvoiceCaseSnapshotByCaseId(conn, caseId);
-      if (!data) {
-        return Response.json({ error: "Record not found" }, { status: 404 });
-      }
-      return Response.json({ data });
-    } finally {
-      conn.release();
+    const linked = await loadInvoiceLinkedCaseByCaseId(caseId, {
+      childKeys: ["amount_recovered"]
+    });
+    if (!linked?.data) {
+      return Response.json({ error: "Record not found" }, { status: 404 });
     }
+
+    return Response.json({
+      data: linked.data,
+      childTableRows: linked.childTableRows || {}
+    });
   } catch (error) {
     return jsonApiErrorForAction(error, "loadInvoiceCaseSnapshot", {
       logLabel: "Invoice case snapshot API"

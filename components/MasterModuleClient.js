@@ -25,6 +25,18 @@ import {
   readJsonResponse
 } from "../lib/fetchClientError";
 import { apiUserMessage } from "../lib/apiUserMessages";
+import {
+  COLUMN_FILTER_DEBOUNCE_MS,
+  columnFiltersEqual,
+  hasAnyColumnFilterValue,
+  hasUncommittedColumnFilters,
+  normalizeCommittedFromInput
+} from "../lib/viewColumnFilters";
+import {
+  getViewGridColumnClass,
+  isViewGridEmphasisField,
+  VIEW_GRID_EMPHASIS_VALUE_CLASS
+} from "../lib/viewGridColumnEmphasis";
 import { resolvePostCreateAckModalCopy } from "../lib/postCreateAck";
 import { getLookupRowLabelKey } from "../lib/lookupLabelField";
 import {
@@ -66,8 +78,10 @@ import {
   getRecoveryInvoiceAckPrintLabel,
   getRecoveryInvoicePrintButtonText,
   getRecoveryInvoicePrintTargetId,
+  getRecoveryInvoiceDotTone,
   isRecoveryInvoiceModule,
   mergeRecoveryInvoiceEntryInitialValues,
+  recoveryInvoiceDotLabel,
   recoveryInvoiceRefHintFromRow,
   useRecoveryInvoiceClientModel,
   validateRecoveryInvoiceClientSubmit
@@ -75,10 +89,12 @@ import {
 import {
   downloadSarfaesiInvoicePdf,
   getSarfaesiInvoiceAckPrintLabel,
+  getSarfaesiInvoiceDotTone,
   getSarfaesiInvoicePrintButtonText,
   getSarfaesiInvoicePrintTargetId,
   isSarfaesiInvoiceModule,
   mergeSarfaesiInvoiceEntryInitialValues,
+  sarfaesiInvoiceDotLabel,
   sarfaesiInvoiceRefHintFromRow,
   useSarfaesiInvoiceClientModel,
   validateSarfaesiInvoiceClientSubmit
@@ -86,12 +102,14 @@ import {
 import {
   downloadVehicleInvoicePdf,
   getVehicleInvoiceAckPrintLabel,
+  getVehicleInvoiceDotTone,
   getVehicleInvoicePrintButtonText,
   getVehicleInvoicePrintTargetId,
   isVehicleInvoiceModule,
   mergeVehicleInvoiceEntryInitialValues,
   useVehicleInvoiceClientModel,
   validateVehicleInvoiceClientSubmit,
+  vehicleInvoiceDotLabel,
   vehicleInvoiceRefHintFromRow
 } from "../lib/modules/vehicleInvoiceClient";
 import {
@@ -477,6 +495,16 @@ function ClearIcon() {
   );
 }
 
+function NewRecordIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
+    </svg>
+  );
+}
+
 function EditIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -535,6 +563,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   // View-mode column filters (one filter input per table column).
   const [viewColumnFilterInput, setViewColumnFilterInput] = useState({});
   const [viewColumnFilters, setViewColumnFilters] = useState({});
+  const viewColumnFilterInputRef = useRef({});
+  const viewColumnFiltersRef = useRef({});
+  const columnFilterDebounceRef = useRef(null);
+  const pageRef = useRef(1);
+  const limitRef = useRef(20);
   const [permissions, setPermissions] = useState({
     canView: false,
     canCreate: false,
@@ -1009,6 +1042,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const auditLogsSimpleView = isAuditLogs;
   // New Case Inward uses a dot marker instead of row background tint for case status.
   const nciStatusDotEnabled = isNewCaseInwardModule(moduleKey);
+  const recoveryInvoiceStatusDotEnabled = isRecoveryInvoice;
+  const sarfaesiInvoiceStatusDotEnabled = isSarfaesiInvoice;
+  const vehicleInvoiceStatusDotEnabled = isVehicleInvoice;
+  const invoiceStatusDotEnabled =
+    recoveryInvoiceStatusDotEnabled ||
+    sarfaesiInvoiceStatusDotEnabled ||
+    vehicleInvoiceStatusDotEnabled;
+  const statusDotEnabled = nciStatusDotEnabled || invoiceStatusDotEnabled;
   const nciViewPeekEnabled = isNewCaseInwardModule(moduleKey) && permissions.canView;
 
   const nciCaseStatusField = useMemo(() => getNciCaseStatusField(config, moduleKey), [moduleKey, config]);
@@ -1059,23 +1100,29 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     if (returnCaseClient.handleFieldValueChange(fieldName, value, label)) return;
   }
 
-  const loadRecords = async () => {
+  function buildRecordsFetchKey(filters, pageNum, limitNum, modeView = viewMode) {
+    const filtersKey = JSON.stringify(filters || {});
+    return `${moduleKey}|${String(pageNum)}|${String(limitNum)}|${String(modeView)}|${filtersKey}`;
+  }
+
+  const loadRecords = async (overrides = {}) => {
+    const filters = overrides.filters ?? viewColumnFiltersRef.current;
+    const pageNum = overrides.page ?? pageRef.current;
+    const limitNum = overrides.limit ?? limitRef.current;
+    const fetchKey = buildRecordsFetchKey(filters, pageNum, limitNum);
+
     setBusy(true);
     try {
-      // Build the same query format used by `/api/crud/[module]`:
-      // column filters are `f_<fieldName>` (supported by the API).
       const query = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
+        page: String(pageNum),
+        limit: String(limitNum),
         sortBy: "id",
         sortDir: "desc"
       });
 
-      for (const [fieldName, rawValue] of Object.entries(viewColumnFilters || {})) {
+      for (const [fieldName, rawValue] of Object.entries(filters || {})) {
         const value = rawValue == null ? "" : String(rawValue).trim();
         if (!value) continue;
-        // Exact filter key format required by the API:
-        //   f_<fieldName>  -> exact match (or numeric comparison in server code)
         query.set(`f_${fieldName}`, value);
       }
 
@@ -1084,10 +1131,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
 
       setData(Array.isArray(payload?.data) ? payload.data : []);
       setMeta(
-        payload?.meta || { page: 1, limit, total: 0, totalPages: 1, sortBy: "id", sortDir: "desc" }
+        payload?.meta || { page: 1, limit: limitNum, total: 0, totalPages: 1, sortBy: "id", sortDir: "desc" }
       );
+      recordsFetchKeyRef.current = fetchKey;
+      return true;
     } catch (e) {
+      recordsFetchKeyRef.current = "";
       showToast("error", formatUserFacingError(e, { fallback: apiUserMessage("loadList") }));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -1101,6 +1152,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setFormKey((k) => k + 1);
     setSelectedId(null);
     if (clearViewFilters) {
+      cancelColumnFilterDebounce();
+      viewColumnFilterInputRef.current = {};
+      viewColumnFiltersRef.current = {};
+      recordsFetchKeyRef.current = "";
       setViewColumnFilterInput({});
       setViewColumnFilters({});
     }
@@ -1118,37 +1173,106 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   useEffect(() => {
     if (!isActive) return;
     if (!config) return;
-    const filtersKey = JSON.stringify(viewColumnFilters || {});
-    const fetchKey = `${moduleKey}|${String(page)}|${String(limit)}|${String(viewMode)}|${filtersKey}`;
-    // Avoid duplicate list fetches when React re-renders with the same query key.
+    const fetchKey = buildRecordsFetchKey(viewColumnFilters, page, limit);
     if (recordsFetchKeyRef.current === fetchKey) return;
-    recordsFetchKeyRef.current = fetchKey;
-    loadRecords();
+    void loadRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, page, limit, viewMode, viewColumnFilters]);
 
-  /**
-   * Commit staged inputs to server filters (resets to page 1). Text filters apply on Enter; selects on change.
-   * Uses a functional merge so `viewColumnFilterInput` is never stale when combining several columns.
-   */
-  function commitColumnFilters(mergeFn) {
-    setViewColumnFilterInput((prev) => {
-      const merged = typeof mergeFn === "function" ? mergeFn(prev) : mergeFn;
-      return merged;
-    });
-    setViewColumnFilters((prev) => {
-      const merged = typeof mergeFn === "function" ? mergeFn(prev) : mergeFn;
-      return merged;
-    });
-    setPage(1);
-    setSelectedId(null);
+  function cancelColumnFilterDebounce() {
+    if (columnFilterDebounceRef.current) {
+      clearTimeout(columnFilterDebounceRef.current);
+      columnFilterDebounceRef.current = null;
+    }
   }
 
-  const hasAnyColumnFilter = useMemo(() => {
-    const values = Object.values(viewColumnFilterInput || {});
-    // Used to conditionally render "Clear column filters" only when something is actually entered.
-    return values.some((v) => String(v ?? "").trim() !== "");
+  /** Snapshot-sync draft column inputs to committed server filters (not per-field merge into prev). */
+  function commitColumnFiltersFromInput(input) {
+    const next = normalizeCommittedFromInput(input);
+    const prev = viewColumnFiltersRef.current;
+    if (columnFiltersEqual(next, prev)) return;
+    viewColumnFiltersRef.current = next;
+    viewColumnFilterInputRef.current = next;
+    setViewColumnFilterInput(next);
+    setViewColumnFilters(next);
+    pageRef.current = 1;
+    setPage(1);
+    setSelectedId(null);
+    recordsFetchKeyRef.current = buildRecordsFetchKey(next, 1, limitRef.current);
+    void loadRecords({ filters: next, page: 1 });
+  }
+
+  function scheduleColumnFilterCommit(input, { immediate = false } = {}) {
+    cancelColumnFilterDebounce();
+    if (immediate) {
+      commitColumnFiltersFromInput(input);
+      return;
+    }
+    columnFilterDebounceRef.current = setTimeout(() => {
+      columnFilterDebounceRef.current = null;
+      commitColumnFiltersFromInput(viewColumnFilterInputRef.current);
+    }, COLUMN_FILTER_DEBOUNCE_MS);
+  }
+
+  function clearAllColumnFilters() {
+    cancelColumnFilterDebounce();
+    viewColumnFilterInputRef.current = {};
+    viewColumnFiltersRef.current = {};
+    setViewColumnFilterInput({});
+    setViewColumnFilters({});
+    setSelectedId(null);
+    pageRef.current = 1;
+    setPage(1);
+    recordsFetchKeyRef.current = buildRecordsFetchKey({}, 1, limitRef.current);
+    void loadRecords({ filters: {}, page: 1 });
+  }
+
+  function resetColumnFilterState() {
+    cancelColumnFilterDebounce();
+    viewColumnFilterInputRef.current = {};
+    viewColumnFiltersRef.current = {};
+    recordsFetchKeyRef.current = "";
+    setViewColumnFilterInput({});
+    setViewColumnFilters({});
+  }
+
+  function applyColumnFiltersNow() {
+    scheduleColumnFilterCommit(viewColumnFilterInputRef.current, { immediate: true });
+  }
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  useEffect(() => {
+    limitRef.current = limit;
+  }, [limit]);
+
+  useEffect(() => {
+    viewColumnFilterInputRef.current = viewColumnFilterInput;
   }, [viewColumnFilterInput]);
+
+  useEffect(() => {
+    viewColumnFiltersRef.current = viewColumnFilters;
+  }, [viewColumnFilters]);
+
+  useEffect(
+    () => () => {
+      cancelColumnFilterDebounce();
+      recordsFetchKeyRef.current = "";
+    },
+    []
+  );
+
+  const hasAnyColumnFilter = useMemo(
+    () => hasAnyColumnFilterValue(viewColumnFilterInput, viewColumnFilters),
+    [viewColumnFilterInput, viewColumnFilters]
+  );
+
+  const hasUncommittedFilters = useMemo(
+    () => hasUncommittedColumnFilters(viewColumnFilterInput, viewColumnFilters),
+    [viewColumnFilterInput, viewColumnFilters]
+  );
 
   useEffect(() => {
     if (!isActive) return;
@@ -1199,8 +1323,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     invoicesReceivedClient.resetSnapshot();
     setFormKey((k) => k + 1);
     setSelectedId(null);
-    setViewColumnFilterInput({});
-    setViewColumnFilters({});
+    resetColumnFilterState();
     setViewMode(false);
     setToast(null);
   }
@@ -1212,8 +1335,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setEditingRow(null);
     setFormKey((k) => k + 1);
     setSelectedId(null);
-    setViewColumnFilterInput({});
-    setViewColumnFilters({});
+    resetColumnFilterState();
     setViewMode(true);
     setToast(null);
   }
@@ -1815,7 +1937,9 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   );
 
   return (
-    <div className="master-module-page">
+    <div
+      className={`master-module-page${effectiveViewMode ? " master-module-page--view" : " master-module-page--entry"}`}
+    >
       <PostCreateAckModal
         open={postCreateAckOpen != null}
         value={postCreateAckOpen?.value}
@@ -2097,7 +2221,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
         </div>
       ) : (
         // View mode: show a table with per-column filters + checkbox selection.
-        <div className="card table-section">
+        <div className="card table-section master-view-card">
           <p className="table-scroll-hint" role="note">
             Swipe or scroll sideways to see all columns.
           </p>
@@ -2117,6 +2241,22 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               </span>
             </div>
           ) : null}
+          {invoiceStatusDotEnabled ? (
+            <div className="master-status-legend" role="note" aria-label="Invoice status legend">
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--cancelled" aria-hidden />
+                Cancelled Invoice
+              </span>
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--received" aria-hidden />
+                Received Invoice
+              </span>
+              <span className="master-status-legend-item">
+                <span className="master-status-dot master-status-dot--pending" aria-hidden />
+                Pending Invoice
+              </span>
+            </div>
+          ) : null}
           <div className="table-wrap table-wrap-scroll-y master-orders-table-wrap">
             <table
               className={`data-table data-table-compact master-orders-table${
@@ -2130,7 +2270,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       ✔️
                     </th>
                   ) : null}
-                  {nciStatusDotEnabled ? <th className="master-status-dot-col">Status</th> : null}
+                  {statusDotEnabled ? <th className="master-status-dot-col">Status</th> : null}
                   {viewFieldConfigs.map((f) => (
                     <th
                       key={f.name}
@@ -2166,13 +2306,11 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       {/* selection column has no filter */}
                     </th>
                   ) : null}
-                  {nciStatusDotEnabled ? <th className="master-filter-th" aria-hidden /> : null}
+                  {statusDotEnabled ? <th className="master-filter-th" aria-hidden /> : null}
                   {viewFieldConfigs.map((f) => {
                     // Per-column filter input.
                     // Values are sent to the server as `f_<fieldName>` and applied server-side.
                     const value = viewColumnFilterInput?.[f.name] ?? "";
-                    const onChangeValue = (next) =>
-                      setViewColumnFilterInput((prev) => ({ ...prev, [f.name]: next }));
 
                     if (f.type === "select" && Array.isArray(f.options)) {
                       return (
@@ -2190,7 +2328,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                             value={value}
                             onChange={(e) => {
                               const next = e.target.value;
-                              commitColumnFilters((prev) => ({ ...prev, [f.name]: next }));
+                              const updated = { ...viewColumnFilterInputRef.current, [f.name]: next };
+                              viewColumnFilterInputRef.current = updated;
+                              setViewColumnFilterInput(updated);
+                              scheduleColumnFilterCommit(updated, { immediate: true });
                             }}
                             aria-label={`Filter ${f.label}`}
                           >
@@ -2210,10 +2351,10 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                       f.type === "date" ? "dd-mm-yyyy" : f.type === "number" ? "Amount (commas OK)" : "";
                     const filterTitle =
                       f.type === "date"
-                        ? "Type dd-mm-yyyy or yyyy-mm-dd, then Enter"
+                        ? "Type dd-mm-yyyy or yyyy-mm-dd; applies after you pause typing or press Enter"
                         : f.type === "number"
-                          ? "Type digits (commas OK); matches amounts containing those digits, then Enter"
-                          : "Press Enter to apply filter";
+                          ? "Type digits (commas OK); applies after you pause typing or press Enter"
+                          : "Filter applies after you pause typing, or press Enter";
 
                     return (
                       <th
@@ -2230,16 +2371,28 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                           value={value}
                           type={inputType}
                           inputMode={f.type === "number" ? "decimal" : undefined}
-                          onChange={(e) => onChangeValue(e.target.value)}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            const updated = { ...viewColumnFilterInputRef.current, [f.name]: next };
+                            viewColumnFilterInputRef.current = updated;
+                            setViewColumnFilterInput(updated);
+                            scheduleColumnFilterCommit(updated, {
+                              immediate: String(next).trim() === ""
+                            });
+                          }}
                           onKeyDown={(e) => {
                             if (e.key !== "Enter") return;
                             e.preventDefault();
-                            // Read value here — React may null `e.currentTarget` before the setState updater runs.
                             const nextVal = e.currentTarget.value;
-                            commitColumnFilters((prev) => ({
-                              ...prev,
-                              [f.name]: nextVal
-                            }));
+                            const updated = { ...viewColumnFilterInputRef.current, [f.name]: nextVal };
+                            viewColumnFilterInputRef.current = updated;
+                            setViewColumnFilterInput(updated);
+                            scheduleColumnFilterCommit(updated, { immediate: true });
+                          }}
+                          onBlur={() => {
+                            scheduleColumnFilterCommit(viewColumnFilterInputRef.current, {
+                              immediate: true
+                            });
                           }}
                           placeholder={filterPlaceholder}
                           title={filterTitle}
@@ -2259,6 +2412,18 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   const isChecked = selectedId != null && String(r.id) === String(selectedId);
                   // Dot color comes from current case status label (lookup label preferred).
                   const nciDotTone = nciCaseStatusField != null ? getNciDotTone(r, nciCaseStatusField) : null;
+                  let invoiceDotTone = null;
+                  let invoiceDotLabel = recoveryInvoiceDotLabel;
+                  if (recoveryInvoiceStatusDotEnabled) {
+                    invoiceDotTone = getRecoveryInvoiceDotTone(r);
+                    invoiceDotLabel = recoveryInvoiceDotLabel;
+                  } else if (sarfaesiInvoiceStatusDotEnabled) {
+                    invoiceDotTone = getSarfaesiInvoiceDotTone(r);
+                    invoiceDotLabel = sarfaesiInvoiceDotLabel;
+                  } else if (vehicleInvoiceStatusDotEnabled) {
+                    invoiceDotTone = getVehicleInvoiceDotTone(r);
+                    invoiceDotLabel = vehicleInvoiceDotLabel;
+                  }
                   const trClass = [isChecked && "master-row-selected"].filter(Boolean).join(" ");
                   return (
                     <tr key={r.id} className={trClass || undefined}>
@@ -2273,79 +2438,95 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                           />
                         </td>
                       ) : null}
-                      {nciStatusDotEnabled ? (
+                      {statusDotEnabled ? (
                         <td className="master-status-dot-col">
-                          <span
-                            className={`master-status-dot master-status-dot--${nciDotTone || "ongoing"}`}
-                            title={
-                              nciDotTone === "returned"
-                                ? "Returned case"
-                                : nciDotTone === "final"
-                                  ? "Final stage case"
-                                  : "Ongoing case"
-                            }
-                            aria-label={
-                              nciDotTone === "returned"
-                                ? "Returned case"
-                                : nciDotTone === "final"
-                                  ? "Final stage case"
-                                  : "Ongoing case"
-                            }
-                          />
-                        </td>
-                      ) : null}
-                      {viewFieldConfigs.map((f) => (
-                        <td
-                          key={f.name}
-                          className={
-                            isAuditLogs ? getAuditLogsGridColumnClass(f.name) || undefined : undefined
-                          }
-                        >
-                          {/* rowValueForField: MySQL may return column names in different casing than config. */}
-                          {isAuditLogsJsonField(f.name) ? (
-                            (() => {
-                              const raw = rowValueForField(r, f.name);
-                              const preview = auditJsonPreview(raw);
-                              return preview ? (
-                                <span className="audit-json-preview">{preview}</span>
-                              ) : (
-                                "—"
-                              );
-                            })()
-                          ) : isAuditLogsCreatedAtField(f.name) ? (
-                            (() => {
-                              const raw = rowValueForField(r, f.name);
-                              const d = raw ? new Date(raw) : null;
-                              if (!d || Number.isNaN(d.getTime())) return raw ? String(raw) : "";
-                              const dd = String(d.getDate()).padStart(2, "0");
-                              const mm = String(d.getMonth() + 1).padStart(2, "0");
-                              const yyyy = d.getFullYear();
-                              const hh = String(d.getHours()).padStart(2, "0");
-                              const min = String(d.getMinutes()).padStart(2, "0");
-                              return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
-                            })()
-                          ) : isAuditLogs && isAuditLogsModuleColumn(f.name) ? (
-                            formatAuditModuleLabel(rowValueForField(r, f.name))
-                          ) : isAuditLogs && isAuditLogsRecordLabelColumn(f.name) ? (
-                            (() => {
-                              const text = String(rowValueForField(r, f.name) ?? "").trim();
-                              return text ? (
-                                <span className="audit-record-preview" title={text}>
-                                  {text}
-                                </span>
-                              ) : (
-                                "—"
-                              );
-                            })()
-                          ) : f.type === "lookup" ? (
-                            rowValueForField(r, getLookupRowLabelKey(f)) ??
-                            rowValueForField(r, f.name) ??
-                            ""
+                          {nciStatusDotEnabled ? (
+                            <span
+                              className={`master-status-dot master-status-dot--${nciDotTone || "ongoing"}`}
+                              title={
+                                nciDotTone === "returned"
+                                  ? "Returned case"
+                                  : nciDotTone === "final"
+                                    ? "Final stage case"
+                                    : "Ongoing case"
+                              }
+                              aria-label={
+                                nciDotTone === "returned"
+                                  ? "Returned case"
+                                  : nciDotTone === "final"
+                                    ? "Final stage case"
+                                    : "Ongoing case"
+                              }
+                            />
                           ) : (
-                            formatViewCellValue(f, rowValueForField(r, f.name))
+                            <span
+                              className={`master-status-dot master-status-dot--${invoiceDotTone || "pending"}`}
+                              title={invoiceDotLabel(invoiceDotTone || "pending")}
+                              aria-label={invoiceDotLabel(invoiceDotTone || "pending")}
+                            />
                           )}
                         </td>
-                      ))}
+                      ) : null}
+                      {viewFieldConfigs.map((f) => {
+                        const emphasizeCell = isViewGridEmphasisField(moduleKey, f.name);
+                        const cellClassName =
+                          [
+                            isAuditLogs ? getAuditLogsGridColumnClass(f.name) : "",
+                            getViewGridColumnClass(moduleKey, f.name)
+                          ]
+                            .filter(Boolean)
+                            .join(" ") || undefined;
+                        let cellContent;
+                        if (isAuditLogsJsonField(f.name)) {
+                          const raw = rowValueForField(r, f.name);
+                          const preview = auditJsonPreview(raw);
+                          cellContent = preview ? (
+                            <span className="audit-json-preview">{preview}</span>
+                          ) : (
+                            "—"
+                          );
+                        } else if (isAuditLogsCreatedAtField(f.name)) {
+                          const raw = rowValueForField(r, f.name);
+                          const d = raw ? new Date(raw) : null;
+                          if (!d || Number.isNaN(d.getTime())) {
+                            cellContent = raw ? String(raw) : "";
+                          } else {
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            const mm = String(d.getMonth() + 1).padStart(2, "0");
+                            const yyyy = d.getFullYear();
+                            const hh = String(d.getHours()).padStart(2, "0");
+                            const min = String(d.getMinutes()).padStart(2, "0");
+                            cellContent = `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+                          }
+                        } else if (isAuditLogs && isAuditLogsModuleColumn(f.name)) {
+                          cellContent = formatAuditModuleLabel(rowValueForField(r, f.name));
+                        } else if (isAuditLogs && isAuditLogsRecordLabelColumn(f.name)) {
+                          const text = String(rowValueForField(r, f.name) ?? "").trim();
+                          cellContent = text ? (
+                            <span className="audit-record-preview" title={text}>
+                              {text}
+                            </span>
+                          ) : (
+                            "—"
+                          );
+                        } else if (f.type === "lookup") {
+                          cellContent =
+                            rowValueForField(r, getLookupRowLabelKey(f)) ??
+                            rowValueForField(r, f.name) ??
+                            "";
+                        } else {
+                          cellContent = formatViewCellValue(f, rowValueForField(r, f.name));
+                        }
+                        return (
+                          <td key={f.name} className={cellClassName}>
+                            {emphasizeCell ? (
+                              <span className={VIEW_GRID_EMPHASIS_VALUE_CLASS}>{cellContent}</span>
+                            ) : (
+                              cellContent
+                            )}
+                          </td>
+                        );
+                      })}
                       {nciViewPeekEnabled ? (
                         <td
                           className="master-nci-peek-grid-cell"
@@ -2427,22 +2608,30 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
               setSelectedId(null);
             }}
             leftExtra={
-              hasAnyColumnFilter ? (
-                // Clear column filters button placed next to the "Showing X–Y of Z" summary.
-                <button
-                  type="button"
-                  className="master-btn master-btn-warning"
-                  onClick={() => {
-                    setViewColumnFilterInput({});
-                    setViewColumnFilters({});
-                    setSelectedId(null);
-                    setPage(1);
-                  }}
-                  title="Clear column filters"
-                >
-                  <ClearIcon />
-                  Clear
-                </button>
+              hasAnyColumnFilter || hasUncommittedFilters ? (
+                <span className="master-col-filter-actions">
+                  {hasUncommittedFilters ? (
+                    <button
+                      type="button"
+                      className="master-btn"
+                      onClick={applyColumnFiltersNow}
+                      title="Apply column filters now"
+                    >
+                      Apply
+                    </button>
+                  ) : null}
+                  {hasAnyColumnFilter ? (
+                    <button
+                      type="button"
+                      className="master-btn master-btn-warning"
+                      onClick={clearAllColumnFilters}
+                      title="Clear column filters"
+                    >
+                      <ClearIcon />
+                      Clear
+                    </button>
+                  ) : null}
+                </span>
               ) : null
             }
           />
@@ -2458,7 +2647,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                     className="master-btn master-btn-warning"
                     disabled={busy}
                   >
-                    <ClearIcon />
+                    <NewRecordIcon />
                     New Record
                   </button>
                 ) : null}

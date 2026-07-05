@@ -73,7 +73,7 @@ Recovery invoice only: when `caseNo` is empty, case-linked header/borrower/recov
 | Constant family | Used for |
 |-----------------|----------|
 | `HDR_*` | Header grid (bank, date, invoice no, GST, …) |
-| `ACCOUNT_*`, `FS_ACCOUNT`, `ACCOUNT_ROW_H` | Current account block (compact: 9pt font, 18pt rows) |
+| `ACCOUNT_*` | Current account block (11pt font, 19pt rows — all three invoice PDFs) |
 | `CHARGES_COLS_MM` | Full-width charges table (SARFAESI / Vehicle only) |
 
 Do **not** alias `HDR_*` to `ACCOUNT_*` — they are tuned independently.

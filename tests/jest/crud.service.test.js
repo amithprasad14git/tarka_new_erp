@@ -172,6 +172,7 @@ jest.mock("../../lib/modules/newCaseInward", () => ({
 
 const pool = require("../../lib/db").default;
 const { hasModulePermission } = require("../../lib/rbac");
+const { apiUserMessage } = require("../../lib/apiUserMessages");
 const { getScopeForAction } = require("../../lib/rbac");
 const { canUserModifyRow, rowMatchesScope, annotateRowsModifyAccess } = require("../../lib/rowScope");
 const { enrichLookupDisplayRows } = require("../../lib/crudLookupEnrich");
@@ -302,12 +303,13 @@ describe("crud.service", () => {
       pool.getConnection.mockResolvedValueOnce(conn);
 
       const result = await createCrudRecord(user, "sample_module", { name: "A", amount: 10 });
-      expect(result).toEqual({ status: 500, body: { error: "Failed to create record" } });
+      expect(result.status).toBe(500);
+      expect(result.body.error).toBe(apiUserMessage("saveRecord"));
       expect(conn.rollback).toHaveBeenCalled();
       expect(conn.release).toHaveBeenCalled();
     });
 
-    test("duplicate key handling (generic DB error path)", async () => {
+    test("duplicate key returns user-friendly 400 message", async () => {
       hasModulePermission.mockResolvedValueOnce(true);
       const conn = makeTxConn();
       const dup = new Error("Duplicate entry");
@@ -316,9 +318,23 @@ describe("crud.service", () => {
       pool.getConnection.mockResolvedValueOnce(conn);
 
       const result = await createCrudRecord(user, "sample_module", { name: "A", amount: 10 });
-      expect(result.status).toBe(500);
-      expect(result.body.error).toBe("Failed to create record");
+      expect(result.status).toBe(400);
+      expect(result.body.error).toBe("This record already exists.");
       expect(conn.rollback).toHaveBeenCalled();
+    });
+
+    test("ER_BAD_NULL_ERROR returns column-specific 400 message", async () => {
+      hasModulePermission.mockResolvedValueOnce(true);
+      const conn = makeTxConn();
+      const nullErr = new Error("Column 'caseNo' cannot be null");
+      nullErr.code = "ER_BAD_NULL_ERROR";
+      nullErr.sqlMessage = "Column 'caseNo' cannot be null";
+      conn.query.mockRejectedValueOnce(nullErr);
+      pool.getConnection.mockResolvedValueOnce(conn);
+
+      const result = await createCrudRecord(user, "sample_module", { name: "A", amount: 10 });
+      expect(result.status).toBe(400);
+      expect(result.body.error).toBe("Case No is required.");
     });
 
     test("create rejects when no valid fields to insert", async () => {

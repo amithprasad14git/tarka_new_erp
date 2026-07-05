@@ -1,7 +1,21 @@
 /** @jest-environment node */
 
 import { modules } from "../../config/modules";
+import { reports } from "../../config/reports";
 import { validateCrudPayloadForWrite } from "../../lib/services/crudPayloadValidation";
+import { validateRecoveryInvoiceClientSubmit } from "../../lib/modules/recoveryInvoiceClient";
+
+function collectNpaCurrentAcLookups(registry) {
+  const out = [];
+  for (const cfg of Object.values(registry)) {
+    for (const f of cfg.fields || []) {
+      if (f.name === "npaCurrentAc" && f.lookup) {
+        out.push(f.lookup);
+      }
+    }
+  }
+  return out;
+}
 
 describe("recovery_invoice optional caseNo", () => {
   test("caseNo is optional in module config", () => {
@@ -29,5 +43,38 @@ describe("recovery_invoice optional caseNo", () => {
       Object.keys(body)
     );
     expect(err).toBeNull();
+  });
+
+  test("all module npaCurrentAc lookups filter active Yes", () => {
+    const lookups = collectNpaCurrentAcLookups(modules);
+    expect(lookups.length).toBeGreaterThanOrEqual(8);
+    for (const lookup of lookups) {
+      expect(lookup.extraLovParams?.f_active).toBe("Yes");
+    }
+  });
+
+  test("all report npaCurrentAc filters filter active Yes", () => {
+    const lookups = collectNpaCurrentAcLookups(reports);
+    expect(lookups.length).toBeGreaterThanOrEqual(10);
+    for (const lookup of lookups) {
+      expect(lookup.extraLovParams?.f_active).toBe("Yes");
+    }
+  });
+
+  test("client submit requires billToUnit and npa when caseNo empty", () => {
+    expect(
+      validateRecoveryInvoiceClientSubmit({
+        cancelledInvoice: "No",
+        billToUnit: "",
+        npaCurrentAc: ""
+      })
+    ).toBe("Bill to Unit and NPA Current AC are required when Case No is not selected.");
+    expect(
+      validateRecoveryInvoiceClientSubmit({
+        cancelledInvoice: "No",
+        billToUnit: 2,
+        npaCurrentAc: 1
+      })
+    ).toBeNull();
   });
 });

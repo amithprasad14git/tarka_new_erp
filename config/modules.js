@@ -181,6 +181,13 @@ const STANDARD_ROW_AUDIT_FIELDS = [
   { name: "modifiedDate", type: "text", label: "Modified Date", excludeFromForm: true, showInView: false }
 ];
 
+/** Shared lookup for NPA Current AC fields — active accounts only. */
+const NPA_CURRENT_AC_LOOKUP = {
+  module: "current_account_master",
+  valueField: "id",
+  extraLovParams: { f_active: "Yes" }
+};
+
 /** All new_case_inward Case No popup pickers: newest record first. */
 const NCI_CASE_NO_PICKER_SORT = { pickerSortBy: "id", pickerSortDir: "desc" };
 
@@ -490,7 +497,7 @@ export const modules = {
         label: "Current Account",
         required: true,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
       {
@@ -1591,7 +1598,7 @@ export const modules = {
         label: "NPA Current AC",
         required: false,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
       { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
@@ -1661,7 +1668,7 @@ export const modules = {
         label: "NPA Current AC",
         required: true,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
       { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
@@ -1701,7 +1708,7 @@ export const modules = {
         label: "From Current AC",
         required: true,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       {
         name: "toCurrentAc",
@@ -1709,7 +1716,7 @@ export const modules = {
         label: "To Current AC",
         required: true,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
       { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
@@ -1782,7 +1789,7 @@ export const modules = {
         label: "NPA Current AC",
         required: false,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
       { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
@@ -1871,7 +1878,7 @@ export const modules = {
         label: "NPA Current AC",
         required: false,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "chequeNo", type: "text", label: "Cheque No", required: false, showInView: false },
       { name: "chequeDate", type: "date", label: "Cheque Date", required: false, showInView: false, maxToday: true },
@@ -1928,7 +1935,7 @@ export const modules = {
         label: "NPA Current AC",
         required: true,
         showInView: true,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       { name: "remarks", type: "text", label: "Remarks", required: true, showInView: true },
       { name: "amount", type: "number", label: "Amount", required: true, showInView: true },
@@ -2003,7 +2010,7 @@ export const modules = {
         label: "NPA Current AC",
         required: true,
         showInView: false,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       {
         name: "cancelledInvoice",
@@ -2131,7 +2138,7 @@ export const modules = {
         label: "NPA Current AC",
         required: true,
         showInView: false,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       {
         name: "cancelledInvoice",
@@ -2265,7 +2272,7 @@ export const modules = {
         label: "NPA Current AC",
         required: true,
         showInView: false,
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: NPA_CURRENT_AC_LOOKUP
       },
       {
         name: "cancelledInvoice",

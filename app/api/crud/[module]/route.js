@@ -52,7 +52,12 @@ import {
   isInvoicesReceivedInvoicePickerList,
   normalizeInvoicesReceivedInvoiceFkFields
 } from "../../../../lib/modules/invoicesReceived";
-import { appendVehicleInvoiceCasePickerLoanCategoryFilter } from "../../../../lib/modules/vehicleInvoice";
+import {
+  appendVehicleInvoiceCasePickerLoanCategoryFilter,
+  enrichVehicleInvoiceListRows
+} from "../../../../lib/modules/vehicleInvoice";
+import { enrichRecoveryInvoiceListRows } from "../../../../lib/modules/recoveryInvoice";
+import { enrichSarfaesiInvoiceListRows } from "../../../../lib/modules/sarfaesiInvoice";
 import { enrichAuditLogRecordLabels } from "../../../../lib/modules/auditLogsEnrich";
 import { parseNumericCellValue } from "../../../../lib/formatInrNumber";
 import { appendNumberColumnFilter } from "../../../../lib/crudNumberFilter";
@@ -480,6 +485,18 @@ export async function GET(req, { params }) {
     }
 
     await enrichLookupDisplayRows(m, rows);
+
+    if (module === "recovery_invoice" && !forLookup && rows.length) {
+      await enrichRecoveryInvoiceListRows(rows);
+    }
+
+    if (module === "sarfaesi_invoice" && !forLookup && rows.length) {
+      await enrichSarfaesiInvoiceListRows(rows);
+    }
+
+    if (module === "vehicle_invoice" && !forLookup && rows.length) {
+      await enrichVehicleInvoiceListRows(rows);
+    }
 
     if (irInvoicePicker && rows.length) {
       await enrichInvoicesReceivedInvoicePickerRows(rows);

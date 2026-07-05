@@ -37,6 +37,16 @@ function ClearIcon() {
   );
 }
 
+function NewRecordIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
+    </svg>
+  );
+}
+
 function ChevronIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -134,7 +144,7 @@ export default function MasterActionsMenu({
             onClear();
           }}
         >
-          <ClearIcon />
+          {entryMode ? <ClearIcon /> : <NewRecordIcon />}
           {entryMode ? "Clear Screen" : "New Record"}
         </button>
       </div>

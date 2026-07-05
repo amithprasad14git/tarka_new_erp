@@ -1663,7 +1663,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "outputFormat",
@@ -1795,7 +1795,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "outputFormat",
@@ -1908,7 +1908,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "paymentMode",
@@ -2088,7 +2088,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "transactionType",
@@ -2255,13 +2255,13 @@ export const reports = {
         name: "fromCurrentAc",
         type: "lookup",
         label: "From Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "toCurrentAc",
         type: "lookup",
         label: "To Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "outputFormat",
@@ -2353,7 +2353,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "outputFormat",
@@ -2440,7 +2440,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "bank",
@@ -2594,7 +2594,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "bank",
@@ -2707,7 +2707,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "bank",
@@ -2826,7 +2826,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "paymentMode",
@@ -3000,7 +3000,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "outputFormat",
@@ -3064,7 +3064,7 @@ export const reports = {
         name: "npaCurrentAc",
         type: "lookup",
         label: "NPA Current AC",
-        lookup: { module: "current_account_master", valueField: "id" }
+        lookup: { module: "current_account_master", valueField: "id", extraLovParams: { f_active: "Yes" } }
       },
       {
         name: "bank",

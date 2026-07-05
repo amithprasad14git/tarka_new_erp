@@ -2,7 +2,7 @@
 
 This note is for **operators**, **support staff**, and **developers** who need to understand the Recovery Invoice printout without reading all the drawing code.
 
-**Layout status:** The on-page design is **frozen** (approved May 2026). Small text or data fixes are fine; changing column positions or spacing should be rare and tested on a real print/PDF.
+**Layout status:** Column positions remain tuned (May 2026 baseline). **July 2026 update:** 11pt body / 13pt section / 10pt table headers (same as SARFAESI & Vehicle); header, borrower, and account blocks use faint horizontal row dividers.
 
 See also: [invoices-pdf.md](invoices-pdf.md) (comparison of all invoice PDFs).
 
@@ -38,7 +38,7 @@ The PDF is built from the saved Recovery Invoice and related master data:
 
 | Section | Main source |
 |---------|-------------|
-| Bank, branch, place, RBO/RO | Branch on the linked **New Case Inward** (`caseNo`) → branch master chain; blank when no case |
+| Bank, branch, place, RBO/RO | Branch on the linked **New Case Inward** (`caseNo`) → branch master chain; RBO/RO prints **short code** (falls back to full name); blank when no case |
 | Invoice date, invoice number | Recovery Invoice record |
 | Unit code | **`billToUnit`** on the invoice → `unit_master` (not the case unit) |
 | Case number, borrower, loan details | Linked **New Case Inward** via `caseNo`; blank when `caseNo` is empty |
@@ -62,12 +62,12 @@ Cross-unit billing: the linked case is loaded by id for print even when New Case
 
 1. Company logo  
 2. Copy label (Triplicate / Duplicate / Original)  
-3. **Header table** — two columns: bank/branch on the left; date, invoice no, unit, case no, GST on the right  
+3. **Header block** — two columns separated by a faint vertical line: bank/branch on the left; date, invoice no, unit, case no, GST on the right (faint horizontal row lines; no label|value vertical dividers)  
 4. “Recovery Invoice” badge image  
-5. **Borrower block** — borrower, loan A/C, loan type, NPA date, account status  
+5. **Borrower block** — borrower, loan A/C, loan type, NPA date, account status (faint horizontal row lines)  
 6. **Two tables** — Recovery Details (left) and Recovery Charges (right), with totals  
 7. **Amount in words** (bold)  
-8. **Current account** (left, compact 9pt / 18pt rows) + **RCM note** (right)  
+8. **Current account** (left, 11pt / 19pt rows) + **RCM note** (right, auto-fit from 10pt)  
 9. “Authorised Signatory” (right)  
 10. Registered office **footer image**
 

@@ -1,6 +1,6 @@
 # SARFAESI Invoice PDF — simple guide
 
-This note explains the **SARFAESI Invoice** printout for operators and developers. Layout matches the **Recovery Invoice** header/account/footer pattern, but uses **one full-width charges table** (no recovery-details / amount-recovered table).
+This note explains the **SARFAESI Invoice** printout for operators and developers. Layout matches the **Recovery** and **Vehicle Invoice** PDFs (11pt body, 13pt section titles, 10pt table headers; faint horizontal row lines, darker grid lines). Uses **one full-width charges table** (no recovery-details / amount-recovered table).
 
 See also: [invoices-pdf.md](invoices-pdf.md) (comparison of all invoice PDFs).
 
@@ -33,7 +33,7 @@ One PDF file with **three pages** (same copy labels as Recovery Invoice):
 
 | Section | Source |
 |---------|--------|
-| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** (`caseNo`) |
+| Bank, branch, place, RBO/RO | Branch chain from linked **New Case Inward** (`caseNo`); RBO/RO prints **short code** (falls back to full name) |
 | Invoice date, invoice number | **sarfaesi_invoice** row |
 | Unit | **`billToUnit`** on the invoice → `unit_master` (not the case unit) |
 | Case number, borrower, loan type | Linked **New Case Inward** via `caseNo` |
@@ -54,12 +54,12 @@ Amounts use the **₹** symbol. Long particulars/remarks **wrap**; row height gr
 
 1. Company logo  
 2. Copy label  
-3. Header table  
+3. Header block — faint horizontal row lines; vertical split between bank/branch and date/invoice columns  
 4. Centre badge (`npa_sarfaesi_invoice.png`, or recovery badge if missing)  
-5. Borrower block — borrower, loan A/C no., loan type (no NPA date / account status on PDF)  
+5. Borrower block — borrower, loan A/C no., loan type (faint horizontal row lines)  
 6. Charges grid + TOTAL row  
 7. Amount in words (bold)  
-8. Current account (compact) + RCM note  
+8. Current account (11pt / 19pt rows) + RCM note (auto-fit from 10pt)  
 9. Authorised Signatory (right)  
 10. Footer image  
 
