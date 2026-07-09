@@ -9,14 +9,15 @@
  * Login page: posts to `/api/auth/login`; successful login sets httpOnly `session` cookie and redirects to dashboard.
  * Layout: floating split card (58% hero / 42% form) on #f8fafc page background.
  */
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatApiErrorPayload,
   formatUserFacingError,
   readJsonResponse
 } from "../../lib/fetchClientError";
 import { apiUserMessage } from "../../lib/apiUserMessages";
+import { sessionErrorMessageForLoginReason } from "../../lib/sessionMessages";
 import styles from "./login.module.css";
 
 const TARKA_LOGO_SRC = "/images/tarkalogo.png";
@@ -25,11 +26,19 @@ const LOGIN_HERO_SRC = "/images/chatgpt_login_image.png";
 /** Public login form; on success redirects to `/dashboard`. */
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (reason) {
+      setError(sessionErrorMessageForLoginReason(reason));
+    }
+  }, [searchParams]);
 
   // POST credentials; server sets session cookie — we only navigate on success.
   const handleLogin = async (e) => {

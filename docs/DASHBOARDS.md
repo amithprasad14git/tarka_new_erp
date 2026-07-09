@@ -90,6 +90,7 @@ Unit Wise Recovery Target uses similar rules inside its own `run.js`.
 - **UI:** `components/dashboards/unit_wise_recovery_target/UnitWiseRecoveryTargetWidget.js`
 - **Achieved amount (Recovery Progress):** Same rules as **Unit Wise Cumulative** report — cases with final settled status (excluding Returned), `caseStatusUpdatedDate` in active FY, lifetime sum of `new_case_inward_amount_recovered.recoveredAmount` per case (not FY-filtered recovery dates). Bank pie groups that total by bank (no `bank.active` filter).
 - **Settled Cases (FY) KPI:** Count of those settled cases with cash recovered > 0.
+- **Pending Cases on Hand:** Open cases grouped by status; cases with no or blank `caseStatus` appear under **For Execution**.
 - **Month chart:** Groups by **settlement month** (`caseStatusUpdatedDate`), not recovery date.
 
 ### Invoice Collections

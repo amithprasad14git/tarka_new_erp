@@ -19,17 +19,25 @@ jest.mock("../../config/modules", () => ({
   }
 }));
 
-jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
-}));
+jest.mock("../../lib/session", () => {
+  const { apiUserMessage } = require("../../lib/apiUserMessages");
+  return {
+    getSessionUser: jest.fn(),
+    getSessionInvalidReason: jest.fn(),
+    sessionErrorMessageForInvalidReason: (reason) =>
+      reason === "replaced" ? apiUserMessage("sessionReplaced") : apiUserMessage("sessionExpired"),
+    sessionLoginReasonForInvalid: (reason) => (reason === "replaced" ? "replaced" : "expired")
+  };
+});
 
 jest.mock("../../lib/rbac", () => ({
   hasModulePermission: jest.fn()
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
+const { apiUserMessage } = require("../../lib/apiUserMessages");
 const { GET } = require("../../app/api/permissions/[module]/route");
 
 // Checks who may view, create, edit, or delete records based on their permission row.
@@ -42,9 +50,13 @@ describe("api/permissions/[module] route", () => {
 
   test("returns 401 when session is missing", async () => {
     getSessionUser.mockResolvedValue(null);
+    getSessionInvalidReason.mockResolvedValue("missing");
     const res = await GET({}, { params: Promise.resolve({ module: "branch_master" }) });
     expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
+    await expect(res.json()).resolves.toEqual({
+      error: apiUserMessage("sessionExpired"),
+      reason: "expired"
+    });
   });
 
   test("returns 404 for unknown module", async () => {

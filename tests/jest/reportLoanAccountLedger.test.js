@@ -119,13 +119,13 @@ describe("splitLoanLedgerAmounts", () => {
 });
 
 describe("buildFilterSummaryText as-on date label", () => {
-  test("formats as on date filter as DD/MM/YYYY", () => {
+  test("formats as on date filter as DD-MM-YYYY", () => {
     const cfg = getReportConfig("report_loan_account_ledger");
     const summary = buildFilterSummaryText(cfg, {
       asOnDate: "2026-06-02",
       transactionType: "Receipt"
     });
-    expect(summary).toContain("As on Date: 02/06/2026");
+    expect(summary).toContain("As on Date: 02-06-2026");
     expect(summary).toContain("Transaction Type: Receipt");
   });
 });

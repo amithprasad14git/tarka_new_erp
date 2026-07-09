@@ -7,8 +7,7 @@
  * Drawing: lib/modules/vehicleInvoicePdf.js — docs/vehicle-invoice-pdf.md, docs/invoices-pdf.md.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
@@ -18,13 +17,6 @@ import {
   safeVehicleInvoicePdfFilename
 } from "../../../../../lib/modules/vehicleInvoicePdf";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-
-// Session cookie → logged-in user.
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 // Bank / RBO / branch labels for Vehicle Loan invoice PDF.
 async function loadBranchChainForPdf(branchId) {
@@ -108,10 +100,11 @@ async function loadCurrentAccountForPdf(caId) {
 }
 
 // Vehicle Invoice PDF download.
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { id } = await params;
     const result = await getCrudRecordById(user, "vehicle_invoice", id);

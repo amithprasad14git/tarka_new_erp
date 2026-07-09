@@ -6,8 +6,7 @@
  * Requires dashboard_my_reminders permission (canAccessDashboard my_reminders).
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../lib/session";
+import { requireRequestUser } from "../../../lib/requestSession";
 import { canAccessDashboard } from "../../../lib/dashboards/dashboardAccess";
 import {
   listRemindersForDashboard,
@@ -16,14 +15,7 @@ import {
 } from "../../../lib/modules/reminderDashboard.service";
 import { jsonApiErrorForAction } from "../../../lib/apiErrorResponse";
 
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
-
 async function assertDashboardReminderAccess(user) {
-  if (!user) return { status: 401, body: { error: "Unauthorized" } };
   const allowed = await canAccessDashboard(user, "my_reminders");
   if (!allowed) return { status: 403, body: { error: "Forbidden" } };
   return null;
@@ -31,7 +23,9 @@ async function assertDashboardReminderAccess(user) {
 
 export async function GET(req) {
   try {
-    const user = await getRequestUser();
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
     const denied = await assertDashboardReminderAccess(user);
     if (denied) return Response.json(denied.body, { status: denied.status });
 
@@ -57,7 +51,9 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const user = await getRequestUser();
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
     const denied = await assertDashboardReminderAccess(user);
     if (denied) return Response.json(denied.body, { status: denied.status });
 

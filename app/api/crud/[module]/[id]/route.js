@@ -24,17 +24,9 @@
  * - Unexpected server failure: 500 with a generic message; details only in server logs.
  * =============================================================================
  */
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { deleteCrudRecord, getCrudRecordById, updateCrudRecord } from "../../../../../lib/services/crud.service";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-
-/** Same as the list route: cookie → session id → user object or null. */
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 /**
  * GET — load one parent row (and configured child tables) for the entry form.
@@ -42,8 +34,9 @@ async function getRequestUser() {
 // Load one record (and child tables) for view/edit form.
 export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { module, id } = await params;
     const result = await getCrudRecordById(user, module, id);
@@ -63,8 +56,9 @@ export async function GET(req, { params }) {
 // Update existing row; JSON body is read only after edit permission passes in service.
 export async function PUT(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { module, id } = await params;
     const result = await updateCrudRecord(user, module, id, () => req.json());
@@ -81,8 +75,9 @@ export async function PUT(req, { params }) {
 // Permanently delete one row after permission and row-scope checks in service.
 export async function DELETE(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { module, id } = await params;
     const result = await deleteCrudRecord(user, module, id);

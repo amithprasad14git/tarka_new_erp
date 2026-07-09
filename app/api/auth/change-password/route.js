@@ -10,7 +10,7 @@ import { cookies } from "next/headers";
 import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableId } from "../../../../lib/sqlModuleTable";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 import { validateNewPassword } from "../../../../lib/passwordPolicy";
 
 /**
@@ -39,7 +39,7 @@ export async function POST(req) {
     const sid = cookieStore.get("session")?.value;
     const sessionUser = await getSessionUser(sid);
     if (!sessionUser?.id) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      return await jsonUnauthorizedForSession(sid);
     }
 
     const body = await req.json();

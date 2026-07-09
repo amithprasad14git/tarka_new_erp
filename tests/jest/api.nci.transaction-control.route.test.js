@@ -13,9 +13,16 @@ jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
 
-jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
-}));
+jest.mock("../../lib/session", () => {
+  const { apiUserMessage } = require("../../lib/apiUserMessages");
+  return {
+    getSessionUser: jest.fn(),
+    getSessionInvalidReason: jest.fn(),
+    sessionErrorMessageForInvalidReason: (reason) =>
+      reason === "replaced" ? apiUserMessage("sessionReplaced") : apiUserMessage("sessionExpired"),
+    sessionLoginReasonForInvalid: (reason) => (reason === "replaced" ? "replaced" : "expired")
+  };
+});
 
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
@@ -31,8 +38,9 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const pool = require("../../lib/db").default;
+const { apiUserMessage } = require("../../lib/apiUserMessages");
 const { GET } = require("../../app/api/new-case-inward/transaction-control/route");
 
 // Automated checks for: api/new-case-inward/transaction-control route.
@@ -52,9 +60,13 @@ describe("api/new-case-inward/transaction-control route", () => {
 
   test("returns 401 when session is missing", async () => {
     getSessionUser.mockResolvedValue(null);
+    getSessionInvalidReason.mockResolvedValue("missing");
     const res = await GET();
     expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
+    await expect(res.json()).resolves.toEqual({
+      error: apiUserMessage("sessionExpired"),
+      reason: "expired"
+    });
   });
 
   test("returns active control rows", async () => {

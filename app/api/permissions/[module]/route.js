@@ -8,7 +8,7 @@
 import { modules } from "../../../../config/modules";
 import { getSessionUser } from "../../../../lib/session";
 import { hasModulePermission } from "../../../../lib/rbac";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 import { cookies } from "next/headers";
 
 // Tell the UI which buttons to show (view/create/edit/delete) for one module.
@@ -20,7 +20,7 @@ export async function GET(req, { params }) {
     const user = await getSessionUser(sid);
 
     if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      return await jsonUnauthorizedForSession(sid);
     }
 
     // `params.module` comes from the dynamic route segment: `/api/permissions/:module`.

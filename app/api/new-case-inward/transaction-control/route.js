@@ -11,7 +11,7 @@ import pool from "../../../../lib/db";
 import { modules } from "../../../../config/modules";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 /**
  * Returns New Case Inward transaction-control rows for UI date-picker limits.
@@ -25,7 +25,7 @@ export async function GET() {
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return await jsonUnauthorizedForSession(sid);
 
     const cfg = modules.new_case_inward_transaction_control;
     // If module config is missing, return empty data instead of failing hard.

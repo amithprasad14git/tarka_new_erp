@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 import { modules } from "../../config/modules";
 import { reports } from "../../config/reports";
 import { dashboards } from "../../config/dashboards";
-import { getSessionUser } from "../../lib/session";
+import { getSessionInvalidReason, getSessionUser, sessionLoginReasonForInvalid } from "../../lib/session";
 import { hasAnyModuleAccess } from "../../lib/rbac";
 import { canAccessDashboardByPermissionKey } from "../../lib/dashboards/dashboardAccess";
 import DashboardSidebar from "../../components/DashboardSidebar";
@@ -34,8 +34,9 @@ export default async function DashboardLayout({ children }) {
   const user = await getSessionUser(sid);
 
   if (!user) {
-    // Without a valid session, force the user back to login.
-    redirect("/login");
+    const invalidReason = await getSessionInvalidReason(sid);
+    const reason = sessionLoginReasonForInvalid(invalidReason);
+    redirect(`/login?reason=${reason}`);
   }
 
   // Sidebar: show a module if the user has any CRUD flag (create-only users must still see the module).

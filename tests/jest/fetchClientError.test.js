@@ -7,6 +7,7 @@ const {
   formatUserFacingError,
   isNetworkFetchError,
   isUnauthorizedMessage,
+  resolveSessionAuthDisplayMessage,
   readJsonResponse
 } = require("../../lib/fetchClientError");
 const { apiUserMessage } = require("../../lib/apiUserMessages");
@@ -38,6 +39,16 @@ describe("fetchClientError", () => {
       apiUserMessage("sessionExpired")
     );
     expect(isUnauthorizedMessage("Unauthorized")).toBe(true);
+  });
+
+  test("recognizes layman session auth messages", () => {
+    expect(isUnauthorizedMessage(apiUserMessage("sessionReplaced"))).toBe(true);
+    expect(resolveSessionAuthDisplayMessage(apiUserMessage("sessionReplaced"))).toBe(
+      apiUserMessage("sessionReplaced")
+    );
+    expect(formatUserFacingError(new Error(apiUserMessage("sessionInactive")))).toBe(
+      apiUserMessage("sessionInactive")
+    );
   });
 
   test("formatUserFacingError preserves API error text", () => {

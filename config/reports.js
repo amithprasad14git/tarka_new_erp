@@ -136,7 +136,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -155,7 +154,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -373,7 +371,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -398,7 +395,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -571,7 +567,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -596,7 +591,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -753,7 +747,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -778,7 +771,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -936,7 +928,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -961,7 +952,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -988,7 +978,6 @@ export const reports = {
         key: "returnDate",
         label: "RETURN DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem"
@@ -1166,7 +1155,6 @@ export const reports = {
         key: "entrustmentDate",
         label: "ENTRUSTMENT DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem",
@@ -1233,7 +1221,6 @@ export const reports = {
         key: "npaDate",
         label: "NPA DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem",
@@ -1261,7 +1248,6 @@ export const reports = {
         key: "settledDate",
         label: "SETTLED DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 14,
         widthHtml: "7rem",
@@ -1350,8 +1336,6 @@ export const reports = {
       customRenderer: "region_wise_cumulative",
       title: "REGION WISE CUMMULATIVE REPORT",
       contentAlign: "center",
-      showGeneratedAt: false,
-      showOutputMeta: false,
       filterSummaryExcludeFields: ["outputFormat", "financialYear"]
     },
 
@@ -1412,7 +1396,7 @@ export const reports = {
         default: "Month Wise",
         options: [
           { label: "Month Wise", value: "Month Wise" },
-          { label: "Summary", value: "Summary" }
+          { label: "Unit Wise", value: "Unit Wise" }
         ]
       },
       {
@@ -1439,8 +1423,6 @@ export const reports = {
       customRenderer: "unit_wise_cumulative",
       title: "UNIT WISE CUMMULATIVE REPORT",
       contentAlign: "center",
-      showGeneratedAt: false,
-      showOutputMeta: false,
       filterSummaryExcludeFields: ["outputFormat", "financialYear"]
     },
 
@@ -1521,8 +1503,6 @@ export const reports = {
       mode: "custom",
       customRenderer: "sarfaesi_case_report",
       title: "SARFAESI CASE STATUS REPORT",
-      showGeneratedAt: false,
-      showOutputMeta: false,
       filterSummaryExcludeFields: ["outputFormat"]
     },
 
@@ -1696,7 +1676,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -1739,7 +1718,6 @@ export const reports = {
         key: "chequeDate",
         label: "CHEQUE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -1826,7 +1804,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -1868,7 +1845,6 @@ export const reports = {
         key: "chequeDate",
         label: "CHEQUE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -1995,7 +1971,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2048,7 +2023,6 @@ export const reports = {
         key: "chequeDate",
         label: "CHEQUE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2160,7 +2134,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2211,7 +2184,6 @@ export const reports = {
         key: "chequeDate",
         label: "CHEQUE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2292,7 +2264,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2384,7 +2355,6 @@ export const reports = {
         key: "date",
         label: "DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -2513,7 +2483,6 @@ export const reports = {
         key: "invoiceDate",
         label: "INVOICE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -3125,7 +3094,6 @@ export const reports = {
         key: "invoiceDate",
         label: "INVOICE DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"
@@ -3135,7 +3103,6 @@ export const reports = {
         key: "receivedDate",
         label: "RECEIVED DATE",
         type: "date",
-        dateFormat: "dd/MM/yyyy",
         align: "center",
         widthExcel: 12,
         widthHtml: "7rem"

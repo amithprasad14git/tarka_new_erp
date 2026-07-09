@@ -6,17 +6,10 @@
  * Delegates to lib/reports/report.service.js. See docs/REPORTS.md.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { isReportKey } from "../../../../../lib/reportConfig";
 import { runReportForUser } from "../../../../../lib/reports/report.service";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 function parseFiltersFromUrl(url) {
   const out = {};
@@ -40,7 +33,9 @@ function parseFilterLabels(url) {
 
 export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
     const { module: reportKey } = await params;
 
     // Report keys live in config/reports.js (not config/modules.js).
@@ -58,9 +53,6 @@ export async function GET(req, { params }) {
       filterLabels
     });
 
-    if (result.status === 401) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
     if (result.status === 403) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }

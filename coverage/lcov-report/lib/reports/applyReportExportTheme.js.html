@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>5/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>8/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -120,16 +120,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -140,7 +138,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -161,15 +161,15 @@ import { REPORT_EXPORT_THEME } from "../../config/reportExportTheme";
  * @param {object | null | undefined} reportConfig Raw entry from config/reports.js
  * @returns {object | null}
  */
-export function <span class="fstat-no" title="function not covered" >applyReportExportTheme(</span>reportConfig) {
-<span class="cstat-no" title="statement not covered" >  if (!reportConfig) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+export function applyReportExportTheme(reportConfig) {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!reportConfig) <span class="cstat-no" title="statement not covered" >return null;</span>
 &nbsp;
-  const theme = <span class="cstat-no" title="statement not covered" >REPORT_EXPORT_THEME;</span>
-  const layout = <span class="cstat-no" title="statement not covered" >{</span>
+  const theme = REPORT_EXPORT_THEME;
+  const layout = {
     ...theme.reportLayout,
-    ...(reportConfig.reportLayout || {})
+    ...(reportConfig.reportLayout || <span class="branch-1 cbranch-no" title="branch not covered" >{})</span>
   };
-  const style = <span class="cstat-no" title="statement not covered" >{</span>
+  const style = {
     ...theme.reportStyle,
     ...(reportConfig.reportStyle || {}),
     zebra: {
@@ -182,7 +182,7 @@ export function <span class="fstat-no" title="function not covered" >applyReport
     }
   };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return {</span>
+  return {
     ...reportConfig,
     reportLayout: layout,
     reportStyle: style,
@@ -196,7 +196,7 @@ export function <span class="fstat-no" title="function not covered" >applyReport
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-04T11:17:29.148Z
+                at 2026-07-09T00:22:19.303Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

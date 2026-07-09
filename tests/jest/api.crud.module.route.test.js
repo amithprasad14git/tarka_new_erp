@@ -5,14 +5,6 @@
  * Run with: npm test
  */
 
-// Test file for validating app behavior and regression safety.
-// Keep module-specific business logic in lib/modules/<module> files.
-
-// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
-jest.mock("next/headers", () => ({
-  cookies: jest.fn()
-}));
-
 jest.mock("../../config/modules", () => ({
   modules: {
     sample_module: {
@@ -50,7 +42,8 @@ jest.mock("../../lib/db", () => {
 });
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/rbac", () => ({
@@ -93,22 +86,28 @@ jest.mock("../../lib/modules/newCaseInward", () => ({
   applyRole2FinalStageEditLock: jest.fn()
 }));
 
-const { cookies } = require("next/headers");
 const pool = require("../../lib/db").default;
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const { createCrudRecord } = require("../../lib/services/crud.service");
 const { GET, POST } = require("../../app/api/crud/[module]/route");
 
-// Checks the HTTP API handler returns the right status codes and messages.
+function mockReq(url, cookieHeader = "session=sid-crud") {
+  return {
+    url,
+    headers: {
+      get: (name) => (String(name).toLowerCase() === "cookie" ? cookieHeader : null)
+    }
+  };
+}
+
 describe("api/crud/[module] route", () => {
   let consoleErrorSpy;
 
-  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-crud" }) });
+    getSessionInvalidReason.mockResolvedValue("missing");
   });
 
   afterEach(() => {
@@ -117,14 +116,14 @@ describe("api/crud/[module] route", () => {
 
   test("GET returns 401 when session missing", async () => {
     getSessionUser.mockResolvedValue(null);
-    const req = { url: "http://localhost/api/crud/sample_module" };
+    const req = mockReq("http://localhost/api/crud/sample_module", "");
     const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(res.status).toBe(401);
   });
 
   test("GET returns 404 for unknown module", async () => {
     getSessionUser.mockResolvedValue({ id: 1, role: 1 });
-    const req = { url: "http://localhost/api/crud/unknown" };
+    const req = mockReq("http://localhost/api/crud/unknown");
     const res = await GET(req, { params: Promise.resolve({ module: "unknown" }) });
     expect(res.status).toBe(404);
   });
@@ -136,12 +135,13 @@ describe("api/crud/[module] route", () => {
       .mockResolvedValueOnce([[{ total: 1 }]])
       .mockResolvedValueOnce([[{ id: 1, name: "A" }]]);
 
-    const req = { url: "http://localhost/api/crud/sample_module?page=1&limit=20" };
+    const req = mockReq("http://localhost/api/crud/sample_module?page=1&limit=20");
     const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(res.status).toBe(200);
     const payload = await res.json();
     expect(payload.data).toEqual([{ id: 1, name: "A" }]);
     expect(payload.meta.total).toBe(1);
+    expect(getSessionUser).toHaveBeenCalledWith("sid-crud");
   });
 
   test("GET lookup supports exclude_id filter", async () => {
@@ -151,7 +151,9 @@ describe("api/crud/[module] route", () => {
       .mockResolvedValueOnce([[{ total: 0 }]])
       .mockResolvedValueOnce([[]]);
 
-    const req = { url: "http://localhost/api/crud/sample_module?lov=1&exclude_id=77&page=1&limit=20" };
+    const req = mockReq(
+      "http://localhost/api/crud/sample_module?lov=1&exclude_id=77&page=1&limit=20"
+    );
     const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(res.status).toBe(200);
     const countCall = pool.query.mock.calls[0];
@@ -166,7 +168,7 @@ describe("api/crud/[module] route", () => {
       .mockResolvedValueOnce([[{ total: 0 }]])
       .mockResolvedValueOnce([[]]);
 
-    const req = { url: "http://localhost/api/crud/sample_module?lov=1&f_unit=5&page=1&limit=20" };
+    const req = mockReq("http://localhost/api/crud/sample_module?lov=1&f_unit=5&page=1&limit=20");
     const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(res.status).toBe(200);
     const countCall = pool.query.mock.calls[0];
@@ -176,14 +178,20 @@ describe("api/crud/[module] route", () => {
 
   test("POST returns 401 when session missing", async () => {
     getSessionUser.mockResolvedValue(null);
-    const res = await POST({ json: jest.fn() }, { params: Promise.resolve({ module: "sample_module" }) });
+    const res = await POST(
+      { ...mockReq("http://localhost/api/crud/sample_module", ""), json: jest.fn() },
+      { params: Promise.resolve({ module: "sample_module" }) }
+    );
     expect(res.status).toBe(401);
   });
 
   test("POST delegates to createCrudRecord", async () => {
     getSessionUser.mockResolvedValue({ id: 1 });
     createCrudRecord.mockResolvedValue({ status: 200, body: { ok: true, id: 10 } });
-    const req = { json: jest.fn().mockResolvedValue({ name: "X" }) };
+    const req = {
+      ...mockReq("http://localhost/api/crud/sample_module"),
+      json: jest.fn().mockResolvedValue({ name: "X" })
+    };
     const res = await POST(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(createCrudRecord).toHaveBeenCalledWith({ id: 1 }, "sample_module", { name: "X" });
     expect(res.status).toBe(200);
@@ -196,7 +204,7 @@ describe("api/crud/[module] route", () => {
     pool.query.mockRejectedValueOnce(
       Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" })
     );
-    const req = { url: "http://localhost/api/crud/sample_module?page=1&limit=20" };
+    const req = mockReq("http://localhost/api/crud/sample_module?page=1&limit=20");
     const res = await GET(req, { params: Promise.resolve({ module: "sample_module" }) });
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({
@@ -205,5 +213,3 @@ describe("api/crud/[module] route", () => {
     });
   });
 });
-
-

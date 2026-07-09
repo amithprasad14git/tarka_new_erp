@@ -85,10 +85,11 @@ HTML and Excel always receive the **same** visible column list and totals.
 - **Dark:** CSS vars — subtle brand-tinted zebra, header, and totals on `var(--panel)`
 - **Line-height:** `1.5` body; `1.45` header (denser rows)
 - **Borders:** horizontal row lines only (no vertical grid in body); sticky header with stronger bottom edge
-- **Table:** `width: 100%`, `table-layout: fixed`, sticky header, hidden scrollbars, cell wrap
+- **Table:** `width: 100%`, `table-layout: fixed`, sticky header, hidden scrollbars, cell wrap; INR/number columns use `nowrap` (horizontal scroll on narrow viewports)
 - **Font toolbar:** top-right of report card when rows present — **A− / A / A+** (session-only; min/max disabled)
 - **Filter panel:** remains visible after Generate; use **Generate** again to refresh output with changed filters
-- **Output meta:** inline with filter summary — filters left, `Generated On: DD/MM/YYYY, HH:mm · N records` right on the same row
+- **Dates:** all report date columns, filter summary dates, and Excel export use **DD-MM-YYYY** (`lib/formatReportDateDisplay.js`)
+- **Output meta:** filters left and `Generated: DD-MM-YYYY, HH:mm · N records` right on one row; centered reports (`contentAlign: center`) stack filter summary and generated meta on separate lines
 - **Loading:** skeleton placeholder in the output area while HTML runs (Excel still uses overlay)
 - **Table scroll:** hidden scrollbar; animated down-chevron while more rows below; animated up-chevron at bottom (click scrolls to top)
 - **Full screen:** toolbar **⛶** shows table only (font controls + data); **✕** or **Esc** to exit
@@ -99,7 +100,7 @@ HTML and Excel always receive the **same** visible column list and totals.
 - Table: 9pt; title 12pt; filter 10pt
 - Logo: 2 rows `[34, 24]` height (title starts row 3); fixed size `logoExtWidth: 396`, `logoExtHeight: 58` pixels via `addReportExcelLogo.js` (`editAs: absolute` — immune to later column width changes)
 - No gridlines; header/footer borders; vertical lines on data columns
-- **Wrap text** on filter summary, column headers, data cells, and totals row (`buildReportWorkbook.js`)
+- **Wrap text** on filter summary, column headers, text data cells, and totals row; INR/number cells omit wrap (`buildReportWorkbook.js`)
 - Zebra / totals: `#ffffff` / `#F0F4F8`; header `#9DB7C8`; total row `#9FD4AD`
 
 ### Changing frozen styling

@@ -8,14 +8,14 @@ import pool from "../../../../lib/db";
 import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import { resolveReturnCaseCcToByCaseId } from "../../../../lib/modules/returnCase";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 export async function GET(req) {
   try {
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return await jsonUnauthorizedForSession(sid);
 
     const moduleKey = "return_case";
     const [canView, canCreate, canEdit] = await Promise.all([

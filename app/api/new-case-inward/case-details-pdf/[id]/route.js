@@ -12,8 +12,7 @@
  * 4) Build PDF bytes
  * 5) Return as file download
  */
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import pool from "../../../../../lib/db";
 import { resolveNewCaseInwardBankRuleByBranch } from "../../../../../lib/modules/newCaseInward";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
@@ -25,18 +24,12 @@ import { rowValueForField } from "../../../../../lib/gridRowValue";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 import { apiUserMessage } from "../../../../../lib/apiUserMessages";
 
-async function getRequestUser() {
-  // Reuse session cookie handling used by other APIs.
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
-
 // Full case dossier PDF (parent + child tables); same access as viewing the NCI record.
 export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { id } = await params;
     const result = await getCrudRecordById(user, "new_case_inward", id);

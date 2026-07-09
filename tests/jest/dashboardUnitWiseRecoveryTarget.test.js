@@ -170,8 +170,11 @@ describe("companion widget SQL helpers", () => {
     expect(sql).toContain("DATE(nci.entrustmentDate) <= CURDATE()");
     expect(sql).toContain("nci.caseStatus IS NULL OR cs.lookupValue IS NULL");
     expect(sql).toContain("LOWER(TRIM(cs.lookupValue)) NOT IN");
-    expect(sql).toContain("TRIM(cs.lookupValue) <> ''");
-    expect(sql).toContain("INNER JOIN");
+    expect(sql).toContain("For Execution");
+    expect(sql).toContain("CASE");
+    expect(sql).toContain("LEFT JOIN");
+    expect(sql).not.toContain("INNER JOIN");
+    expect(sql).not.toContain("TRIM(cs.lookupValue) <> ''");
   });
 
   test("pendingCaseStatusCountBindValues appends open-case filter values after unit ids", () => {
@@ -205,8 +208,9 @@ describe("loadDashboard unit scoping", () => {
         { monthKey: "2025-05", monthLabel: "May-2025", amountRecovered: 600000 }
       ],
       caseStatusCounts: [
-        { statusLabel: "Closed", caseCount: 120 },
-        { statusLabel: "Open", caseCount: 45 }
+        { statusLabel: "Post Execution", caseCount: 120 },
+        { statusLabel: "For Execution", caseCount: 8 },
+        { statusLabel: "Part Recovery", caseCount: 45 }
       ]
     });
 
@@ -217,8 +221,9 @@ describe("loadDashboard unit scoping", () => {
     expect(result.data.totals.gapToTarget).toBe(900000);
     expect(result.data.kpis.recoveredCaseCount).toBe(42);
     expect(result.data.kpis.partRecoveredCaseCount).toBe(7);
-    expect(result.data.kpis.caseStatusCounts).toHaveLength(2);
-    expect(result.data.kpis.caseStatusCounts[0].statusLabel).toBe("Closed");
+    expect(result.data.kpis.caseStatusCounts).toHaveLength(3);
+    expect(result.data.kpis.caseStatusCounts[0].statusLabel).toBe("Post Execution");
+    expect(result.data.kpis.caseStatusCounts.some((r) => r.statusLabel === "For Execution")).toBe(true);
     expect(result.data.monthWiseRecovery).toHaveLength(2);
     const statusQueryCall = pool.query.mock.calls[7];
     expect(statusQueryCall[1]).toEqual(expect.arrayContaining([1, 2]));

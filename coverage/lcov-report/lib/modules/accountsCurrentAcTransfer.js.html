@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.17% </span>
+                <span class="strong">30.43% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/46</span>
+                <span class='fraction'>14/46</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">30% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>9/30</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>6/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.27% </span>
+                <span class="strong">29.54% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/44</span>
+                <span class='fraction'>13/44</span>
             </div>
         
             
@@ -207,31 +207,31 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -304,8 +304,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -334,29 +334,29 @@ import {
 &nbsp;
 export const ACCOUNTS_CURRENT_AC_TRANSFER_MODULE_KEY = "accounts_current_ac_transfer";
 &nbsp;
-function <span class="fstat-no" title="function not covered" >throwValidation(</span>message) {
-<span class="cstat-no" title="statement not covered" >  throw Object.assign(new Error(message), { code: "ACCOUNTS_CURRENT_AC_TRANSFER_VALIDATION_FAILED" });</span>
+function throwValidation(message) {
+  throw Object.assign(new Error(message), { code: "ACCOUNTS_CURRENT_AC_TRANSFER_VALIDATION_FAILED" });
 }
 &nbsp;
-async function <span class="fstat-no" title="function not covered" >assertAccountsCurrentAcTransferDateNotInFrozenFy(</span>conn, parentData, user) {
+async function assertAccountsCurrentAcTransferDateNotInFrozenFy(conn, parentData, user) {
   // Unit operators cannot move balances between current accounts in a frozen FY.
-<span class="cstat-no" title="statement not covered" >  if (!shouldEnforceFreezeTransactionsForUser(user)) <span class="cstat-no" title="statement not covered" >return;</span></span>
-<span class="cstat-no" title="statement not covered" >  await assertDateNotInFrozenFinancialYear(conn, parentData?.date, {</span>
-    onBlocked: <span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >throwValidation(FREEZE_TRANSACTIONS_LOCKED_MESSAGE)</span>
+  if (!shouldEnforceFreezeTransactionsForUser(user)) return;
+  await assertDateNotInFrozenFinancialYear(conn, parentData?.date, {
+    onBlocked: () =&gt; throwValidation(FREEZE_TRANSACTIONS_LOCKED_MESSAGE)
   });
 }
 &nbsp;
-function <span class="fstat-no" title="function not covered" >asPositiveInt(</span>value) {
-  const n = <span class="cstat-no" title="statement not covered" >Number(value);</span>
-<span class="cstat-no" title="statement not covered" >  return Number.isFinite(n) &amp;&amp; n &gt; 0 ? n : null;</span>
+function asPositiveInt(value) {
+  const n = Number(value);
+  return Number.isFinite(n) &amp;&amp; n &gt; 0 ? n : <span class="branch-1 cbranch-no" title="branch not covered" >null;</span>
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >assertAccountsCurrentAcTransferFromToDifferent(</span>parentData) {
+export function assertAccountsCurrentAcTransferFromToDifferent(parentData) {
   // Prevents a no-op transfer that would still consume a voucher number.
-  const fromId = <span class="cstat-no" title="statement not covered" >asPositiveInt(parentData?.fromCurrentAc);</span>
-  const toId = <span class="cstat-no" title="statement not covered" >asPositiveInt(parentData?.toCurrentAc);</span>
-<span class="cstat-no" title="statement not covered" >  if (!fromId || !toId) <span class="cstat-no" title="statement not covered" >return;</span></span>
-<span class="cstat-no" title="statement not covered" >  if (fromId === toId) {</span>
+  const fromId = asPositiveInt(parentData?.fromCurrentAc);
+  const toId = asPositiveInt(parentData?.toCurrentAc);
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!fromId || !toId) <span class="cstat-no" title="statement not covered" >return;</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (fromId === toId) {
 <span class="cstat-no" title="statement not covered" >    throwValidation("From Current AC and To Current AC must be different.");</span>
   }
 }
@@ -427,10 +427,10 @@ export async function <span class="fstat-no" title="function not covered" >assig
   ]);
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >validateAccountsCurrentAcTransferBeforeWrite(</span>conn, { parentData, user }) {
+export async function validateAccountsCurrentAcTransferBeforeWrite(conn, { parentData, user }) {
   // --- FY freeze and from/to current account must differ ---
-<span class="cstat-no" title="statement not covered" >  await assertAccountsCurrentAcTransferDateNotInFrozenFy(conn, parentData, user);</span>
-<span class="cstat-no" title="statement not covered" >  assertAccountsCurrentAcTransferFromToDifferent(parentData);</span>
+  await assertAccountsCurrentAcTransferDateNotInFrozenFy(conn, parentData, user);
+  assertAccountsCurrentAcTransferFromToDifferent(parentData);
 }
 &nbsp;
 export async function <span class="fstat-no" title="function not covered" >applyAccountsCurrentAcTransferBeforeWrite(</span>conn, { oldRow, merged, user }) {
@@ -445,7 +445,7 @@ export async function <span class="fstat-no" title="function not covered" >apply
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-04T11:17:29.148Z
+                at 2026-07-09T00:22:19.303Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

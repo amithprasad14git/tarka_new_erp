@@ -30,6 +30,13 @@ function htmlColumnMinWidth(widthHtml) {
   return undefined;
 }
 
+function cellClassName(col) {
+  if (col.type === "inr") return "report-output-cell--inr";
+  if (col.type === "number") return "report-output-cell--number";
+  if (col.type === "date") return "report-output-cell--date";
+  return undefined;
+}
+
 function cellStyle(col, tableFitContent) {
   const style = cellAlignStyle(col.align);
   if (tableFitContent) {
@@ -48,7 +55,7 @@ function renderSumRowCells(columns, labelColKey, labelText, sumValues, tableFitC
       content = formatReportAmountForDisplay(sumValues[col.key]);
     }
     return (
-      <td key={col.key} style={cellStyle(col, tableFitContent)}>
+      <td key={col.key} className={cellClassName(col)} style={cellStyle(col, tableFitContent)}>
         {content}
       </td>
     );
@@ -62,7 +69,7 @@ function renderDetailRow(columns, row, rowIndex, tableFitContent) {
       className={rowIndex % 2 === 0 ? "report-output-row-even" : "report-output-row-odd"}
     >
       {columns.map((col) => (
-        <td key={col.key} style={cellStyle(col, tableFitContent)}>
+        <td key={col.key} className={cellClassName(col)} style={cellStyle(col, tableFitContent)}>
           {formatReportCellValue(col, row[col.key])}
         </td>
       ))}
@@ -256,7 +263,7 @@ export default function ReportOutputView({
               <thead>
                 <tr>
                   {columns.map((col) => (
-                    <th key={col.key} style={cellStyle(col, tableFitContent)}>
+                    <th key={col.key} className={cellClassName(col)} style={cellStyle(col, tableFitContent)}>
                       {col.label}
                     </th>
                   ))}

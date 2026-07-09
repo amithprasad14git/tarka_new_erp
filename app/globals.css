@@ -7290,6 +7290,10 @@ button.master-child-icon-act:disabled {
   padding-right: 0;
 }
 
+.report-output--centered.report-output:has(.report-output-toolbar) .report-output-header {
+  padding-top: 2.25rem;
+}
+
 .report-output--centered .report-output-logo--banner {
   margin-inline: auto;
 }
@@ -7300,24 +7304,34 @@ button.master-child-icon-act:disabled {
 
 .report-output--centered.report-output:has(.report-output-toolbar) .report-output-filter-meta-row,
 .report-output--centered .report-output-filter-meta-row {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
   width: 100%;
   max-width: 100%;
   margin-right: 0;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
 .report-output--centered .report-output-filter-meta-row .report-output-filter-summary {
-  display: inline-block;
+  flex: 0 0 auto;
+  width: auto;
   max-width: 100%;
-  margin: 0.35rem 0 0;
+  margin: 0;
   text-align: center;
 }
 
 .report-output--centered .report-output-meta {
-  display: inline-block;
-  margin: 0.35rem 0 0;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
   text-align: center;
+  white-space: normal;
 }
 
 .report-output-table-scroll-outer {
@@ -7465,6 +7479,14 @@ button.master-child-icon-act:disabled {
   overflow-wrap: break-word;
   word-break: normal;
   color: var(--report-table-body-color, var(--text));
+}
+
+.report-output-table th.report-output-cell--inr,
+.report-output-table td.report-output-cell--inr,
+.report-output-table th.report-output-cell--number,
+.report-output-table td.report-output-cell--number {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .report-output-table th:not(:last-child),
@@ -7645,6 +7667,10 @@ button.master-child-icon-act:disabled {
   padding-right: 0;
 }
 
+.report-custom-output--centered.report-output:has(.report-output-toolbar) .report-output-header {
+  padding-top: 2.25rem;
+}
+
 .report-custom-output--centered .report-output-logo--banner {
   margin-inline: auto;
 }
@@ -7656,24 +7682,34 @@ button.master-child-icon-act:disabled {
 
 .report-custom-output--centered.report-output:has(.report-output-toolbar) .report-output-filter-meta-row,
 .report-custom-output--centered .report-output-filter-meta-row {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
   width: 100%;
   max-width: 100%;
   margin-right: 0;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
 .report-custom-output--centered .report-output-filter-meta-row .report-output-filter-summary {
-  display: inline-block;
+  flex: 0 0 auto;
+  width: auto;
   max-width: 100%;
-  margin: 0.35rem 0 0;
+  margin: 0;
   text-align: center;
 }
 
 .report-custom-output--centered .report-output-meta {
-  display: inline-block;
-  margin: 0.35rem 0 0;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
   text-align: center;
+  white-space: normal;
 }
 
 .report-custom-output-fy-line {

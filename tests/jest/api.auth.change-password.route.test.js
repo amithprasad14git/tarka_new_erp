@@ -13,9 +13,16 @@ jest.mock("next/headers", () => ({
   cookies: jest.fn()
 }));
 
-jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
-}));
+jest.mock("../../lib/session", () => {
+  const { apiUserMessage } = require("../../lib/apiUserMessages");
+  return {
+    getSessionUser: jest.fn(),
+    getSessionInvalidReason: jest.fn(),
+    sessionErrorMessageForInvalidReason: (reason) =>
+      reason === "replaced" ? apiUserMessage("sessionReplaced") : apiUserMessage("sessionExpired"),
+    sessionLoginReasonForInvalid: (reason) => (reason === "replaced" ? "replaced" : "expired")
+  };
+});
 
 jest.mock("../../lib/db", () => {
   const query = jest.fn();
@@ -31,8 +38,9 @@ jest.mock("../../lib/sqlModuleTable", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const pool = require("../../lib/db").default;
+const { apiUserMessage } = require("../../lib/apiUserMessages");
 const { POST } = require("../../app/api/auth/change-password/route");
 
 // Builds a fake HTTP request with a JSON body — used to call route handlers in tests.
@@ -54,9 +62,13 @@ describe("api/auth/change-password route", () => {
 
   test("returns 401 when session user is missing", async () => {
     getSessionUser.mockResolvedValue(null);
+    getSessionInvalidReason.mockResolvedValue("missing");
     const res = await POST(makeReq({}));
     expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
+    await expect(res.json()).resolves.toEqual({
+      error: apiUserMessage("sessionExpired"),
+      reason: "expired"
+    });
   });
 
   test("returns 400 for missing fields", async () => {

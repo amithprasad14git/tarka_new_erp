@@ -6,26 +6,17 @@
  * Delegates matching to lib/dashboards/search_bank_branch/searchBranches.js.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { canAccessDashboard } from "../../../../../lib/dashboards/dashboardAccess";
 import { searchBranches } from "../../../../../lib/dashboards/search_bank_branch/searchBranches";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 
-/** Read logged-in user from session cookie (shared by GET handler). */
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
-
 /** Search branches by code/name fragment; returns rows + truncated flag. */
 export async function GET(req) {
   try {
-    const user = await getRequestUser();
-    if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const allowed = await canAccessDashboard(user, "search_bank_branch");
     if (!allowed) {

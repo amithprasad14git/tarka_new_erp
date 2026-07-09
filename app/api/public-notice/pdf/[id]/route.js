@@ -5,21 +5,13 @@
  * Loads notice + case + branch data; drawing in lib/modules/publicNoticePdf.js.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
 import { buildPublicNoticePdfBuffer, safePublicNoticePdfFilename } from "../../../../../lib/modules/publicNoticePdf";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
 import mysql from "mysql2";
-
-// Session cookie → logged-in user.
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 // Map lookup_value_master ids to display text for notice person “type” column.
 async function lookupValueLabelsByIds(ids) {
@@ -82,10 +74,11 @@ async function loadUnitShortCode(unitId) {
  * GET /api/public-notice/pdf/:id
  * Session + CRUD view scope; builds legacy-style Public Notice PDF (bank logo + dynamic columns).
  */
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { id } = await params;
     const result = await getCrudRecordById(user, "public_notice", id);

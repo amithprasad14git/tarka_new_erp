@@ -11,14 +11,14 @@ import {
   canAccessAnyInvoiceModule,
   resolveInvoiceNpaCurrentAcByCaseId
 } from "../../../../lib/modules/invoiceNpaCurrentAc";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 export async function GET(req) {
   try {
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return await jsonUnauthorizedForSession(sid);
 
     if (!(await canAccessAnyInvoiceModule(user))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });

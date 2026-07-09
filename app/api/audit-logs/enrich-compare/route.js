@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import { getSessionUser } from "../../../../lib/session";
 import { hasModulePermission } from "../../../../lib/rbac";
 import { enrichAuditCompareSnapshot } from "../../../../lib/modules/auditLogsEnrich";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 // Replace raw FK ids in audit compare JSON with human-readable lookup labels.
 export async function POST(request) {
@@ -19,7 +19,7 @@ export async function POST(request) {
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
     if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      return await jsonUnauthorizedForSession(sid);
     }
 
     const canView = await hasModulePermission(user, "audit_logs", "view");

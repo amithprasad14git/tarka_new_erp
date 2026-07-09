@@ -22,6 +22,7 @@ import {
   formatApiErrorPayload,
   formatUserFacingError,
   isUnauthorizedMessage,
+  resolveSessionAuthDisplayMessage,
   readJsonResponse
 } from "../lib/fetchClientError";
 import { apiUserMessage } from "../lib/apiUserMessages";
@@ -1071,7 +1072,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     const text = String(message || "").trim();
     if (kind !== "error") return text;
     if (isUnauthorizedMessage(text)) {
-      return apiUserMessage("sessionExpired");
+      return resolveSessionAuthDisplayMessage(text);
     }
     return text;
   }

@@ -10,7 +10,7 @@ import { cookies } from "next/headers";
 import pool from "../../../../lib/db";
 import { getSessionUser } from "../../../../lib/session";
 import { resolveNewCaseInwardBankRuleByBranch } from "../../../../lib/modules/newCaseInward";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 /** Returns bank-specific Loan Account No length rule by selected Branch. */
 // Tell the NCI form how many digits Loan Account No must have for the selected branch’s bank.
@@ -19,7 +19,7 @@ export async function GET(req) {
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return await jsonUnauthorizedForSession(sid);
 
     const url = new URL(req.url);
     const branchId = Number(url.searchParams.get("branchId"));

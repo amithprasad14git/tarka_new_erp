@@ -92,8 +92,8 @@ describe("buildFilterSummaryText select labels", () => {
       module: "employee_master",
       action: "create"
     });
-    expect(summary).toContain("From Date: 01/01/2026");
-    expect(summary).toContain("To Date: 31/01/2026");
+    expect(summary).toContain("From Date: 01-01-2026");
+    expect(summary).toContain("To Date: 31-01-2026");
     expect(summary).toContain("Module: Employee Master");
     expect(summary).toContain("Action: Create");
   });

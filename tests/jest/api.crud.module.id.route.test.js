@@ -5,16 +5,9 @@
  * Run with: npm test
  */
 
-// Test file for validating app behavior and regression safety.
-// Keep module-specific business logic in lib/modules/<module> files.
-
-// Replace real database, auth, and Next.js pieces with fakes so tests run offline.
-jest.mock("next/headers", () => ({
-  cookies: jest.fn()
-}));
-
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/services/crud.service", () => ({
@@ -23,35 +16,41 @@ jest.mock("../../lib/services/crud.service", () => ({
   deleteCrudRecord: jest.fn()
 }));
 
-const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById, updateCrudRecord, deleteCrudRecord } = require("../../lib/services/crud.service");
 const { GET, PUT, DELETE } = require("../../app/api/crud/[module]/[id]/route");
 
-// Builds a fake HTTP request with a JSON body — used to call route handlers in tests.
-function makeReq(body) {
-  return { json: jest.fn().mockResolvedValue(body) };
+function mockReq(extra = {}, cookieHeader = "session=sid-crud-id") {
+  return {
+    headers: {
+      get: (name) => (String(name).toLowerCase() === "cookie" ? cookieHeader : null)
+    },
+    ...extra
+  };
 }
 
-// Checks the HTTP API handler returns the right status codes and messages.
+function makeReq(body) {
+  return mockReq({ json: jest.fn().mockResolvedValue(body) });
+}
+
 describe("api/crud/[module]/[id] route", () => {
-  // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
-    cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-crud-id" }) });
+    getSessionInvalidReason.mockResolvedValue("missing");
   });
 
   test("GET returns 401 when session missing", async () => {
     getSessionUser.mockResolvedValue(null);
-    const res = await GET({}, { params: Promise.resolve({ module: "x", id: "1" }) });
+    const res = await GET(mockReq({}, ""), { params: Promise.resolve({ module: "x", id: "1" }) });
     expect(res.status).toBe(401);
   });
 
   test("GET delegates to service and returns service status/body", async () => {
     getSessionUser.mockResolvedValue({ id: 1 });
     getCrudRecordById.mockResolvedValue({ status: 200, body: { data: { id: 1 } } });
-    const res = await GET({}, { params: Promise.resolve({ module: "x", id: "1" }) });
+    const res = await GET(mockReq(), { params: Promise.resolve({ module: "x", id: "1" }) });
     expect(getCrudRecordById).toHaveBeenCalledWith({ id: 1 }, "x", "1");
+    expect(getSessionUser).toHaveBeenCalledWith("sid-crud-id");
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ data: { id: 1 } });
   });
@@ -71,11 +70,9 @@ describe("api/crud/[module]/[id] route", () => {
   test("DELETE delegates to service", async () => {
     getSessionUser.mockResolvedValue({ id: 1 });
     deleteCrudRecord.mockResolvedValue({ status: 200, body: { ok: true } });
-    const res = await DELETE({}, { params: Promise.resolve({ module: "x", id: "2" }) });
+    const res = await DELETE(mockReq(), { params: Promise.resolve({ module: "x", id: "2" }) });
     expect(deleteCrudRecord).toHaveBeenCalledWith({ id: 1 }, "x", "2");
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true });
   });
 });
-
-

@@ -35,11 +35,19 @@ const { randomUUID } = require("crypto");
 
 const {
   createSession,
+  deleteSessionsForUser,
   refreshSessionExpiry,
   getSession,
   deleteSession,
-  getSessionUser
+  getSessionUser,
+  getSessionInvalidReason
 } = require("../../lib/session");
+const {
+  sessionErrorMessageForInvalidReason,
+  sessionErrorMessageForLoginReason,
+  sessionLoginReasonForInvalid
+} = require("../../lib/sessionMessages");
+const { apiUserMessage } = require("../../lib/apiUserMessages");
 
 const SESSION_USER_SQL =
   "SELECT u.id, u.fullName, u.username, u.email, u.role, u.unit\n     FROM `sessions` s\n     JOIN `users` u ON u.id = s.user_id\n     WHERE s.id=? AND s.expires_at > NOW()\n       AND LOWER(TRIM(COALESCE(u.active, ''))) = 'yes'\n     LIMIT 1";
@@ -53,12 +61,14 @@ describe("session", () => {
 
 // Checks whether a logged-in cookie still works, expires, or is rejected.
   describe("createSession", () => {
-    test("session creation inserts DB row and returns generated id", async () => {
-      pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    test("session creation deletes prior rows, inserts DB row and returns generated id", async () => {
+      pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await expect(createSession(42)).resolves.toBe("session-uuid-123");
       expect(randomUUID).toHaveBeenCalledTimes(1);
-      expect(pool.query).toHaveBeenCalledWith(
+      expect(pool.query).toHaveBeenNthCalledWith(1, "DELETE FROM `sessions` WHERE user_id = ?", [42]);
+      expect(pool.query).toHaveBeenNthCalledWith(
+        2,
         "INSERT INTO `sessions` (id, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
         ["session-uuid-123", 42, 20]
       );
@@ -67,6 +77,64 @@ describe("session", () => {
     test("database failure handling: createSession propagates DB error", async () => {
       pool.query.mockRejectedValueOnce(new Error("insert failed"));
       await expect(createSession(42)).rejects.toThrow("insert failed");
+    });
+  });
+
+  describe("deleteSessionsForUser", () => {
+    test("deletes rows for user_id", async () => {
+      pool.query.mockResolvedValueOnce([{ affectedRows: 2 }]);
+      await expect(deleteSessionsForUser(42)).resolves.toBeUndefined();
+      expect(pool.query).toHaveBeenCalledWith("DELETE FROM `sessions` WHERE user_id = ?", [42]);
+    });
+
+    test("no-op for invalid user id", async () => {
+      await expect(deleteSessionsForUser(0)).resolves.toBeUndefined();
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getSessionInvalidReason", () => {
+    test("returns missing when session id empty", async () => {
+      await expect(getSessionInvalidReason("")).resolves.toBe("missing");
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    test("returns replaced when session row absent", async () => {
+      pool.query.mockResolvedValueOnce([[]]);
+      await expect(getSessionInvalidReason("sid-1")).resolves.toBe("replaced");
+    });
+
+    test("returns expired when session row past expiry", async () => {
+      pool.query
+        .mockResolvedValueOnce([[{ expires_at: "2000-01-01", active: "Yes" }]])
+        .mockResolvedValueOnce([[]]);
+      await expect(getSessionInvalidReason("sid-1")).resolves.toBe("expired");
+    });
+
+    test("returns inactive_user when account not active", async () => {
+      pool.query
+        .mockResolvedValueOnce([[{ expires_at: "2099-01-01", active: "No" }]])
+        .mockResolvedValueOnce([[{ id: "sid-1" }]]);
+      await expect(getSessionInvalidReason("sid-1")).resolves.toBe("inactive_user");
+    });
+
+    test("returns null when session still valid", async () => {
+      pool.query
+        .mockResolvedValueOnce([[{ expires_at: "2099-01-01", active: "Yes" }]])
+        .mockResolvedValueOnce([[{ id: "sid-1" }]]);
+      await expect(getSessionInvalidReason("sid-1")).resolves.toBeNull();
+    });
+  });
+
+  describe("session error message helpers", () => {
+    test("maps invalid reasons to login reason and messages", () => {
+      expect(sessionLoginReasonForInvalid("replaced")).toBe("replaced");
+      expect(sessionLoginReasonForInvalid("expired")).toBe("expired");
+      expect(sessionErrorMessageForInvalidReason("replaced")).toBe(apiUserMessage("sessionReplaced"));
+      expect(sessionErrorMessageForInvalidReason("expired")).toBe(apiUserMessage("sessionExpired"));
+      expect(sessionErrorMessageForLoginReason("inactive")).toBe(apiUserMessage("sessionInactive"));
+      expect(sessionErrorMessageForLoginReason("replaced")).toBe(apiUserMessage("sessionReplaced"));
+      expect(sessionErrorMessageForLoginReason("expired")).toBe(apiUserMessage("sessionExpired"));
     });
   });
 
@@ -189,6 +257,15 @@ describe("session", () => {
       pool.query.mockResolvedValueOnce([[]]);
       await expect(getSessionUser(malformed)).resolves.toBeNull();
       expect(pool.query).toHaveBeenCalledWith(SESSION_USER_SQL, [malformed]);
+    });
+
+    test("returns user when sliding refresh fails (non-fatal)", async () => {
+      const user = { id: 7, fullName: "A", username: "a.user", email: "a@x.com", role: 2, unit: 5 };
+      pool.query
+        .mockResolvedValueOnce([[user]])
+        .mockRejectedValueOnce(new Error("update failed"));
+
+      await expect(getSessionUser("sid-1")).resolves.toEqual(user);
     });
 
     test("database failure handling: getSessionUser propagates DB error", async () => {

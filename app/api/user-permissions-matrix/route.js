@@ -10,13 +10,12 @@
  * Load and save per-user module rights: can_* flags + view_scope / edit_scope / delete_scope (own|unit|all).
  * POST { userId, rows } — replace rows for matrix module keys.
  */
-import { cookies } from "next/headers";
+import { requireRequestUser } from "../../../lib/requestSession";
 import pool from "../../../lib/db";
 import { actionScopesFromDbRow, normalizeActionScope } from "../../../lib/permissionScope";
 import { getRbacMatrixModuleEntries, getRbacMatrixModuleKeySet } from "../../../lib/rbacMatrixModules";
 import { isReportKey } from "../../../lib/reportConfig";
 import { isDashboardPermissionKey } from "../../../lib/dashboardConfig";
-import { getSessionUser } from "../../../lib/session";
 import { hasModulePermission } from "../../../lib/rbac";
 import { escapeSqlTableId } from "../../../lib/sqlModuleTable";
 import { formatInstantAsMysqlDatetimeIST } from "../../../lib/istDateTime";
@@ -24,14 +23,6 @@ import { assertUserPermissionsTargetUserIsActive } from "../../../lib/modules/us
 import { jsonApiErrorForAction } from "../../../lib/apiErrorResponse";
 
 const COLS = ["can_view", "can_create", "can_edit", "can_delete"];
-
-// Read session cookie and return logged-in admin user (or null).
-async function getRequestUser() {
-  // Shared session resolver for this route (same pattern as other APIs).
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 // Read ?userId= from query string; invalid values become null.
 function parseUserId(url) {
@@ -56,10 +47,9 @@ async function loadPermRowsForUser(userId) {
 // Load the full RBAC matrix for one target user (for the permissions admin screen).
 export async function GET(req) {
   try {
-    const user = await getRequestUser();
-    if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const canView = await hasModulePermission(user, "user_permissions", "view");
     if (!canView) {
@@ -132,10 +122,9 @@ export async function GET(req) {
 // Save the full permission matrix for one user (replace matrix-managed module rows).
 export async function POST(req) {
   try {
-    const user = await getRequestUser();
-    if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const canEdit = await hasModulePermission(user, "user_permissions", "edit");
     const canCreate = await hasModulePermission(user, "user_permissions", "create");

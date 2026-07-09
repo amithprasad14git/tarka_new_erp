@@ -23,8 +23,7 @@
 import { modules } from "../../../../config/modules";
 import { isReportKey } from "../../../../lib/reportConfig";
 import pool, { queryWithRetry } from "../../../../lib/db";
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../lib/session";
+import { requireRequestUser } from "../../../../lib/requestSession";
 import { getScopeForAction, hasModulePermission } from "../../../../lib/rbac";
 import { appendRowScopeFilter, annotateRowsModifyAccess } from "../../../../lib/rowScope";
 import { enrichLookupDisplayRows } from "../../../../lib/crudLookupEnrich";
@@ -61,16 +60,6 @@ import { enrichSarfaesiInvoiceListRows } from "../../../../lib/modules/sarfaesiI
 import { enrichAuditLogRecordLabels } from "../../../../lib/modules/auditLogsEnrich";
 import { parseNumericCellValue } from "../../../../lib/formatInrNumber";
 import { appendNumberColumnFilter } from "../../../../lib/crudNumberFilter";
-
-/**
- * Reads the httpOnly session cookie and returns the logged-in user (or null).
- * Side effect: valid sessions get their expiry extended (see getSessionUser).
- */
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 /**
  * Reads URL query parameters for the list screen: page size, sort column/direction,
@@ -129,10 +118,9 @@ function normalizeListQuery(req, moduleConfig) {
 // Paged grid list with filters, search, row scope, and module-specific LoV rules.
 export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { module } = await params;
     if (isReportKey(module)) {
@@ -547,8 +535,9 @@ export async function GET(req, { params }) {
 // Create a new row; validation and audit run in crud.service.
 export async function POST(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { module } = await params;
     const raw = await req.json();

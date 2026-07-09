@@ -21,6 +21,7 @@ import {
   formatApiErrorPayload,
   formatUserFacingError,
   isUnauthorizedMessage,
+  resolveSessionAuthDisplayMessage,
   readApiErrorMessage,
   readJsonResponse
 } from "../lib/fetchClientError";
@@ -63,7 +64,7 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
   function showToastMessage(kind, message) {
     const text = String(message || "").trim();
     if (kind === "error" && isUnauthorizedMessage(text)) {
-      setToast({ kind: "error", message: apiUserMessage("sessionExpired") });
+      setToast({ kind: "error", message: resolveSessionAuthDisplayMessage(text) });
       return;
     }
     setToast({ kind, message: text });

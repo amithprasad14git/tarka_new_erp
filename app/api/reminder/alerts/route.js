@@ -5,22 +5,16 @@
  * Requires dashboard_my_reminders permission.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../lib/session";
+import { requireRequestUser } from "../../../../lib/requestSession";
 import { canAccessDashboard } from "../../../../lib/dashboards/dashboardAccess";
 import { loadReminderAlerts } from "../../../../lib/modules/reminderDashboard.service";
 import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
-
-export async function GET() {
+export async function GET(req) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const allowed = await canAccessDashboard(user, "my_reminders");
     if (!allowed) return Response.json({ error: "Forbidden" }, { status: 403 });

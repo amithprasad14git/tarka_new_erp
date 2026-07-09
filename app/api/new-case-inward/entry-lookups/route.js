@@ -15,7 +15,7 @@ import { buildLookupLabelSqlExpression } from "../../../../lib/lookupLabelFieldS
 import { hasModulePermission } from "../../../../lib/rbac";
 import { getSessionUser } from "../../../../lib/session";
 import { escapeSqlTableIdForModuleConfig } from "../../../../lib/sqlModuleTable";
-import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
+import { jsonApiErrorForAction, jsonUnauthorizedForSession } from "../../../../lib/apiErrorResponse";
 
 // Shape SQL rows into { id, _label } objects the NCI form dropdowns expect.
 function sanitizeLookupRows(rows, valueField) {
@@ -37,7 +37,7 @@ export async function GET() {
     const cookieStore = await cookies();
     const sid = cookieStore.get("session")?.value;
     const user = await getSessionUser(sid);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return await jsonUnauthorizedForSession(sid);
 
     const moduleKey = "new_case_inward";
     const [canView, canCreate, canEdit] = await Promise.all([

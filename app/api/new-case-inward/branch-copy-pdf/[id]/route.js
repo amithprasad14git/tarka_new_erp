@@ -6,8 +6,7 @@
 // Application route/page/API handler for this feature area.
 // Keep module-specific business logic in lib/modules/<module> files.
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import pool from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
@@ -16,16 +15,6 @@ import {
   safeBranchCopyPdfFilename
 } from "../../../../../lib/modules/newCaseInwardBranchCopyPdf";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-
-/**
- * Session helper for API routes in this file.
- * Returns logged-in user object or null when session is missing/expired.
- */
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 /**
  * GET /api/new-case-inward/branch-copy-pdf/:id
@@ -37,10 +26,11 @@ async function getRequestUser() {
  * 4) Build PDF buffer and return it as a downloadable file.
  */
 // Branch Copy PDF for one NCI case (bank letter to branch).
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { id } = await params;
     const result = await getCrudRecordById(user, "new_case_inward", id);

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">68.75% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>11/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">61.11% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/18</span>
+                <span class='fraction'>11/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>11/11</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -110,13 +110,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -124,10 +124,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Shared report helper — resolve report logo path to filesystem.
 &nbsp;
@@ -142,25 +142,25 @@ import path from "path";
  * @param {string | undefined} logoPath Web path under public (leading slash optional)
  * @returns {string | null} Absolute filesystem path if the file exists
  */
-export function <span class="fstat-no" title="function not covered" >resolveReportLogoFile(</span>logoPath) {
-<span class="cstat-no" title="statement not covered" >  if (!logoPath || typeof logoPath !== "string") <span class="cstat-no" title="statement not covered" >return null;</span></span>
-  const trimmed = <span class="cstat-no" title="statement not covered" >logoPath.trim();</span>
-<span class="cstat-no" title="statement not covered" >  if (!trimmed) <span class="cstat-no" title="statement not covered" >return null;</span></span>
-  const relative = <span class="cstat-no" title="statement not covered" >trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;</span>
-<span class="cstat-no" title="statement not covered" >  if (relative.includes("..")) <span class="cstat-no" title="statement not covered" >return null;</span></span>
-  const full = <span class="cstat-no" title="statement not covered" >path.join(process.cwd(), "public", ...relative.split("/"));</span>
-<span class="cstat-no" title="statement not covered" >  return fs.existsSync(full) ? full : null;</span>
+export function resolveReportLogoFile(logoPath) {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!logoPath || typeof logoPath !== "string") <span class="cstat-no" title="statement not covered" >return null;</span>
+  const trimmed = logoPath.trim();
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!trimmed) <span class="cstat-no" title="statement not covered" >return null;</span>
+  const relative = trimmed.startsWith("/") ? trimmed.slice(1) : <span class="branch-1 cbranch-no" title="branch not covered" >trimmed;</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (relative.includes("..")) <span class="cstat-no" title="statement not covered" >return null;</span>
+  const full = path.join(process.cwd(), "public", ...relative.split("/"));
+  return fs.existsSync(full) ? full : <span class="branch-1 cbranch-no" title="branch not covered" >null;</span>
 }
 &nbsp;
 /**
  * @param {string} absolutePath
  * @returns {'png' | 'jpeg' | 'gif'}
  */
-export function <span class="fstat-no" title="function not covered" >imageExtensionForExcel(</span>absolutePath) {
-  const ext = <span class="cstat-no" title="statement not covered" >path.extname(absolutePath).slice(1).toLowerCase();</span>
-<span class="cstat-no" title="statement not covered" >  if (ext === "jpg" || ext === "jpeg") <span class="cstat-no" title="statement not covered" >return "jpeg";</span></span>
-<span class="cstat-no" title="statement not covered" >  if (ext === "gif") <span class="cstat-no" title="statement not covered" >return "gif";</span></span>
-<span class="cstat-no" title="statement not covered" >  return "png";</span>
+export function imageExtensionForExcel(absolutePath) {
+  const ext = path.extname(absolutePath).slice(1).toLowerCase();
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (ext === "jpg" || ext === "jpeg") <span class="cstat-no" title="statement not covered" >return "jpeg";</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (ext === "gif") <span class="cstat-no" title="statement not covered" >return "gif";</span>
+  return "png";
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -169,7 +169,7 @@ export function <span class="fstat-no" title="function not covered" >imageExtens
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-29T17:32:47.614Z
+                at 2026-07-09T00:22:19.303Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

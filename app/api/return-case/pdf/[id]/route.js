@@ -15,8 +15,7 @@
  * Drawing logic lives in lib/modules/returnCasePdf.js — see docs/return-case-pdf.md.
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../../lib/session";
+import { requireRequestUser } from "../../../../../lib/requestSession";
 import { getCrudRecordById } from "../../../../../lib/services/crud.service";
 import { queryWithRetry } from "../../../../../lib/db";
 import { rowValueForField } from "../../../../../lib/gridRowValue";
@@ -26,13 +25,6 @@ import {
   safeReturnCasePdfFilename
 } from "../../../../../lib/modules/returnCasePdf";
 import { jsonApiErrorForAction } from "../../../../../lib/apiErrorResponse";
-
-/** Read session cookie and return the logged-in user (or null). */
-async function getRequestUser() {
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
 
 /**
  * Load bank name, branch display text, and RBO name for the PDF header.
@@ -84,10 +76,11 @@ async function loadUnitShortCode(unitId) {
 }
 
 // Return Case letter PDF (3 pages) for staff Print action.
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
 
     const { id } = await params;
 

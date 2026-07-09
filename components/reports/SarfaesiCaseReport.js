@@ -20,7 +20,7 @@ const PRIMARY_HEADERS = [
 ];
 
 function formatDate(value) {
-  return formatReportCellValue({ type: "date", dateFormat: "dd/MM/yyyy" }, value);
+  return formatReportCellValue({ type: "date" }, value);
 }
 
 function formatInr(value) {

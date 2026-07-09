@@ -6,28 +6,19 @@
  * Requires login + dashboard permission. See docs/DASHBOARDS.md
  */
 
-import { cookies } from "next/headers";
-import { getSessionUser } from "../../../../lib/session";
+import { requireRequestUser } from "../../../../lib/requestSession";
 import { loadDashboardForUser } from "../../../../lib/dashboards/dashboard.service";
 import { jsonApiErrorForAction } from "../../../../lib/apiErrorResponse";
 
-async function getRequestUser() {
-  // Resolve session cookie to logged-in user (same as other protected API routes).
-  const cookieStore = await cookies();
-  const sid = cookieStore.get("session")?.value;
-  return getSessionUser(sid);
-}
-
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
-    const user = await getRequestUser();
+    const auth = await requireRequestUser(req);
+    if (auth.unauthorized) return auth.unauthorized;
+    const user = auth.user;
     const { key: dashboardKey } = await params;
     const result = await loadDashboardForUser(user, dashboardKey);
 
     // Map service status codes to HTTP responses for the browser loader.
-    if (result.status === 401) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
     if (result.status === 403) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }

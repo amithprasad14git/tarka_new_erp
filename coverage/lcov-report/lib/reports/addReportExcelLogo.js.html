@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">69.23% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/26</span>
+                <span class='fraction'>18/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">54.16% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/24</span>
+                <span class='fraction'>13/24</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>2/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">68.18% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>15/22</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -166,8 +166,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -184,34 +184,34 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Shared report helper — insert logo in Excel export.
 &nbsp;
@@ -240,9 +240,9 @@ function <span class="fstat-no" title="function not covered" >readPngDimensions(
  * @param {object} excelTheme
  * @returns {number}
  */
-function <span class="fstat-no" title="function not covered" >resolveLogoWidthPx(</span>logoHeightPx, logoFile, excelTheme) {
-  const themed = <span class="cstat-no" title="statement not covered" >Number(excelTheme.logoExtWidth);</span>
-<span class="cstat-no" title="statement not covered" >  if (Number.isFinite(themed) &amp;&amp; themed &gt; 0) <span class="cstat-no" title="statement not covered" >return themed;</span></span>
+function resolveLogoWidthPx(logoHeightPx, logoFile, excelTheme) {
+  const themed = Number(excelTheme.logoExtWidth);
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (Number.isFinite(themed) &amp;&amp; themed &gt; 0) return themed;
 &nbsp;
   const dim = <span class="cstat-no" title="statement not covered" >readPngDimensions(logoFile);</span>
 <span class="cstat-no" title="statement not covered" >  if (dim?.width &amp;&amp; dim?.height) {</span>
@@ -258,35 +258,35 @@ function <span class="fstat-no" title="function not covered" >resolveLogoWidthPx
  * @param {object} excelTheme exportTheme.excel
  * @returns {number} Next 1-based row index for content below the logo block
  */
-export function <span class="fstat-no" title="function not covered" >addReportExcelLogo(</span>wb, ws, layout, excelTheme) {
-  let rowIdx = <span class="cstat-no" title="statement not covered" >1;</span>
-  const showLogo = <span class="cstat-no" title="statement not covered" >layout.showLogo !== false;</span>
-  const logoFile = <span class="cstat-no" title="statement not covered" >showLogo &amp;&amp; layout.logoPath ? resolveReportLogoFile(layout.logoPath) : null;</span>
-  const logoRowCount = <span class="cstat-no" title="statement not covered" >Number(excelTheme.logoRowCount) || 2;</span>
-<span class="cstat-no" title="statement not covered" >  if (!logoFile) <span class="cstat-no" title="statement not covered" >return rowIdx;</span></span>
+export function addReportExcelLogo(wb, ws, layout, excelTheme) {
+  let rowIdx = 1;
+  const showLogo = layout.showLogo !== false;
+  const logoFile = showLogo &amp;&amp; layout.logoPath ? resolveReportLogoFile(layout.logoPath) : null;
+  const logoRowCount = Number(excelTheme.logoRowCount) || <span class="branch-1 cbranch-no" title="branch not covered" >2;</span>
+  if (!logoFile) return rowIdx;
 &nbsp;
   // Reserve vertical space so title rows do not overlap the image.
-  const rowHeights = <span class="cstat-no" title="statement not covered" >excelTheme.logoRowHeights || [34, 24];</span>
-<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; logoRowCount; i++) {</span>
-<span class="cstat-no" title="statement not covered" >    ws.getRow(rowIdx + i).height = rowHeights[i] ?? rowHeights[rowHeights.length - 1];</span>
+  const rowHeights = excelTheme.logoRowHeights || <span class="branch-1 cbranch-no" title="branch not covered" >[34, 24];</span>
+  for (let i = 0; i &lt; logoRowCount; i++) {
+    ws.getRow(rowIdx + i).height = rowHeights[i] ?? <span class="branch-1 cbranch-no" title="branch not covered" >rowHeights[rowHeights.length - 1];</span>
   }
 &nbsp;
-  const imageId = <span class="cstat-no" title="statement not covered" >wb.addImage({</span>
+  const imageId = wb.addImage({
     filename: logoFile,
     extension: imageExtensionForExcel(logoFile)
   });
 &nbsp;
-  const logoHeightPx = <span class="cstat-no" title="statement not covered" >Number(excelTheme.logoExtHeight) || 58;</span>
-  const logoWidthPx = <span class="cstat-no" title="statement not covered" >resolveLogoWidthPx(logoHeightPx, logoFile, excelTheme);</span>
+  const logoHeightPx = Number(excelTheme.logoExtHeight) || <span class="branch-1 cbranch-no" title="branch not covered" >58;</span>
+  const logoWidthPx = resolveLogoWidthPx(logoHeightPx, logoFile, excelTheme);
 &nbsp;
   // Absolute anchor — width/height stay fixed when worksheet columns are resized below.
-<span class="cstat-no" title="statement not covered" >  ws.addImage(imageId, {</span>
+  ws.addImage(imageId, {
     tl: { col: 0, row: 0 },
     ext: { width: logoWidthPx, height: logoHeightPx },
     editAs: "absolute"
   });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return rowIdx + logoRowCount;</span>
+  return rowIdx + logoRowCount;
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -295,7 +295,7 @@ export function <span class="fstat-no" title="function not covered" >addReportEx
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-29T17:32:47.614Z
+                at 2026-07-09T00:22:19.303Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
