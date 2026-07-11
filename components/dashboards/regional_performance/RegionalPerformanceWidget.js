@@ -6,12 +6,12 @@
  * Landing widget: Summary KPIs | loan type pie | region bars.
  * Data from GET /api/dashboard/regional_performance (see lib/dashboards/regional_performance/).
  * Layout reuses dashboard-recovery-layout (three panels; region column fills remaining width).
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
-import DashboardWidgetRefreshHeader from "../DashboardWidgetRefreshHeader";
-import DashboardSectionHeader from "../DashboardSectionHeader";
-import BankRecoveryPie from "../BankRecoveryPie";
+import DashboardWidgetRefreshHeader from "../shared/DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../shared/DashboardSectionHeader";
+import BankRecoveryPie from "../shared/BankRecoveryPie";
 import RegionalPerformanceKpis from "./RegionalPerformanceKpis";
 import RegionPerformanceBars from "./RegionPerformanceBars";
 
@@ -111,3 +111,4 @@ export default function RegionalPerformanceWidget({
     </article>
   );
 }
+

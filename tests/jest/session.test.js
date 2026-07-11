@@ -265,7 +265,9 @@ describe("session", () => {
         .mockResolvedValueOnce([[user]])
         .mockRejectedValueOnce(new Error("update failed"));
 
+      const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       await expect(getSessionUser("sid-1")).resolves.toEqual(user);
+      errSpy.mockRestore();
     });
 
     test("database failure handling: getSessionUser propagates DB error", async () => {
@@ -274,5 +276,6 @@ describe("session", () => {
     });
   });
 });
+
 
 

@@ -13,7 +13,7 @@ import ThemeToggle from "./ThemeToggle";
 import TopbarIstClock from "./TopbarIstClock";
 import TopbarMicroFloatLane from "./TopbarMicroFloatLane";
 import UserMenu from "./UserMenu";
-import DashboardAlertsBell from "./dashboard/DashboardAlertsBell";
+import DashboardAlertsBell from "./dashboardAlerts/DashboardAlertsBell";
 
 /**
  * Expands in the topbar; micro lane fills remaining width (flex: 1).
@@ -31,3 +31,4 @@ export default function DashboardTopbar({ userUsername, userFullName = "" }) {
     </div>
   );
 }
+

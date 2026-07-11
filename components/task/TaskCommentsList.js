@@ -1,8 +1,17 @@
 "use client";
 
+/**
+ * React UI component: TaskCommentsList
+ * Thread of comments on a task with avatars and timestamps.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import TaskAvatar from "./TaskAvatar";
 import { formatTaskDateTime } from "./taskUtils";
 
+/**
+ * @param {{ rows?: object[], userNamesById?: Record<number, string> }} props
+ */
 export default function TaskCommentsList({ rows, userNamesById = {} }) {
   const list = rows || [];
   if (!list.length) {

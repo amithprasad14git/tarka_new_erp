@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportSearchLoanAc`.
+ * Run with: npm test
+ */
+
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
@@ -131,3 +138,4 @@ describe("buildTextSearchWhereParts", () => {
     expect(values).toEqual(["%100\\%\\_done\\\\x%"]);
   });
 });
+

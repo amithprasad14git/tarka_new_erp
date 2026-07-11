@@ -5,7 +5,7 @@
 /**
  * HTML table for standard reports: logo, title, filter summary, zebra rows, totals, font toolbar.
  * Supports flat rows or grouped sections (section header, detail rows, subtotal, grand total).
- * Styling via reportExportTheme CSS vars + app/globals.css (.report-output*). See docs/REPORTS.md.
+ * Styling via reportExportTheme CSS vars + app/globals.css (.report-output*). See README.md#reports-frozen-framework.
  */
 
 import { useMemo, useState } from "react";
@@ -296,3 +296,4 @@ export default function ReportOutputView({
     </section>
   );
 }
+

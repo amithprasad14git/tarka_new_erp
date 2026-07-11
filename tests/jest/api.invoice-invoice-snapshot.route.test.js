@@ -5,7 +5,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/db", () => ({
@@ -19,19 +20,20 @@ jest.mock("../../lib/modules/invoiceCaseSnapshot", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const pool = require("../../lib/db");
 const {
   canAccessInvoiceLinkedSnapshot,
   loadInvoiceRowForSnapshotById
 } = require("../../lib/modules/invoiceCaseSnapshot");
-const { GET } = require("../../app/api/invoice/invoice-snapshot/[moduleKey]/[invoiceId]/route");
+const { GET } = require("../../app/api/(invoices)/invoice/invoice-snapshot/[moduleKey]/[invoiceId]/route");
 
 describe("api/invoice/invoice-snapshot/[moduleKey]/[invoiceId] route", () => {
   const release = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-ir" }) });
     pool.getConnection.mockResolvedValue({ release });
   });

@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAnnualInvoicesReceivedLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { groupStandardLedgerSections } from "../../lib/reports/groupStandardLedgerSections";
@@ -89,3 +96,4 @@ describe("groupStandardLedgerSections multi-column sumKeys", () => {
     expect(grandTotal).toEqual({ billedAmount: 350, tdsAmount: 35, receivedAmount: 315 });
   });
 });
+

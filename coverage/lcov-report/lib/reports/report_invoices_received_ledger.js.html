@@ -233,7 +233,19 @@
 <a name='L168'></a><a href='#L168'>168</a>
 <a name='L169'></a><a href='#L169'>169</a>
 <a name='L170'></a><a href='#L170'>170</a>
-<a name='L171'></a><a href='#L171'>171</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -247,10 +259,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -332,8 +350,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -374,10 +396,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -399,6 +422,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -417,8 +441,10 @@ import { monthEndYmd, monthStartYmd } from "./monthFilterRange";
 import { appendInvoicesReceivedBillToUnitFilterIfSelected } from "./nciReportDimensionFilters.js";
 &nbsp;
 const DATE_FORMAT = "%d-%m-%Y";
+/** MySQL DATE_FORMAT for month section labels in annual received summary. */
 export const MONTH_LABEL_FORMAT_INVOICES_RECEIVED = "%M-%Y";
 &nbsp;
+/** Safe quoted table names for invoices-received ledger joins. */
 function sqlTableIds() {
   return {
     ir: escapeSqlTableId("invoices_received"),
@@ -435,6 +461,10 @@ function sqlTableIds() {
   };
 }
 &nbsp;
+/**
+ * FROM/JOIN linking invoices_received to recovery/SARFAESI/vehicle invoices and case hierarchy.
+ * @returns {string}
+ */
 function buildFromJoinSql() {
   const t = sqlTableIds();
   return `
@@ -501,6 +531,7 @@ export function buildInvoicesReceivedLedgerWhereSql(filters, dateRange = null) {
   return { whereSql: parts.join(" AND "), values };
 }
 &nbsp;
+/** Detail SELECT for invoices received ledger rows. */
 function <span class="fstat-no" title="function not covered" >buildSelectSql(</span>) {
   const branchLabel = <span class="cstat-no" title="statement not covered" >branchLabelSelectSql("br", "bank");</span>
 <span class="cstat-no" title="statement not covered" >  return `</span>
@@ -524,7 +555,10 @@ function <span class="fstat-no" title="function not covered" >buildSelectSql(</s
 `;
 }
 &nbsp;
-/** Summary row shape for annual received ledger aggregation. */
+/**
+ * Summary SELECT (NPA AC + month + amounts) — reused by annual received ledger.
+ * @returns {string}
+ */
 export function buildInvoicesReceivedSummarySelectSql() {
   return `
   SELECT
@@ -539,6 +573,7 @@ export function buildInvoicesReceivedSummarySelectSql() {
 }
 &nbsp;
 /**
+ * Runs Invoices Received Ledger for the selected month.
  * @param {object} user
  * @param {Record&lt;string, unknown&gt;} filters
  * @param {{ limit?: number }} ctx
@@ -573,6 +608,7 @@ export async function <span class="fstat-no" title="function not covered" >runRe
     truncated: (rawRows || []).length &gt;= limit
   };
 }
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -580,7 +616,7 @@ export async function <span class="fstat-no" title="function not covered" >runRe
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

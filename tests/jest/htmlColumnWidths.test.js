@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `htmlColumnWidths`.
+ * Run with: npm test
+ */
+
 import { htmlColumnWidthPercents, parseHtmlColumnWeight } from "../../lib/reports/htmlColumnWidths";
 
 describe("htmlColumnWidths", () => {
@@ -21,3 +28,4 @@ describe("htmlColumnWidths", () => {
     expect(parseFloat(pcts[1])).toBeGreaterThan(parseFloat(pcts[0]));
   });
 });
+

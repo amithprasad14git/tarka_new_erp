@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * React UI component: ReminderActivityList
+ * Timeline of field changes (status, due date, recurrence, spawned) on a reminder.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { formatReminderDate, formatReminderDateTime } from "./reminderUtils";
 
 const FIELD_LABELS = {
@@ -56,6 +62,10 @@ function activityMessage(row) {
   );
 }
 
+/**
+ * Vertical timeline of reminder activity rows.
+ * @param {{ rows?: object[] }} props
+ */
 export default function ReminderActivityList({ rows }) {
   const list = rows || [];
   if (!list.length) {

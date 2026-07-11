@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportBranchRegister`.
+ * Run with: npm test
+ */
+
 import { resolveVisibleReportColumns } from "../../lib/reports/resolveVisibleReportColumns";
 import { getReportConfig } from "../../lib/reportConfig";
 
@@ -30,3 +37,4 @@ describe("report_branch_register config", () => {
     expect(visible.map((c) => c.key)).not.toContain("active");
   });
 });
+

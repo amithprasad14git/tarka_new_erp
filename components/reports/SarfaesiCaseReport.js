@@ -153,3 +153,4 @@ export default function SarfaesiCaseReport({ custom = {} }) {
     </div>
   );
 }
+

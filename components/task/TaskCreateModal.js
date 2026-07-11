@@ -261,3 +261,4 @@ export default function TaskCreateModal({ open, onClose, onCreated }) {
     </TaskModalPortal>
   );
 }
+

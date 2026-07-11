@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportBranchLabelSql`.
+ * Run with: npm test
+ */
+
 import { branchLabelSelectSql } from "../../lib/reports/reportBranchLabelSql";
 
 describe("branchLabelSelectSql", () => {
@@ -8,3 +15,4 @@ describe("branchLabelSelectSql", () => {
     );
   });
 });
+

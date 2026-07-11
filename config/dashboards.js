@@ -8,7 +8,7 @@
  * - permissionKey — row in User Permissions matrix (group "Dashboards")
  * - landingWidget: true — show on /dashboard grid (not just sidebar cards)
  *
- * Full guide: docs/DASHBOARDS.md
+ * Full guide: README.md#5a-landing-dashboards
  * Runners: lib/dashboards/<key>/run.js via lib/dashboards/dashboardRegistry.js
  */
 export const dashboards = [
@@ -73,3 +73,4 @@ export const dashboards = [
     landingWidget: true
   }
 ];
+

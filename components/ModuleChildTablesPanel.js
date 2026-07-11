@@ -21,6 +21,7 @@ import { apiUserMessage } from "../lib/apiUserMessages";
 import { toYyyyMmDdForSqlDateField } from "../lib/sqlDateFieldValue";
 import InrNumberInput from "./InrNumberInput";
 
+/** Temporary client-side id for a new unsaved child line. */
 function newRowId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -41,6 +42,7 @@ export function newChildRowDraft(ct) {
   return draft;
 }
 
+/** Required / type checks before a child line is marked saved. */
 function validateRowFields(ct, row) {
   const fields = ct.fields || [];
   // Required columns and basic type checks before a child line is marked saved.
@@ -246,6 +248,10 @@ function PlusIcon() {
  * Child `readOnly` (field config or override): lookup shows fixed label while editing
  * (used by SARFAESI Case Status Update particulars).
  */
+/**
+ * Editable child-table grids under the master entry form.
+ * @param {object} props
+ */
 export default function ModuleChildTablesPanel({
   childTables,
   value,
@@ -318,6 +324,7 @@ export default function ModuleChildTablesPanel({
     if (onNotify) onNotify(kind, message);
   }
 
+  /** Validate and mark a child line as saved (ready for parent submit). */
   function handleSaveLine(ct, tableKey, index) {
     const rows = [...(value[tableKey] || [])];
     const row = rows[index];
@@ -332,6 +339,7 @@ export default function ModuleChildTablesPanel({
     setRows(tableKey, rows);
   }
 
+  /** Re-open a saved child line for editing. */
   function handleEditLine(tableKey, index) {
     const rows = [...(value[tableKey] || [])];
     const row = rows[index];
@@ -341,6 +349,7 @@ export default function ModuleChildTablesPanel({
     setRows(tableKey, rows);
   }
 
+  /** Remove a child line (keeps at least one empty draft row). */
   function handleDeleteLine(tableKey, index) {
     const rows = [...(value[tableKey] || [])];
     rows.splice(index, 1);
@@ -351,6 +360,7 @@ export default function ModuleChildTablesPanel({
     }
   }
 
+  /** Insert a new editable child line below the current row (respects maxRows). */
   function handleInsertRowAfter(tableKey, index) {
     const rows = [...(value[tableKey] || [])];
     const maxRows = Number(ctByKey(tableKey)?.maxRows);

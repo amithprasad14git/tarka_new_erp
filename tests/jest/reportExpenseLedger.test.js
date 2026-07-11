@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportExpenseLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { getReportRunner } from "../../lib/reports/reportRegistry";
@@ -120,3 +127,4 @@ describe("expense ledger data type constants", () => {
     expect(EXPENSE_LEDGER_DATA_TYPE_EXPENSE_CATEGORY).toBe("Expense Category Wise");
   });
 });
+

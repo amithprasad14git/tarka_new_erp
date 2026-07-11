@@ -1,6 +1,6 @@
 // Frozen HTML + Excel export styling for all reports. Change only with deliberate review.
 //
-// Framework v1 — locked June 2026 (NCI + Branch Register). See docs/REPORTS.md § Frozen framework.
+// Framework v1 — locked June 2026 (NCI + Branch Register). See README.md#reports-frozen-framework § Frozen framework.
 
 /**
  * Shared theme — per-report `reportLayout` / `reportStyle` in config/reports.js may override
@@ -101,3 +101,4 @@ export function getReportHtmlCssVars(preset = "normal", theme = REPORT_EXPORT_TH
     "--report-scroll-max-height": layout.scrollMaxHeight
   };
 }
+

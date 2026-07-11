@@ -5,16 +5,16 @@
 /**
  * Landing widget: recovery donut + totals | bank pie | KPI strip | month-wise recovery.
  * Recovery amounts use cases settled in active FY (Unit Wise Cumulative rules). Full-width dashboard-recovery-layout.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { formatDashboardInrAmount } from "../../../lib/formatInrNumber";
-import UnitTargetDonut from "../UnitTargetDonut";
-import BankRecoveryPie from "../BankRecoveryPie";
-import DashboardWidgetRefreshHeader from "../DashboardWidgetRefreshHeader";
-import DashboardSectionHeader from "../DashboardSectionHeader";
-import RecoveryKpiStrip from "../RecoveryKpiStrip";
-import MonthWiseRecoveryBars from "../MonthWiseRecoveryBars";
+import UnitTargetDonut from "../shared/UnitTargetDonut";
+import BankRecoveryPie from "../shared/BankRecoveryPie";
+import DashboardWidgetRefreshHeader from "../shared/DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../shared/DashboardSectionHeader";
+import RecoveryKpiStrip from "../shared/RecoveryKpiStrip";
+import MonthWiseRecoveryBars from "../shared/MonthWiseRecoveryBars";
 
 /**
  * Full-width Recovery Target widget — donut, bank pie, KPI strip, month chart.
@@ -127,3 +127,4 @@ export default function UnitWiseRecoveryTargetWidget({
     </article>
   );
 }
+

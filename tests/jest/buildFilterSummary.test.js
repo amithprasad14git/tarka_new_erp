@@ -44,3 +44,4 @@ describe("buildFilterSummaryText", () => {
     expect(text).not.toContain(": 5");
   });
 });
+

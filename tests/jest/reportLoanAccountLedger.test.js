@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportLoanAccountLedger`.
+ * Run with: npm test
+ */
+
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
@@ -129,3 +136,4 @@ describe("buildFilterSummaryText as-on date label", () => {
     expect(summary).toContain("Transaction Type: Receipt");
   });
 });
+

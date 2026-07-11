@@ -141,7 +141,20 @@ import {
   returnCaseRefHintFromRow,
   useReturnCaseClientModel
 } from "../lib/modules/returnCaseClient";
-import { useSarfaesiCaseStatusUpdateClientModel } from "../lib/modules/sarfaesiCaseStatusUpdateClient";
+import {
+  downloadSarfaesiCovering132Pdf,
+  downloadSarfaesiCovering132PaperPublicationPdf,
+  downloadSarfaesiCovering134Pdf,
+  getSarfaesiCovering132PrintButtonText,
+  getSarfaesiCovering132PaperPublicationPrintButtonText,
+  getSarfaesiCovering134PrintButtonText,
+  getSarfaesiCovering132PrintTargetId,
+  getSarfaesiCovering132PaperPublicationPrintTargetId,
+  getSarfaesiCovering134PrintTargetId,
+  isSarfaesiCaseStatusUpdateModule,
+  sarfaesiCovering132RefHintFromRow,
+  useSarfaesiCaseStatusUpdateClientModel
+} from "../lib/modules/sarfaesiCaseStatusUpdateClient";
 import {
   InvoiceSnapshotModal,
   isInvoicesReceivedModule,
@@ -171,6 +184,7 @@ import PaginationBar from "./PaginationBar";
 import ToastNotice from "./ToastNotice";
 import CaseSnapshotModal from "./CaseSnapshotModal";
 
+/** Initial empty child-row map keyed by each childTables[].key. */
 function emptyChildRowsState(childTables) {
   if (!childTables?.length) return {};
   const o = {};
@@ -219,6 +233,7 @@ function rowHasAnyContent(row, fields) {
   return false;
 }
 
+/** Client-side required checks on child lines before submit. */
 function validateChildTableRows(moduleConfig, childRowsByKey) {
   const tables = moduleConfig.childTables || [];
   for (const ct of tables) {
@@ -274,6 +289,7 @@ function validateChildTableRows(moduleConfig, childRowsByKey) {
   return null;
 }
 
+/** Drop UI-only keys (_rowId, _editing, …) before sending child rows to the API. */
 function stripChildRowsForApi(childTables, childRowsByKey) {
   const out = {};
   for (const ct of childTables) {
@@ -428,6 +444,7 @@ function buildAuditCompareSubtitle({ auditEntryId, action, createdAt, fetchFaile
   return bits.join(" · ");
 }
 
+/** Build side-by-side field rows for the Audit Logs Compare modal. */
 function buildAuditCompareRows(
   oldRaw,
   newRaw,
@@ -720,6 +737,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   const isSarfaesiInvoice = isSarfaesiInvoiceModule(moduleKey);
   const isVehicleInvoice = isVehicleInvoiceModule(moduleKey);
   const isReturnCase = isReturnCaseModule(moduleKey);
+  const isSarfaesiCaseStatusUpdate = isSarfaesiCaseStatusUpdateModule(moduleKey);
   const isTransferCase = isTransferCaseModule(moduleKey);
   const isAccountsAssetsInvestments = isAccountsAssetsInvestmentsModule(moduleKey);
   const isAccountsExpenseVoucher = isAccountsExpenseVoucherModule(moduleKey);
@@ -1081,6 +1099,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setToast({ kind, message: normalizeToastMessage(kind, message) });
   }
 
+  /** Propagate an entry-form field change (and optional lookup label) into local state. */
   function handleEntryFieldValueChange(fieldName, value, label) {
     // Let snapshot model observe caseNo changes first.
     caseSnapshot.handleCaseFieldValueChange(fieldName, value);
@@ -1316,6 +1335,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     };
   }, [isActive, moduleKey]);
 
+  /** Switch to a blank entry form for creating a new record. */
   function handleNew() {
     if (busy) return;
     // "Clear Screen" resets this module back to a fresh entry form.
@@ -1329,6 +1349,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setToast(null);
   }
 
+  /** Switch to view (grid) mode without loading a row into the form. */
   function handleViewOnly() {
     if (busy) return;
     // One-way switch: never toggle back to entry via View.
@@ -1341,6 +1362,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setToast(null);
   }
 
+  /** Load the selected view-grid row into entry mode for editing. */
   async function handleEditSelected() {
     if (busy) return;
     if (!selectedId) return;
@@ -1376,6 +1398,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** Delete the selected view-grid row after confirm. */
   async function handleDeleteSelected() {
     if (!selectedId) return;
     if (!permissions.canDelete) return;
@@ -1452,6 +1475,32 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     editingRowId: editingRow?.id ?? null
   });
 
+  const printSarfaesiCovering132TargetId = getSarfaesiCovering132PrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
+  const printSarfaesiCovering132PaperPublicationTargetId =
+    getSarfaesiCovering132PaperPublicationPrintTargetId({
+      moduleKey,
+      canView: permissions.canView,
+      effectiveViewMode,
+      selectedId,
+      editingRowId: editingRow?.id ?? null
+    });
+
+  const printSarfaesiCovering134TargetId = getSarfaesiCovering134PrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
+  /** NCI: download Case Details PDF for the print target id. */
   async function handlePrintCaseDetails() {
     if (busy) return;
     if (!isNciModule || !permissions.canView) return;
@@ -1469,6 +1518,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
   }
 
   // Shared click handler used by both view-grid and edit-mode Branch Copy buttons.
+  /** NCI: download Branch Copy PDF for the print target id. */
   async function handlePrintBranchCopy() {
     if (busy) return;
     if (!isNciModule || !permissions.canView) return;
@@ -1486,6 +1536,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** Public Notice: download PDF from toolbar (view or edit). */
   async function handlePrintPublicNoticeFromToolbar() {
     if (busy) return;
     if (!isPublicNotice || !permissions.canView) return;
@@ -1503,6 +1554,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** Recovery Invoice: download PDF from toolbar (view or edit). */
   async function handlePrintRecoveryInvoiceFromToolbar() {
     if (busy) return;
     if (!isRecoveryInvoice || !permissions.canView) return;
@@ -1520,6 +1572,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** SARFAESI Invoice: download PDF from toolbar (view or edit). */
   async function handlePrintSarfaesiInvoiceFromToolbar() {
     if (busy) return;
     if (!isSarfaesiInvoice || !permissions.canView) return;
@@ -1537,6 +1590,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** Vehicle Invoice: download PDF from toolbar (view or edit). */
   async function handlePrintVehicleInvoiceFromToolbar() {
     if (busy) return;
     if (!isVehicleInvoice || !permissions.canView) return;
@@ -1554,6 +1608,61 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** SARFAESI Case Update: download 13/2 covering sheet PDF from toolbar. */
+  async function handlePrintSarfaesiCovering132FromToolbar() {
+    if (busy) return;
+    if (!isSarfaesiCaseStatusUpdate || !permissions.canView) return;
+    const id = printSarfaesiCovering132TargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = sarfaesiCovering132RefHintFromRow(rowForName || {});
+    setBusy(true);
+    try {
+      await downloadSarfaesiCovering132Pdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** SARFAESI Case Update: download 13/2 paper publication covering sheet PDF. */
+  async function handlePrintSarfaesiCovering132PaperPublicationFromToolbar() {
+    if (busy) return;
+    if (!isSarfaesiCaseStatusUpdate || !permissions.canView) return;
+    const id = printSarfaesiCovering132PaperPublicationTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = sarfaesiCovering132RefHintFromRow(rowForName || {});
+    setBusy(true);
+    try {
+      await downloadSarfaesiCovering132PaperPublicationPdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** SARFAESI Case Update: download 13(4) covering sheet PDF from toolbar. */
+  async function handlePrintSarfaesiCovering134FromToolbar() {
+    if (busy) return;
+    if (!isSarfaesiCaseStatusUpdate || !permissions.canView) return;
+    const id = printSarfaesiCovering134TargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = sarfaesiCovering132RefHintFromRow(rowForName || {});
+    setBusy(true);
+    try {
+      await downloadSarfaesiCovering134Pdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Return Case: download PDF from toolbar (view or edit). */
   async function handlePrintReturnCaseFromToolbar() {
     // Return Case: download RETURN_<refNo>.pdf (same pattern as invoice Print).
     if (busy) return;
@@ -1572,6 +1681,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     }
   }
 
+  /** Post-create ack modal: print the module-specific PDF for the new record. */
   async function handlePostCreateAckPrintPdf(recordId, valueText) {
     if (busy) return;
     if (!permissions.canView) return;
@@ -1685,6 +1795,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     await resetEntryAfterSave({ clearViewFilters: true, showSuccessToast: false });
   }
 
+  /** Close post-create ack and prepare a fresh entry form. */
   function handlePostCreateAckContinue() {
     const ack = postCreateAckOpen;
     setPostCreateAckOpen(null);
@@ -1692,6 +1803,7 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     void resetEntryAfterSave({ clearViewFilters: true });
   }
 
+  /** Save entry form (create or update) via CRUD API; show ack / toast on success. */
   async function handleSubmit(e) {
     e.preventDefault();
     if (!config || busy) return;
@@ -1907,6 +2019,48 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           >
             <PrintCaseDetailsIcon />
             {getReturnCasePrintButtonText()}
+          </button>
+        ) : null}
+        {isSarfaesiCaseStatusUpdate &&
+        permissions.canView &&
+        printSarfaesiCovering132TargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintSarfaesiCovering132FromToolbar}
+            title="Download 13(2) Demand Notice covering sheet PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getSarfaesiCovering132PrintButtonText()}
+          </button>
+        ) : null}
+        {isSarfaesiCaseStatusUpdate &&
+        permissions.canView &&
+        printSarfaesiCovering132PaperPublicationTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintSarfaesiCovering132PaperPublicationFromToolbar}
+            title="Download 13(2) Demand Notice paper publication covering sheet PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getSarfaesiCovering132PaperPublicationPrintButtonText()}
+          </button>
+        ) : null}
+        {isSarfaesiCaseStatusUpdate &&
+        permissions.canView &&
+        printSarfaesiCovering134TargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintSarfaesiCovering134FromToolbar}
+            title="Download 13(4) notice covering sheet PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getSarfaesiCovering134PrintButtonText()}
           </button>
         ) : null}
       </div>
@@ -2776,6 +2930,51 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   >
                     <PrintCaseDetailsIcon />
                     {getReturnCasePrintButtonText()}
+                  </button>
+                ) : null}
+                {isSarfaesiCaseStatusUpdate &&
+                effectiveViewMode &&
+                printSarfaesiCovering132TargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintSarfaesiCovering132FromToolbar}
+                    title="Download 13(2) Demand Notice covering sheet PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getSarfaesiCovering132PrintButtonText()}
+                  </button>
+                ) : null}
+                {isSarfaesiCaseStatusUpdate &&
+                effectiveViewMode &&
+                printSarfaesiCovering132PaperPublicationTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintSarfaesiCovering132PaperPublicationFromToolbar}
+                    title="Download 13(2) Demand Notice paper publication covering sheet PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getSarfaesiCovering132PaperPublicationPrintButtonText()}
+                  </button>
+                ) : null}
+                {isSarfaesiCaseStatusUpdate &&
+                effectiveViewMode &&
+                printSarfaesiCovering134TargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintSarfaesiCovering134FromToolbar}
+                    title="Download 13(4) notice covering sheet PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getSarfaesiCovering134PrintButtonText()}
                   </button>
                 ) : null}
               </div>

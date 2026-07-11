@@ -2,7 +2,7 @@
 
 /**
  * Verifies invoice_collections registration, FY aggregation queries, and loadDashboard edge cases.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 jest.mock("../../lib/db", () => {
@@ -213,3 +213,4 @@ describe("RBAC matrix", () => {
     expect(entries.some((e) => e.key === "dashboard_invoice_collections")).toBe(true);
   });
 });
+

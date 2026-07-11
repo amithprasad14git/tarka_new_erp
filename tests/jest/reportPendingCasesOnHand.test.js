@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportPendingCasesOnHand`.
+ * Run with: npm test
+ */
+
 import { FINAL_CASE_STATUSES } from "../../lib/modules/newCaseInwardCaseStatus";
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
@@ -64,3 +71,4 @@ describe("buildOpenCaseStatusWhereSql", () => {
     expect(sql).toMatch(/nci\.caseStatus IS NULL/);
   });
 });
+

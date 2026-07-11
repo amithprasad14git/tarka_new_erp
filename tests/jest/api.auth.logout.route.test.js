@@ -19,7 +19,7 @@ jest.mock("../../lib/session", () => ({
 
 const { cookies } = require("next/headers");
 const { deleteSession } = require("../../lib/session");
-const { POST } = require("../../app/api/auth/logout/route");
+const { POST } = require("../../app/api/(auth)/auth/logout/route");
 
 // Automated checks for: api/auth/logout route.
 describe("api/auth/logout route", () => {
@@ -62,5 +62,6 @@ describe("api/auth/logout route", () => {
     await expect(res.json()).resolves.toEqual({ error: "Logout failed" });
   });
 });
+
 
 

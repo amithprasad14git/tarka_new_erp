@@ -1,9 +1,18 @@
 "use client";
 
+/**
+ * React UI component: TaskStatusNav
+ * Sidebar status filter with counts for the task list modal.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { TASK_STATUSES, TASK_STATUS_COLORS, VIEW_ALL_STATUS } from "./taskUtils";
 
 const NAV_ITEMS = [...TASK_STATUSES, VIEW_ALL_STATUS];
 
+/**
+ * @param {{ activeStatus: string, onChange?: (status: string) => void, counts?: Record<string, number>, loading?: boolean }} props
+ */
 export default function TaskStatusNav({ activeStatus, onChange, counts, loading }) {
   return (
     <nav className="task-status-nav" aria-label="Filter by status">

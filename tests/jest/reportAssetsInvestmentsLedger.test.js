@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAssetsInvestmentsLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { buildFilterSummaryText } from "../../lib/reports/buildFilterSummary";
@@ -143,3 +150,4 @@ describe("buildFilterSummaryText month labels", () => {
     expect(summary).toContain("Payment Mode: Cash");
   });
 });
+

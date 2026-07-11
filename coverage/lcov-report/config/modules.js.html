@@ -2743,7 +2743,8 @@
 <a name='L2678'></a><a href='#L2678'>2678</a>
 <a name='L2679'></a><a href='#L2679'>2679</a>
 <a name='L2680'></a><a href='#L2680'>2680</a>
-<a name='L2681'></a><a href='#L2681'>2681</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L2681'></a><a href='#L2681'>2681</a>
+<a name='L2682'></a><a href='#L2682'>2682</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2901,7 +2902,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">35x</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2927,18 +2928,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">35x</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">35x</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">35x</span>
-<span class="cline-any cline-yes">35x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2951,7 +2952,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">35x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -6840,7 +6842,7 @@ export const modules = {
   //
   // Server rules: lib/modules/returnCase.js
   // Browser (preload reasons, Print download): lib/modules/returnCaseClient.js
-  // PDF layout: lib/modules/returnCasePdf.js — docs/return-case-pdf.md
+  // PDF layout: lib/modules/returnCasePdf.js — README.md#return-case-letter-pdf
   // -----------------------------------------------------------------------------
   return_case: {
     label: "Return Case",
@@ -7233,7 +7235,7 @@ export const modules = {
   // - Extra save rules (payment mode, NPA current account, cheques, role-2 unit scope) live in
   //   accountsLoanAc.js and are wired via lib/modules/crudModuleAdapters.js — not in this file.
   // - Browser helpers (e.g. operator unit / NPA behaviour) are in accountsLoanAcClient.js.
-  // Layman doc: docs/README-accounts-modules.md
+  // Layman doc: README.md#10a-accounts-modules-loan-account--suspense-entry
   // =============================================================================
   accounts_loan_ac: 
   {
@@ -7321,7 +7323,7 @@ export const modules = {
   // - No extra CRUD-phase module adapter: only generic required-field validation from this blueprint;
   //   postCreateAck shows the new voucher in the acknowledgement modal (same mechanism as other
   //   voucher screens — MasterModuleClient + API postCreateAck in crud.service.js).
-  // Layman doc: docs/README-accounts-modules.md
+  // Layman doc: README.md#10a-accounts-modules-loan-account--suspense-entry
   // =============================================================================
   accounts_suspense_entry: 
   {
@@ -7369,7 +7371,7 @@ export const modules = {
   },
 &nbsp;
   // Invoice modules: 3-page PDF print when postCreateAck.showPrintPdf is true.
-  // PDF code in lib/modules/*InvoicePdf.js; guides in docs/invoices-pdf.md and docs/*-invoice-pdf.md.
+  // PDF code in lib/modules/*InvoicePdf.js; guides in README.md#invoice--letter-pdfs and README.md.
   recovery_invoice: {
     label: "Recovery Invoice",
     icon: "📈",
@@ -8103,6 +8105,7 @@ export const modules = {
 &nbsp;
 };
 &nbsp;
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -8110,7 +8113,7 @@ export const modules = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../prettify.js"></script>
         <script>

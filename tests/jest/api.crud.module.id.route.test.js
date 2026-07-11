@@ -18,7 +18,7 @@ jest.mock("../../lib/services/crud.service", () => ({
 
 const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById, updateCrudRecord, deleteCrudRecord } = require("../../lib/services/crud.service");
-const { GET, PUT, DELETE } = require("../../app/api/crud/[module]/[id]/route");
+const { GET, PUT, DELETE } = require("../../app/api/(platform)/crud/[module]/[id]/route");
 
 function mockReq(extra = {}, cookieHeader = "session=sid-crud-id") {
   return {
@@ -76,3 +76,4 @@ describe("api/crud/[module]/[id] route", () => {
     await expect(res.json()).resolves.toEqual({ ok: true });
   });
 });
+

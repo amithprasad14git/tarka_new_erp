@@ -63,8 +63,10 @@ describe("requestSession", () => {
 
   test("requireRequestUser returns 401 when getSessionUser throws", async () => {
     getSessionUser.mockRejectedValue(new Error("db down"));
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const result = await requireRequestUser(mockReq("session=sid-1"));
     expect(result.user).toBeNull();
     expect(result.unauthorized.status).toBe(401);
+    errSpy.mockRestore();
   });
 });

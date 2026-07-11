@@ -41,7 +41,7 @@ const { cookies } = require("next/headers");
 const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const pool = require("../../lib/db").default;
 const { apiUserMessage } = require("../../lib/apiUserMessages");
-const { POST } = require("../../app/api/auth/change-password/route");
+const { POST } = require("../../app/api/(auth)/auth/change-password/route");
 
 // Builds a fake HTTP request with a JSON body — used to call route handlers in tests.
 function makeReq(body) {
@@ -191,3 +191,4 @@ describe("api/auth/change-password route", () => {
     await expect(res.json()).resolves.toEqual({ ok: true, message: "Password changed successfully." });
   });
 });
+

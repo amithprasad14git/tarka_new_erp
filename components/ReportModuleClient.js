@@ -5,18 +5,20 @@
 /**
  * Dashboard report tab: DynamicForm filters, Generate / Clear, then ReportOutputView
  * (table) or ReportCustomOutputView (bespoke layout). Fetches GET /api/reports/<key>/run.
- * Config from config/reports.js. See docs/REPORTS.md.
+ * Config from config/reports.js. See README.md#reports-frozen-framework.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getReportConfig } from "../lib/reportConfig";
 import { getReportFilterInitialValues } from "../lib/reports/reportFilterDefaults";
+import { getLockedReportUnitId } from "../lib/reports/reportUnitFilterLock";
 import DynamicForm from "./DynamicForm";
 import LoadingOverlay from "./LoadingOverlay";
 import ToastNotice from "./ToastNotice";
 import ReportOutputView from "./ReportOutputView";
 import ReportCustomOutputView from "./ReportCustomOutputView";
 import ReportOutputSkeleton from "./ReportOutputSkeleton";
+import { useDashboardUser } from "./DashboardUserProvider";
 import {
   formatApiErrorPayload,
   formatUserFacingError,
@@ -31,6 +33,12 @@ import { apiUserMessage } from "../lib/apiUserMessages";
  */
 export default function ReportModuleClient({ reportKey, isActive = true }) {
   const config = useMemo(() => getReportConfig(reportKey), [reportKey]);
+  const { role, unitId } = useDashboardUser();
+  // Role 2 on case reports: Unit is fixed to the session unit (not editable).
+  const lockedUnitId = useMemo(
+    () => getLockedReportUnitId(reportKey, role, unitId),
+    [reportKey, role, unitId]
+  );
   const [filterValues, setFilterValues] = useState(() => {
     const cfg = getReportConfig(reportKey);
     return cfg ? getReportFilterInitialValues(cfg) : {};
@@ -42,6 +50,27 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
   const [formKey, setFormKey] = useState(0);
   const [htmlLoading, setHtmlLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
+
+  // Apply locked unit once session role/unit are available; remount form so LookupSelect shows it.
+  useEffect(() => {
+    if (lockedUnitId == null) return;
+    const unitStr = String(lockedUnitId);
+    setFilterValues((prev) => {
+      if (String(prev.unit ?? "") === unitStr) return prev;
+      return { ...prev, unit: unitStr };
+    });
+  }, [lockedUnitId]);
+
+  // Remount filter form when Unit becomes locked so the lookup shows the session value.
+  useEffect(() => {
+    if (lockedUnitId == null) return;
+    setFormKey((k) => k + 1);
+  }, [lockedUnitId]);
+
+  const readOnlyFields = useMemo(
+    () => (lockedUnitId != null ? { unit: true } : null),
+    [lockedUnitId]
+  );
 
   const fieldUiOverrides = useMemo(() => {
     const overrides = {};
@@ -70,7 +99,10 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
     setToast({ kind, message: text });
   }
 
+  /** Update one report filter field in local state. */
   function handleFieldValueChange(fieldName, value) {
+    // Locked Unit must stay on the session unit for role 2 case reports.
+    if (fieldName === "unit" && lockedUnitId != null) return;
     setFilterValues((prev) => {
       const next = { ...prev, [fieldName]: value };
       const cascade = config?.filterCascade || [];
@@ -127,7 +159,10 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
   function readFiltersFromForm() {
     const merged = { ...filterValues };
     const form = document.getElementById(`report-filters-${reportKey}`);
-    if (!form) return merged;
+    if (!form) {
+      if (lockedUnitId != null) merged.unit = String(lockedUnitId);
+      return merged;
+    }
     const fd = new FormData(form);
     for (const f of config.fields || []) {
       const v = fd.get(f.name);
@@ -146,9 +181,12 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
         merged[f.name] = String(f.default);
       }
     }
+    // Role 2 case reports: always send session unit.
+    if (lockedUnitId != null) merged.unit = String(lockedUnitId);
     return merged;
   }
 
+  /** Run the report API with current filters and show the output. */
   async function handleGenerate(e) {
     e?.preventDefault?.();
     if (!config) return;
@@ -209,9 +247,13 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
     }
   }
 
+  /** Reset filters and clear the last report output. */
   function handleClear() {
     if (!config) return;
-    setFilterValues(getReportFilterInitialValues(config));
+    const next = getReportFilterInitialValues(config);
+    // Keep session unit when Unit is locked for role 2.
+    if (lockedUnitId != null) next.unit = String(lockedUnitId);
+    setFilterValues(next);
     setLookupLabels({});
     setHtmlResult(null);
     setFormKey((k) => k + 1);
@@ -242,6 +284,7 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
           className=""
           formRootStyle={{ marginBottom: 0 }}
           fieldUiOverrides={fieldUiOverrides}
+          readOnlyFields={readOnlyFields}
           onFieldValueChange={handleFieldValueChange}
           onSubmit={handleGenerate}
         />
@@ -283,3 +326,4 @@ export default function ReportModuleClient({ reportKey, isActive = true }) {
     </div>
   );
 }
+

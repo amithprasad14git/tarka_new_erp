@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAnnualExpenseLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { getReportRunner } from "../../lib/reports/reportRegistry";
@@ -152,3 +159,4 @@ describe("annual expense data type constants", () => {
     expect(ANNUAL_EXPENSE_LEDGER_DATA_TYPE_EXPENSE_CATEGORY).toBe("Expense Category Wise");
   });
 });
+

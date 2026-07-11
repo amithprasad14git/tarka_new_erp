@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAnnualInvoiceLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { groupStandardLedgerSections } from "../../lib/reports/groupStandardLedgerSections";
@@ -104,3 +111,4 @@ describe("groupStandardLedgerSections npa current ac grouping", () => {
     expect(grandTotal.amount).toBe(350);
   });
 });
+

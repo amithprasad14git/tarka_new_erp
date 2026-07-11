@@ -4,7 +4,7 @@
  * Dashboard area: requires login; builds sidebar from modules/reports the user may access;
  * filters landing widgets by dashboard permission (config/dashboards.js).
  * Mounts DashboardTabs which renders KPI widgets on /dashboard home.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -22,7 +22,7 @@ import { DashboardUserProvider } from "../../components/DashboardUserProvider";
 import InactivityLogout from "../../components/InactivityLogout";
 import DashboardTabs from "../../components/DashboardTabs";
 import AppFooter from "../../components/AppFooter";
-import DashboardAlertsProvider from "../../components/dashboard/DashboardAlertsProvider";
+import DashboardAlertsProvider from "../../components/dashboardAlerts/DashboardAlertsProvider";
 import "../../components/task/task.css";
 import "../../components/reminder/reminder.css";
 
@@ -83,6 +83,7 @@ export default async function DashboardLayout({ children }) {
       username={user.username}
       email={user.email}
       unitId={user.unit != null ? Number(user.unit) : null}
+      role={user.role != null ? Number(user.role) : null}
     >
       <DashboardAlertsProvider>
         <div className="flux-layout">
@@ -112,4 +113,5 @@ export default async function DashboardLayout({ children }) {
     </DashboardUserProvider>
   );
 }
+
 

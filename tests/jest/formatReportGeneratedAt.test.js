@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `formatReportGeneratedAt`.
+ * Run with: npm test
+ */
+
 import { formatReportGeneratedAtDisplay } from "../../lib/formatReportGeneratedAt";
 
 describe("formatReportGeneratedAtDisplay", () => {
@@ -10,3 +17,4 @@ describe("formatReportGeneratedAtDisplay", () => {
     expect(formatReportGeneratedAtDisplay("")).toBe("");
   });
 });
+

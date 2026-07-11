@@ -1,3 +1,16 @@
+/*
+ * =============================================================================
+ * GLOBAL STYLES — app-wide look and layout for the ERP dashboard
+ * =============================================================================
+ * Loaded from app/layout.js. Theme tokens (:root / [data-theme="dark"]) drive
+ * colors for light and dark mode. Most screens share these classes; login and
+ * task/reminder widgets also have their own CSS modules/files.
+ *
+ * Tip: search for "SECTION:" below to jump between major UI areas.
+ * =============================================================================
+ */
+
+/* SECTION: Theme tokens (light) — shared colors, shadows, form chevron */
 :root {
   --bg: #f4f4fb;
   --panel: #ffffff;
@@ -26,6 +39,7 @@
   --form-outline-value: color-mix(in srgb, var(--text) 72%, #030712 28%);
 }
 
+/* SECTION: Theme tokens (dark) — same variables, darker palette */
 [data-theme="dark"] {
   --bg: #0c0c14;
   --panel: #12121c;
@@ -60,6 +74,7 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
+/* SECTION: Base page reset — box model, body font and background */
 * {
   box-sizing: border-box;
 }
@@ -83,6 +98,7 @@ body {
   border: 0;
 }
 
+/* SECTION: App shell — sidebar + main column grid (collapsed rail width) */
 .flux-layout {
   min-height: 100vh;
   min-height: 100dvh;
@@ -97,6 +113,7 @@ body {
   grid-template-columns: 76px 1fr;
 }
 
+/* SECTION: Sidebar — brand, module groups, collapsed flyouts */
 .flux-sidebar {
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
@@ -429,6 +446,7 @@ body {
 }
 
 /* Full navigation overlay on small screens (opened from sidebar ☰). */
+/* SECTION: Mobile sidebar drawer — full-screen nav overlay */
 .flux-sidebar-drawer-root {
   position: fixed;
   inset: 0;
@@ -490,6 +508,7 @@ body {
   display: none;
 }
 
+/* SECTION: Main column — scroll regions under the topbar */
 .flux-main {
   display: flex;
   flex-direction: column;
@@ -516,6 +535,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* SECTION: App footer — pinned under the main scroll area */
 .app-footer {
   flex-shrink: 0;
   border-top: 1px solid var(--line);
@@ -541,6 +561,7 @@ body {
   font-weight: 500;
 }
 
+/* SECTION: Top bar — greeting, weather, sparkles, clock, user menu */
 .flux-topbar {
   background: var(--panel);
   border-bottom: 1px solid var(--line);
@@ -640,7 +661,7 @@ body {
 .topbar-weather-icon {
   display: block;
   flex-shrink: 0;
-  font-size: 3em;
+  font-size: 2.3em;
   line-height: 1;
   margin-top: -0.1em;
   transform-origin: center center;
@@ -1499,6 +1520,7 @@ body {
   color: var(--success);
 }
 
+/* SECTION: Page content padding inside the main column */
 .flux-content {
   padding: 18px;
   min-width: 0;
@@ -1511,6 +1533,7 @@ body {
   min-width: 0;
 }
 
+/* SECTION: Dashboard tabs — open modules as multitasking panels */
 .dashboard-tabs {
   width: 100%;
   min-width: 0;
@@ -1583,6 +1606,7 @@ body {
   min-width: 0;
 }
 
+/* SECTION: Dashboard landing — home KPI widgets after login */
 .dashboard-landing {
   padding: 0;
   width: 100%;
@@ -3180,6 +3204,7 @@ body {
   }
 }
 
+/* SECTION: Employees module page chrome (legacy dedicated layout helpers) */
 .employees-module-page {
   width: 100%;
   max-width: 100%;
@@ -3647,6 +3672,7 @@ button {
   color: var(--brand);
 }
 
+/* SECTION: Master module — entry forms, view grids, action bars, status dots */
 .master-module-page {
   width: 100%;
   max-width: 100%;
@@ -3888,6 +3914,7 @@ button {
   }
 }
 
+/* SECTION: Overlays — loading spinner, post-save acknowledgement modal */
 /* Post-create acknowledgement: auto-generated reference (see PostCreateAckModal.js + modules.postCreateAck). */
 .post-create-ack-modal-backdrop {
   position: fixed;
@@ -4570,6 +4597,7 @@ button {
   color: var(--brand);
 }
 
+/* SECTION: Toast messages — top-center success/error banners */
 .toast {
   position: fixed;
   bottom: 18px;
@@ -4643,6 +4671,7 @@ button {
   padding: 8px 12px;
 }
 
+/* SECTION: Forms / DynamicForm — outlined fields, labels, required markers */
 /* Entry form: responsive grid; each cell is one “form item” (label + control). */
 .form-grid {
   display: grid;
@@ -5134,6 +5163,7 @@ button {
   border-color: color-mix(in srgb, var(--line) 70%, var(--muted));
 }
 
+/* SECTION: Lookup picker — modal search for large foreign-key lists */
 /* Large FK lookup: display + search icon → modal (debounced search, double-click row). */
 .lookup-picker {
   width: 100%;
@@ -5583,6 +5613,7 @@ button {
   color: var(--muted);
 }
 
+/* SECTION: User permissions matrix — VIEW / Own / Unit / All grid */
 /* User permissions matrix (UserPermissionsMatrixClient) */
 .perm-matrix-page-header {
   margin-bottom: 12px;
@@ -6002,6 +6033,7 @@ button {
   margin-top: 12px;
 }
 
+/* SECTION: Child tables & entry cards — line items under the master form */
 /* Child / case-status section shells: no nested card chrome — title + content only */
 .module-child-card.table-section,
 .master-entry-form-case-status.table-section {
@@ -6668,6 +6700,7 @@ button.master-child-icon-act:disabled {
   }
 }
 
+/* SECTION: Responsive tweaks — phone/tablet shell, tabs, and table scroll */
 /* Mobile + tablet: single-line horizontal scroll for child grids, module tabs, and view actions */
 @media (max-width: 1280px) {
   .table-wrap.master-orders-table-wrap.master-child-table-wrap {
@@ -6858,6 +6891,7 @@ button.master-child-icon-act:disabled {
   }
 }
 
+/* SECTION: Invoice entry extras — charge totals and related helpers */
 /* Recovery / SARFAESI Invoice — grand total below charges grid (shared classes) */
 .recovery-invoice-grand-total-bar {
   display: flex;
@@ -6905,6 +6939,7 @@ button.master-child-icon-act:disabled {
   letter-spacing: 0.02em;
 }
 
+/* SECTION: Case peek / snapshot modals — Public Notice & invoice case cards */
 /* Case snapshot modal — match NCI peek width and scroll */
 .case-snapshot-modal-shell {
   max-width: min(920px, 100%);
@@ -6988,8 +7023,9 @@ button.master-child-icon-act:disabled {
   font-weight: 600;
 }
 
+/* SECTION: Reports — filter cards and frozen .report-output HTML tables */
 /* Reports — filter form + read-only output table
- * Frozen styling v1 (June 2026) — see docs/REPORTS.md § Current theme snapshot.
+ * Frozen styling v1 (June 2026) — see README.md#reports-frozen-framework § Current theme snapshot.
  * All HTML report appearance lives here (.report-output*); do not add per-report CSS. */
 .report-module-page .report-filters-card {
   margin-bottom: 1rem;
@@ -7660,7 +7696,7 @@ button.master-child-icon-act:disabled {
 
 /*
  * Custom-layout reports (reportLayout.mode = custom) — Region Wise Cummulative, etc.
- * Standard table reports use .report-output* above. See docs/REPORTS.md.
+ * Standard table reports use .report-output* above. See README.md#reports-frozen-framework.
  */
 .report-custom-output--centered .report-output-header {
   text-align: center;

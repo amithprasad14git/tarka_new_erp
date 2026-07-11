@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * React UI component: TaskActivityList
+ * Timeline of field changes (status, due date, priority, follow-up) on a task.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { formatTaskDate, formatTaskDateTime } from "./taskUtils";
 
 const FIELD_LABELS = {
@@ -52,6 +58,10 @@ function activityMessage(row, userNamesById) {
   );
 }
 
+/**
+ * Vertical timeline of task activity rows.
+ * @param {{ rows?: object[], userNamesById?: Record<number, string> }} props
+ */
 export default function TaskActivityList({ rows, userNamesById = {} }) {
   const list = rows || [];
   if (!list.length) {

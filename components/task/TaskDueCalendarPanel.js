@@ -78,3 +78,4 @@ export default function TaskDueCalendarPanel({ calendar = EMPTY_CALENDAR, metric
     </div>
   );
 }
+

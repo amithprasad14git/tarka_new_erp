@@ -217,7 +217,23 @@
 <a name='L152'></a><a href='#L152'>152</a>
 <a name='L153'></a><a href='#L153'>153</a>
 <a name='L154'></a><a href='#L154'>154</a>
-<a name='L155'></a><a href='#L155'>155</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -247,6 +263,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -305,6 +326,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -313,6 +339,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -331,6 +358,11 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -399,6 +431,11 @@ function asPositiveInt(value) {
   return Number.isFinite(n) &amp;&amp; n &gt; 0 ? n : <span class="branch-1 cbranch-no" title="branch not covered" >null;</span>
 }
 &nbsp;
+/**
+ * Public Notice domain rules before create/update (date, FY freeze, case, detail rows).
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {{ parentData: object, childTableRows?: object, user: object }} ctx
+ */
 export async function validatePublicNoticeBeforeWrite(conn, { parentData, childTableRows, user }) {
   // --- Parent date (not future), FY freeze for unit role, case link, detail rows (max 3) ---
   const ymd = toYyyyMmDdForSqlDateField(parentData?.date);
@@ -458,6 +495,11 @@ export async function validatePublicNoticeBeforeWrite(conn, { parentData, childT
   }
 }
 &nbsp;
+/**
+ * CRUD beforeWrite entry: merge row then run Public Notice validations.
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {{ oldRow?: object | null, merged: object, childTableRows?: object, user: object }} ctx
+ */
 export async function <span class="fstat-no" title="function not covered" >applyPublicNoticeBeforeWrite(</span>conn, { oldRow, merged, childTableRows, user }) {
 <span class="cstat-no" title="statement not covered" >  await validatePublicNoticeBeforeWrite(conn, {</span>
     parentData: oldRow ? { ...oldRow, ...merged } : merged,
@@ -466,6 +508,7 @@ export async function <span class="fstat-no" title="function not covered" >apply
   });
 }
 &nbsp;
+/** Build post-update acknowledgement body (ref no) for the generic ack modal. */
 export function <span class="fstat-no" title="function not covered" >buildPublicNoticeUpdateAckBody(</span>moduleConfig, id, savedRow) {
 <span class="cstat-no" title="statement not covered" >  return buildPostCreateAckUpdateBody(moduleConfig, id, savedRow);</span>
 }
@@ -487,6 +530,11 @@ async function resolveYearCodeByDate(conn, noticeDate) {
   return yearCode;
 }
 &nbsp;
+/**
+ * Stamp refNo as PN/&amp;lt;yearCode&amp;gt;/&amp;lt;5-digit serial&amp;gt; after INSERT.
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {number} recordId
+ */
 export async function assignPublicNoticeRefNo(conn, recordId) {
   // --- Reference PN/&lt;yearCode&gt;/##### after INSERT (5-digit serial per FY) ---
   const pnTable = escapeSqlTableIdForModuleConfig(modules.public_notice);
@@ -532,7 +580,7 @@ export async function assignPublicNoticeRefNo(conn, recordId) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

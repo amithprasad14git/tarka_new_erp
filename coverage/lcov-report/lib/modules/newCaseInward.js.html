@@ -837,7 +837,25 @@
 <a name='L772'></a><a href='#L772'>772</a>
 <a name='L773'></a><a href='#L773'>773</a>
 <a name='L774'></a><a href='#L774'>774</a>
-<a name='L775'></a><a href='#L775'>775</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L775'></a><a href='#L775'>775</a>
+<a name='L776'></a><a href='#L776'>776</a>
+<a name='L777'></a><a href='#L777'>777</a>
+<a name='L778'></a><a href='#L778'>778</a>
+<a name='L779'></a><a href='#L779'>779</a>
+<a name='L780'></a><a href='#L780'>780</a>
+<a name='L781'></a><a href='#L781'>781</a>
+<a name='L782'></a><a href='#L782'>782</a>
+<a name='L783'></a><a href='#L783'>783</a>
+<a name='L784'></a><a href='#L784'>784</a>
+<a name='L785'></a><a href='#L785'>785</a>
+<a name='L786'></a><a href='#L786'>786</a>
+<a name='L787'></a><a href='#L787'>787</a>
+<a name='L788'></a><a href='#L788'>788</a>
+<a name='L789'></a><a href='#L789'>789</a>
+<a name='L790'></a><a href='#L790'>790</a>
+<a name='L791'></a><a href='#L791'>791</a>
+<a name='L792'></a><a href='#L792'>792</a>
+<a name='L793'></a><a href='#L793'>793</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1228,10 +1246,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1239,6 +1253,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1610,6 +1645,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * =============================================================================
@@ -2000,6 +2036,12 @@ export async function isNewCaseInwardFinalStatusById(conn, caseStatusId) {
   return FINAL_CASE_STATUS_SET.has(text);
 }
 &nbsp;
+/**
+ * Block edit when the case is in a final status the user may not change.
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {object} user
+ * @param {object} oldRow
+ */
 export async function <span class="fstat-no" title="function not covered" >assertNewCaseInwardRowEditableByUser(</span>conn, user, oldRow) {
   // Unit operators cannot change cases that have reached a final/closed status.
 <span class="cstat-no" title="statement not covered" >  if (Number(user?.role) !== 2) <span class="cstat-no" title="statement not covered" >return;</span></span>
@@ -2010,6 +2052,11 @@ export async function <span class="fstat-no" title="function not covered" >asser
   });
 }
 &nbsp;
+/**
+ * CRUD beforeWrite entry for New Case Inward (delegates to validate + locks).
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {{ user: object, oldRow?: object | null, merged: object, childTableRows?: object, parentId?: number | null }} ctx
+ */
 export async function <span class="fstat-no" title="function not covered" >applyNewCaseInwardBeforeWrite(</span>conn, { user, oldRow, merged, childTableRows, parentId = <span class="branch-0 cbranch-no" title="branch not covered" >null </span>}) {
   // Delegates to validateNewCaseInwardBeforeWrite; admins may skip some backdate rules.
 <span class="cstat-no" title="statement not covered" >  await validateNewCaseInwardBeforeWrite(conn, {</span>
@@ -2020,6 +2067,12 @@ export async function <span class="fstat-no" title="function not covered" >apply
   });
 }
 &nbsp;
+/**
+ * On get-by-id: mark final-stage rows read-only for role-2 operators.
+ * @param {import("mysql2/promise").PoolConnection} conn
+ * @param {object} user
+ * @param {object} row
+ */
 export async function <span class="fstat-no" title="function not covered" >applyNewCaseInwardGetByIdLocks(</span>conn, user, row) {
 <span class="cstat-no" title="statement not covered" >  if (Number(user?.role) !== 2) <span class="cstat-no" title="statement not covered" >return;</span></span>
 <span class="cstat-no" title="statement not covered" >  await applyRole2FinalStageEditLock(conn, [row]);</span>
@@ -2384,6 +2437,7 @@ export const NEW_CASE_INWARD_VIEW_RECORD_MODAL_TITLE = "Case Snapshot (Read-only
  * Client copy lives in `newCaseInwardClient.js` — keep strings in sync (client does not import this module).
  */
 export const NEW_CASE_INWARD_VIEW_GRID_PEEK_COLUMN_HEADER = "Peek";
+/** Tooltip on the Peek button in the NCI view grid. */
 export const NEW_CASE_INWARD_VIEW_GRID_PEEK_BUTTON_TOOLTIP = "Quick view record (read-only)";
 &nbsp;</pre></td></tr></table></pre>
 
@@ -2392,7 +2446,7 @@ export const NEW_CASE_INWARD_VIEW_GRID_PEEK_BUTTON_TOOLTIP = "Quick view record 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

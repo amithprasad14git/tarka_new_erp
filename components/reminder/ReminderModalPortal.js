@@ -16,3 +16,4 @@ export default function ReminderModalPortal({ children }) {
   if (typeof document === "undefined") return null;
   return createPortal(children, document.body);
 }
+

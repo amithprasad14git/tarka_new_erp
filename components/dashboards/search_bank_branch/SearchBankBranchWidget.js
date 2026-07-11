@@ -5,12 +5,12 @@
 /**
  * Landing widget: user types branch code or name; results from
  * GET /api/dashboard/search-bank-branch/search?q=...
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import DashboardSectionHeader from "../DashboardSectionHeader";
-import DashboardWidgetRefreshHeader from "../DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../shared/DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../shared/DashboardWidgetRefreshHeader";
 import { formatApiErrorPayload, readJsonResponse } from "../../../lib/fetchClientError";
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -169,3 +169,4 @@ export default function SearchBankBranchWidget() {
     </article>
   );
 }
+

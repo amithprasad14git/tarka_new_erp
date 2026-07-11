@@ -18,7 +18,7 @@ import MasterModuleClient from "./MasterModuleClient";
 import ReportModuleClient from "./ReportModuleClient";
 import UserPermissionsMatrixClient from "./UserPermissionsMatrixClient";
 import ToastNotice from "./ToastNotice";
-import DashboardWidgetLoader from "./dashboards/DashboardWidgetLoader";
+import DashboardWidgetLoader from "./dashboards/shared/DashboardWidgetLoader";
 
 const MAX_OPEN_TABS = 5;
 
@@ -42,7 +42,7 @@ function extractModuleKey(pathname) {
  * In-page dashboard tabs: keeps multiple module screens mounted so users can multitask.
  * On `/dashboard` (no module selected) renders landing KPI widgets in a grid.
  * Full-width slots: unit_wise_recovery_target, regional_performance (above Search + Invoice row).
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  * @param {{ visibleModuleKeys: string[], visibleDashboards?: Array<{ key: string, title: string, description?: string, icon?: string, tone?: string }> }} props
  */
 export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboards = [] }) {
@@ -250,3 +250,4 @@ export default function DashboardTabs({ visibleModuleKeys = [], visibleDashboard
     </>
   );
 }
+

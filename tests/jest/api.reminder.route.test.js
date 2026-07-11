@@ -7,7 +7,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/dashboards/dashboardAccess", () => ({
@@ -23,7 +24,7 @@ jest.mock("../../lib/modules/reminderDashboard.service", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { canAccessDashboard } = require("../../lib/dashboards/dashboardAccess");
 const {
   listRemindersForDashboard,
@@ -32,8 +33,8 @@ const {
   getReminderDetailForDashboard,
   updateReminderFromDashboard
 } = require("../../lib/modules/reminderDashboard.service");
-const { GET, POST } = require("../../app/api/reminder/route");
-const { GET: GET_ID, PATCH } = require("../../app/api/reminder/[id]/route");
+const { GET, POST } = require("../../app/api/(workspace)/reminder/route");
+const { GET: GET_ID, PATCH } = require("../../app/api/(workspace)/reminder/[id]/route");
 
 function makeGetReq(url) {
   return { url: `http://localhost${url}` };
@@ -48,6 +49,7 @@ describe("api/reminder routes", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     cookies.mockResolvedValue({ get: jest.fn(() => ({ value: "sid-1" })) });
   });

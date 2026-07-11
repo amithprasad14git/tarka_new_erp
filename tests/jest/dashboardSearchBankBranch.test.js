@@ -2,7 +2,7 @@
 
 /**
  * Verifies search_bank_branch registration and branch search SQL.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 jest.mock("../../lib/db", () => {
@@ -133,3 +133,4 @@ describe("RBAC matrix", () => {
     expect(MIN_TERM_LENGTH).toBe(2);
   });
 });
+

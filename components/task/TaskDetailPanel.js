@@ -607,3 +607,4 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
     </TaskModalPortal>
   );
 }
+

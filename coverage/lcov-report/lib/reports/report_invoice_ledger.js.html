@@ -325,7 +325,17 @@
 <a name='L260'></a><a href='#L260'>260</a>
 <a name='L261'></a><a href='#L261'>261</a>
 <a name='L262'></a><a href='#L262'>262</a>
-<a name='L263'></a><a href='#L263'>263</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -339,13 +349,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">25x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">25x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">25x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">25x</span>
-<span class="cline-any cline-yes">25x</span>
-<span class="cline-any cline-yes">25x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">25x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">25x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -568,6 +584,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -583,6 +600,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -600,19 +618,26 @@ import { branchLabelSelectSql } from "./reportBranchLabelSql.js";
 import { monthEndYmd, monthStartYmd } from "./monthFilterRange";
 import { appendInvoiceBillToUnitFilterIfSelected } from "./nciReportDimensionFilters.js";
 &nbsp;
+/** MySQL DATE_FORMAT for invoice date display columns. */
 export const DATE_FORMAT_INVOICE_LEDGER = "%d-%m-%Y";
+/** MySQL DATE_FORMAT for month section labels in annual invoice summary. */
 export const MONTH_LABEL_FORMAT_INVOICE_LEDGER = "%M-%Y";
 &nbsp;
+/** Non-cancelled invoices that have a matching invoices_received row. */
 export const INVOICE_LEDGER_DATA_TYPE_ACTIVE = "Show Active Invoices";
+/** Non-cancelled invoices with no invoices_received row yet. */
 export const INVOICE_LEDGER_DATA_TYPE_PENDING = "Show Pending Invoices";
+/** Cancelled invoices only. */
 export const INVOICE_LEDGER_DATA_TYPE_CANCELLED = "Show Cancelled Invoices";
 &nbsp;
+/** Recovery / SARFAESI / vehicle invoice tables and their invoices_received FK columns. */
 export const INVOICE_LEDGER_SOURCES = [
   { table: "recovery_invoice", receivedFk: "recoveryInvoice" },
   { table: "sarfaesi_invoice", receivedFk: "sarfaesiInvoice" },
   { table: "vehicle_invoice", receivedFk: "vehicleInvoice" }
 ];
 &nbsp;
+/** Safe quoted table names for invoice ledger joins. */
 function sqlTableIds() {
   return {
     nci: escapeSqlTableId("new_case_inward"),
@@ -825,6 +850,7 @@ export function <span class="fstat-no" title="function not covered" >mapInvoiceL
 }
 &nbsp;
 /**
+ * Runs Invoice Ledger (union of recovery/SARFAESI/vehicle) for the selected month.
  * @param {object} user
  * @param {Record&lt;string, unknown&gt;} filters
  * @param {{ limit?: number }} ctx
@@ -849,6 +875,7 @@ export async function <span class="fstat-no" title="function not covered" >runRe
     truncated: (rawRows || []).length &gt;= limit
   };
 }
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -856,7 +883,7 @@ export async function <span class="fstat-no" title="function not covered" >runRe
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

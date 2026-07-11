@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportInvoicesReceivedLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { buildFilterSummaryText } from "../../lib/reports/buildFilterSummary";
@@ -106,3 +113,4 @@ describe("buildFilterSummaryText month label", () => {
     expect(summary).toContain("Month: 05/2026");
   });
 });
+

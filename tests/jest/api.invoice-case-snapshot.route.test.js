@@ -5,7 +5,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/modules/invoiceCaseSnapshot", () => ({
@@ -15,16 +16,17 @@ jest.mock("../../lib/modules/invoiceCaseSnapshot", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const {
   canAccessInvoiceLinkedSnapshot,
   loadInvoiceLinkedCaseByCaseId
 } = require("../../lib/modules/invoiceCaseSnapshot");
-const { GET } = require("../../app/api/invoice/case-snapshot/[caseId]/route");
+const { GET } = require("../../app/api/(invoices)/invoice/case-snapshot/[caseId]/route");
 
 describe("api/invoice/case-snapshot/[caseId] route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-1" }) });
   });
 

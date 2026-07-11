@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportReturnedCases`.
+ * Run with: npm test
+ */
+
 import { FINAL_CASE_STATUSES } from "../../lib/modules/newCaseInwardCaseStatus";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
@@ -85,3 +92,4 @@ describe("buildReturnedCaseStatusWhereSql", () => {
     expect(values).toEqual(["returned"]);
   });
 });
+

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">65.57% </span>
+                <span class="strong">67.21% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>120/183</span>
+                <span class='fraction'>123/183</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">47.05% </span>
+                <span class="strong">48.73% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>72/153</span>
+                <span class='fraction'>77/158</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.18% </span>
+                <span class="strong">69.56% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>15/22</span>
+                <span class='fraction'>16/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.9% </span>
+                <span class="strong">69.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>110/162</span>
+                <span class='fraction'>113/162</span>
             </div>
         
             
@@ -341,7 +341,10 @@
 <a name='L276'></a><a href='#L276'>276</a>
 <a name='L277'></a><a href='#L277'>277</a>
 <a name='L278'></a><a href='#L278'>278</a>
-<a name='L279'></a><a href='#L279'>279</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -377,10 +380,6 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -396,6 +395,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -619,8 +624,9 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Shared report helper — build .xlsx buffer from report config + data.
-// Frozen layout v1 — fonts, logo size, borders from reportExportTheme.excel. See docs/REPORTS.md.
+// Frozen layout v1 — fonts, logo size, borders from reportExportTheme.excel. See README.md#reports-frozen-framework.
 &nbsp;
 /**
  * Standard table-report Excel builder. Logo via addReportExcelLogo, then title,
@@ -630,7 +636,7 @@
 &nbsp;
 import ExcelJS from "exceljs";
 import { formatInrNumberForDisplay, formatReportAmountForDisplay } from "../formatInrNumber";
-import { toYyyyMmDdForSqlDateField } from "../sqlDateFieldValue";
+import { formatReportDateDisplay } from "../formatReportDateDisplay";
 import { REPORT_EXPORT_THEME } from "../../config/reportExportTheme";
 import { addReportExcelLogo } from "./addReportExcelLogo";
 &nbsp;
@@ -654,11 +660,7 @@ function excelFonts(theme = <span class="branch-0 cbranch-no" title="branch not 
 function formatCellValue(col, value) {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (value == null || value === "") <span class="cstat-no" title="statement not covered" >return "";</span>
   <span class="missing-if-branch" title="if path not taken" >I</span>if (col.type === "date") {
-    const ymd = <span class="cstat-no" title="statement not covered" >toYyyyMmDdForSqlDateField(value);</span>
-<span class="cstat-no" title="statement not covered" >    if (ymd) {</span>
-      const [y, mo, d] = <span class="cstat-no" title="statement not covered" >ymd.split("-");</span>
-<span class="cstat-no" title="statement not covered" >      return `${d}/${mo}/${y}`;</span>
-    }
+<span class="cstat-no" title="statement not covered" >    return formatReportDateDisplay(value);</span>
   }
   if (col.type === "inr") {
     const f = formatReportAmountForDisplay(value);
@@ -671,9 +673,15 @@ function formatCellValue(col, value) {
   return value;
 }
 &nbsp;
-/** All report table cells use wrap text in Excel. */
-export function excelCellAlignment(horizontal = <span class="branch-0 cbranch-no" title="branch not covered" >"left",</span> vertical = "middle") {
-  return { horizontal, vertical, wrapText: true };
+/** Report table cell alignment; amount/number columns omit wrap text. */
+export function excelCellAlignment(horizontal = <span class="branch-0 cbranch-no" title="branch not covered" >"left",</span> vertical = "middle", { wrapText = true } = {}) {
+  return { horizontal, vertical, wrapText };
+}
+&nbsp;
+function excelAlignmentForColumn(col, horizontal) {
+  const h = horizontal || <span class="branch-1 cbranch-no" title="branch not covered" >col.align </span>|| <span class="branch-2 cbranch-no" title="branch not covered" >"left";</span>
+  const nowrap = col.type === "inr" || col.type === "number";
+  return excelCellAlignment(h, "middle", { wrapText: !nowrap });
 }
 &nbsp;
 function applyRowBorders(row, colCount) {
@@ -785,9 +793,9 @@ export async function buildReportWorkbook(reportConfig, payload) {
       cell.value = formatCellValue(col, dataRow[col.key]);
       cell.font = fonts.table;
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb } };
-      if (col.align === "right") cell.alignment = excelCellAlignment("right");
-      else <span class="missing-if-branch" title="if path not taken" >I</span>if (col.align === "center") <span class="cstat-no" title="statement not covered" >cell.alignment = excelCellAlignment("center");</span>
-      else cell.alignment = excelCellAlignment("left");
+      if (col.align === "right") cell.alignment = excelAlignmentForColumn(col, "right");
+      else <span class="missing-if-branch" title="if path not taken" >I</span>if (col.align === "center") <span class="cstat-no" title="statement not covered" >cell.alignment = excelAlignmentForColumn(col, "center");</span>
+      else cell.alignment = excelAlignmentForColumn(col, "left");
     });
     applyDataRowBorders(r, colCount, { isLastDataRow });
   }
@@ -802,10 +810,10 @@ export async function buildReportWorkbook(reportConfig, payload) {
       cell.font = fonts.tableBold;
       if (col.sum &amp;&amp; sumValues?.[col.key] != null) {
         cell.value = formatCellValue(col, sumValues[col.key]);
-        cell.alignment = excelCellAlignment("right");
+        cell.alignment = excelAlignmentForColumn(col, "right");
       } else <span class="missing-if-branch" title="else path not taken" >E</span>if (ci === (currentLabelColIndex &gt;= 0 ? currentLabelColIndex : <span class="branch-1 cbranch-no" title="branch not covered" >0)</span>) {
         cell.value = labelText;
-        cell.alignment = excelCellAlignment(col.align === "right" ? <span class="branch-0 cbranch-no" title="branch not covered" >"right" </span>: "left");
+        cell.alignment = excelAlignmentForColumn(col, col.align === "right" ? <span class="branch-0 cbranch-no" title="branch not covered" >"right" </span>: "left");
       }
     });
     applyRowBorders(r, colCount);
@@ -897,6 +905,7 @@ export async function buildReportWorkbook(reportConfig, payload) {
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -904,7 +913,7 @@ export async function buildReportWorkbook(reportConfig, payload) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

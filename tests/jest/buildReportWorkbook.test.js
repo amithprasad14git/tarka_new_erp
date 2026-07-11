@@ -39,3 +39,4 @@ maybe("buildReportWorkbook", () => {
     expect(buf.length).toBeGreaterThan(100);
   });
 });
+

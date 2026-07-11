@@ -13,3 +13,4 @@ describe("computeReportTotals", () => {
     expect(totals.amount).toBe(350.5);
   });
 });
+

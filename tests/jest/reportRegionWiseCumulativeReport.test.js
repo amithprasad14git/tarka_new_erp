@@ -79,3 +79,4 @@ describe("formatFinancialYearRangeLabel", () => {
     expect(formatFinancialYearRangeLabel("2026-04-01", "2027-03-31")).toBe("2026 - 2027");
   });
 });
+

@@ -317,7 +317,18 @@
 <a name='L252'></a><a href='#L252'>252</a>
 <a name='L253'></a><a href='#L253'>253</a>
 <a name='L254'></a><a href='#L254'>254</a>
-<a name='L255'></a><a href='#L255'>255</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -452,6 +463,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -492,20 +507,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -519,6 +539,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -531,6 +552,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -703,6 +725,10 @@ async function resolveTransferYearCodeByDate(conn, transferDate) {
   return yearCode;
 }
 &nbsp;
+/**
+ * Before save: transfer date must be today, FY freeze for role 2, From Unit matches live NCI owner,
+ * To Unit active and different, assignee active in To Unit.
+ */
 export async function validateTransferCaseBeforeWrite(conn, { parentData, user }) {
   // Business rule: this module is an operational transfer action, so it is allowed only for "today".
   // UI also enforces this, but we re-check on server to prevent API bypass.
@@ -745,6 +771,7 @@ export async function validateTransferCaseBeforeWrite(conn, { parentData, user }
   await assertAssigneeActiveAndBelongsToUnit(conn, assigneeId, toUnitId);
 }
 &nbsp;
+/** CRUD beforeWrite hook — runs validateTransferCaseBeforeWrite on the merged parent row. */
 export async function <span class="fstat-no" title="function not covered" >applyTransferCaseBeforeWrite(</span>conn, { oldRow, merged, user }) {
 <span class="cstat-no" title="statement not covered" >  await validateTransferCaseBeforeWrite(conn, {</span>
     parentData: oldRow ? { ...oldRow, ...merged } : merged,
@@ -752,6 +779,10 @@ export async function <span class="fstat-no" title="function not covered" >apply
   });
 }
 &nbsp;
+/**
+ * Inside the save transaction: move NCI unit/createdBy/modifiedBy to To Unit + Assignee.
+ * Returns before/after case snapshots for audit.
+ */
 export async function applyTransferCaseOwnershipInTransaction(conn, transferCaseRow) {
   const caseId = asPositiveInt(transferCaseRow?.caseNo);
   const toUnitId = asPositiveInt(transferCaseRow?.toUnit);
@@ -779,6 +810,7 @@ export async function applyTransferCaseOwnershipInTransaction(conn, transferCase
   };
 }
 &nbsp;
+/** Load caseNo / fromUnit / toUnit / assignee for a saved Transfer Case id (post-create ownership move). */
 export async function <span class="fstat-no" title="function not covered" >loadTransferCaseOwnershipRowById(</span>conn, transferCaseId) {
   const id = <span class="cstat-no" title="statement not covered" >asPositiveInt(transferCaseId);</span>
 <span class="cstat-no" title="statement not covered" >  if (!id) <span class="cstat-no" title="statement not covered" >return null;</span></span>
@@ -787,6 +819,7 @@ export async function <span class="fstat-no" title="function not covered" >loadT
 <span class="cstat-no" title="statement not covered" >  return rows?.[0] || null;</span>
 }
 &nbsp;
+/** Stamp `refNo` as TRF/&amp;lt;yearCode&amp;gt;/&amp;lt;####&amp;gt; after insert (module_number_sequence). */
 export async function assignTransferCaseRefNo(conn, recordId) {
   const tcTable = escapeSqlTableIdForModuleConfig(modules.transfer_case);
   const seqTable = escapeSqlTableId("module_number_sequence");
@@ -832,7 +865,7 @@ export async function assignTransferCaseRefNo(conn, recordId) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

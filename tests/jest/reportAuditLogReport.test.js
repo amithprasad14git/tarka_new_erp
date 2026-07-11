@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAuditLogReport`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { buildFilterSummaryText } from "../../lib/reports/buildFilterSummary";
@@ -98,3 +105,4 @@ describe("buildFilterSummaryText select labels", () => {
     expect(summary).toContain("Action: Create");
   });
 });
+

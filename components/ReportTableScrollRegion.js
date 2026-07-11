@@ -88,3 +88,4 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
     </div>
   );
 }
+

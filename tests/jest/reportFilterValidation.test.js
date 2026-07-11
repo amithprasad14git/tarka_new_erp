@@ -35,3 +35,4 @@ describe("reportFilterValidation", () => {
     expect(q.fromDate).toBe("2026-06-01");
   });
 });
+

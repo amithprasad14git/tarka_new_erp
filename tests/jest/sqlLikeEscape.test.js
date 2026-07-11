@@ -50,3 +50,4 @@ describe("sqlLikeEscape.escapeSqlLikePattern", () => {
 });
 
 
+

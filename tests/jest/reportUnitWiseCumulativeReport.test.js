@@ -94,3 +94,4 @@ describe("sumCumulativeMetrics (Unit Wise Summary)", () => {
     expect(sumCumulativeMetrics(rows)).toEqual({ caseCount: 5, cashRecovered: 300, npaReduced: 125 });
   });
 });
+

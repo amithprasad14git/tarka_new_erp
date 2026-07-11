@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportSarfaesiCaseReport`.
+ * Run with: npm test
+ */
+
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
@@ -71,3 +78,4 @@ describe("countCustomReportRows", () => {
     expect(countCustomReportRows({ cases: [{ slNo: 1 }, { slNo: 2 }] })).toBe(2);
   });
 });
+

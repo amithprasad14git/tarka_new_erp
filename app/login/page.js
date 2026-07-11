@@ -2,9 +2,6 @@
 
 // Application page or layout — what users see in the browser.
 
-// Application route/page/API handler for this feature area.
-// Keep module-specific business logic in lib/modules/<module> files.
-
 /**
  * Login page: posts to `/api/auth/login`; successful login sets httpOnly `session` cookie and redirects to dashboard.
  * Layout: floating split card (58% hero / 42% form) on #f8fafc page background.
@@ -219,3 +216,4 @@ function EyeOffIcon() {
     </svg>
   );
 }
+

@@ -491,3 +491,4 @@ function SwipeToLogout({ onLogout, disabled = false, loggingOut = false }) {
     </div>
   );
 }
+

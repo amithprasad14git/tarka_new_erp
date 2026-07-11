@@ -7,7 +7,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/dashboards/dashboardAccess", () => ({
@@ -24,7 +25,7 @@ jest.mock("../../lib/modules/taskDashboard.service", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { canAccessDashboard } = require("../../lib/dashboards/dashboardAccess");
 const {
   listTasksForDashboard,
@@ -33,8 +34,8 @@ const {
   getTaskDetailForDashboard,
   updateTaskFromDashboard
 } = require("../../lib/modules/taskDashboard.service");
-const { GET, POST } = require("../../app/api/task/route");
-const { GET: GET_ID, PATCH } = require("../../app/api/task/[id]/route");
+const { GET, POST } = require("../../app/api/(workspace)/task/route");
+const { GET: GET_ID, PATCH } = require("../../app/api/(workspace)/task/[id]/route");
 
 function makeGetReq(url) {
   return { url: `http://localhost${url}` };
@@ -49,6 +50,7 @@ describe("api/task routes", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     cookies.mockResolvedValue({ get: jest.fn(() => ({ value: "sid-1" })) });
   });

@@ -7,12 +7,12 @@
  * Shows extra KPIs + chart for the selected view (received, pending, all, or by type).
  * Footer links to Invoice Ledger or Invoices Received Ledger report.
  * Parent: InvoiceCollectionsWidget.js — data is already loaded (no extra API call).
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { useEffect } from "react";
 import Link from "next/link";
-import MonthWiseRecoveryBars from "../MonthWiseRecoveryBars";
+import MonthWiseRecoveryBars from "../shared/MonthWiseRecoveryBars";
 import {
   formatDashboardInrAmount,
   formatInrNumberForDisplay,
@@ -302,3 +302,4 @@ export default function InvoiceCollectionsSummaryModal({
     </InvoiceCollectionsModalPortal>
   );
 }
+

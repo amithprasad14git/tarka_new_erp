@@ -209,7 +209,16 @@
 <a name='L144'></a><a href='#L144'>144</a>
 <a name='L145'></a><a href='#L145'>145</a>
 <a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -230,6 +239,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -323,13 +333,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -338,6 +341,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -348,6 +359,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -355,15 +368,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Module-specific server rules — validations and side effects on save.
-&nbsp;
-/**
- * auditLogs — business rules when records are created or updated.
- * Form fields and labels: config/modules.js
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * =============================================================================
+ * AUDIT LOGS (MODULE UI HELPERS) — Grid columns and JSON previews
+ * =============================================================================
+ * The audit_logs screen is read-only: custom column layout, truncated JSON
+ * previews, and a Compare modal. These helpers decide which columns get special
+ * treatment and how snapshot JSON is shown in the grid vs full display.
+ * Re-exports display label helpers from lib/auditDisplay.js.
+ * =============================================================================
  */
-&nbsp;
-// Module-specific file: contains business rules for this module only.
-// Do not move this logic into generic/shared files.
 &nbsp;
 export {
   buildAuditRecordLabel,
@@ -373,11 +388,13 @@ export {
   resolveAuditFieldLabel
 } from "../auditDisplay";
 &nbsp;
+/** True when the current screen is Audit Logs (custom layout, no CRUD edit). */
 export function <span class="fstat-no" title="function not covered" >isAuditLogsModule(</span>moduleKey) {
   // Audit log screen uses custom column layout and Compare modal instead of CRUD edit.
 <span class="cstat-no" title="statement not covered" >  return moduleKey === "audit_logs";</span>
 }
 &nbsp;
+/** Hide raw record_id in the grid (operators use record_label instead). */
 export function <span class="fstat-no" title="function not covered" >shouldHideAuditLogsRecordId(</span>fieldName) {
 <span class="cstat-no" title="statement not covered" >  return fieldName === "record_id";</span>
 }
@@ -465,6 +482,7 @@ export function auditJsonFullDisplay(raw) {
 }
 &nbsp;
 /**
+ * True when the field is the audit created_at timestamp (special formatting).
  * @param {string} fieldName
  * @param {string} [_moduleKey] ignored
  */
@@ -472,10 +490,12 @@ export function <span class="fstat-no" title="function not covered" >isAuditLogs
 <span class="cstat-no" title="statement not covered" >  return String(fieldName ?? "").trim() === "created_at";</span>
 }
 &nbsp;
+/** True when the column is the module key (uses formatAuditModuleLabel). */
 export function <span class="fstat-no" title="function not covered" >isAuditLogsModuleColumn(</span>fieldName) {
 <span class="cstat-no" title="statement not covered" >  return fieldName === "module";</span>
 }
 &nbsp;
+/** True when the column is the human record label. */
 export function <span class="fstat-no" title="function not covered" >isAuditLogsRecordLabelColumn(</span>fieldName) {
 <span class="cstat-no" title="statement not covered" >  return fieldName === "record_label";</span>
 }
@@ -501,6 +521,7 @@ export function <span class="fstat-no" title="function not covered" >getAuditLog
   }
 }
 &nbsp;
+&nbsp;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -508,7 +529,7 @@ export function <span class="fstat-no" title="function not covered" >getAuditLog
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-09T00:22:19.303Z
+                at 2026-07-11T05:56:06.019Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

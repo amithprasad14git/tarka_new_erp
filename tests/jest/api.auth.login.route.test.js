@@ -21,7 +21,7 @@ const { cookies } = require("next/headers");
 const { authenticateLogin } = require("../../lib/auth");
 const { createSession } = require("../../lib/session");
 const { getMissingRequiredDbEnvVars, getLoopbackDbHostError } = require("../../lib/db");
-const { POST } = require("../../app/api/auth/login/route");
+const { POST } = require("../../app/api/(auth)/auth/login/route");
 
 function makeReq(body) {
   return { json: jest.fn().mockResolvedValue(body) };
@@ -88,3 +88,4 @@ describe("api/auth/login route", () => {
     await expect(res.json()).resolves.toEqual({ ok: true });
   });
 });
+

@@ -22,6 +22,10 @@ import { getNciDynamicFormLayoutSections, isNewCaseInwardModule } from "../lib/m
 import InrNumberInput from "./InrNumberInput";
 import LookupSelect from "./LookupSelect";
 
+/**
+ * Renders one module’s create/edit fields from config (text, number, date, lookup, …).
+ * @param {object} props
+ */
 export default function DynamicForm({
   moduleKey = null,
   config,

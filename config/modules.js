@@ -1415,7 +1415,7 @@ export const modules = {
   //
   // Server rules: lib/modules/returnCase.js
   // Browser (preload reasons, Print download): lib/modules/returnCaseClient.js
-  // PDF layout: lib/modules/returnCasePdf.js — docs/return-case-pdf.md
+  // PDF layout: lib/modules/returnCasePdf.js — README.md#return-case-letter-pdf
   // -----------------------------------------------------------------------------
   return_case: {
     label: "Return Case",
@@ -1808,7 +1808,7 @@ export const modules = {
   // - Extra save rules (payment mode, NPA current account, cheques, role-2 unit scope) live in
   //   accountsLoanAc.js and are wired via lib/modules/crudModuleAdapters.js — not in this file.
   // - Browser helpers (e.g. operator unit / NPA behaviour) are in accountsLoanAcClient.js.
-  // Layman doc: docs/README-accounts-modules.md
+  // Layman doc: README.md#10a-accounts-modules-loan-account--suspense-entry
   // =============================================================================
   accounts_loan_ac: 
   {
@@ -1896,7 +1896,7 @@ export const modules = {
   // - No extra CRUD-phase module adapter: only generic required-field validation from this blueprint;
   //   postCreateAck shows the new voucher in the acknowledgement modal (same mechanism as other
   //   voucher screens — MasterModuleClient + API postCreateAck in crud.service.js).
-  // Layman doc: docs/README-accounts-modules.md
+  // Layman doc: README.md#10a-accounts-modules-loan-account--suspense-entry
   // =============================================================================
   accounts_suspense_entry: 
   {
@@ -1944,7 +1944,7 @@ export const modules = {
   },
 
   // Invoice modules: 3-page PDF print when postCreateAck.showPrintPdf is true.
-  // PDF code in lib/modules/*InvoicePdf.js; guides in docs/invoices-pdf.md and docs/*-invoice-pdf.md.
+  // PDF code in lib/modules/*InvoicePdf.js; guides in README.md#invoice--letter-pdfs and README.md.
   recovery_invoice: {
     label: "Recovery Invoice",
     icon: "📈",
@@ -2677,4 +2677,5 @@ export const modules = {
   }
 
 };
+
 

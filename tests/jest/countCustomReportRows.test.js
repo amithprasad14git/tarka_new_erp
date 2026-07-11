@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `countCustomReportRows`.
+ * Run with: npm test
+ */
+
 import { countCustomReportRows } from "../../lib/reports/countCustomReportRows";
 
 describe("countCustomReportRows", () => {
@@ -18,3 +25,4 @@ describe("countCustomReportRows", () => {
     expect(countCustomReportRows({})).toBe(0);
   });
 });
+

@@ -412,3 +412,4 @@ export default function ReminderDetailPanel({ open, reminderId, onClose, onUpdat
     </ReminderModalPortal>
   );
 }
+

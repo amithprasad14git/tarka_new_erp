@@ -14,7 +14,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/services/crud.service", () => ({
@@ -36,20 +37,21 @@ jest.mock("../../lib/modules/newCaseInwardBranchCopyPdf", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById } = require("../../lib/services/crud.service");
 const pool = require("../../lib/db").default;
 const {
   buildNewCaseInwardBranchCopyPdf,
   safeBranchCopyPdfFilename
 } = require("../../lib/modules/newCaseInwardBranchCopyPdf");
-const { GET } = require("../../app/api/new-case-inward/branch-copy-pdf/[id]/route");
+const { GET } = require("../../app/api/(cases)/new-case-inward/branch-copy-pdf/[id]/route");
 
 // Checks printable PDF output is built without crashing and includes expected content.
 describe("api/new-case-inward/branch-copy-pdf/[id] route", () => {
   // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-branch-copy" }) });
   });
 
@@ -92,5 +94,6 @@ describe("api/new-case-inward/branch-copy-pdf/[id] route", () => {
     expect(conn.release).toHaveBeenCalled();
   });
 });
+
 
 

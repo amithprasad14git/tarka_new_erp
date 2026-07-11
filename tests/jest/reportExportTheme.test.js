@@ -1,6 +1,13 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportExportTheme`.
+ * Run with: npm test
+ */
+
 import { REPORT_EXPORT_THEME, getReportHtmlCssVars } from "../../config/reportExportTheme";
 
-/** Frozen theme contract — update alongside docs/REPORTS.md when styling changes. */
+/** Frozen theme contract — update alongside README.md#reports-frozen-framework when styling changes. */
 describe("report export theme (frozen v1)", () => {
   test("normal html font preset snapshot", () => {
     expect(getReportHtmlCssVars("normal")).toEqual({
@@ -44,3 +51,4 @@ describe("report export theme (frozen v1)", () => {
     expect(REPORT_EXPORT_THEME.reportStyle.tableHeaderBackground).toBe("#9DB7C8");
   });
 });
+

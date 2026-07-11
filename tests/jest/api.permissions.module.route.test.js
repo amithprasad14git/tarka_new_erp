@@ -38,7 +38,7 @@ const { cookies } = require("next/headers");
 const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const { apiUserMessage } = require("../../lib/apiUserMessages");
-const { GET } = require("../../app/api/permissions/[module]/route");
+const { GET } = require("../../app/api/(platform)/permissions/[module]/route");
 
 // Checks who may view, create, edit, or delete records based on their permission row.
 describe("api/permissions/[module] route", () => {
@@ -87,5 +87,6 @@ describe("api/permissions/[module] route", () => {
     });
   });
 });
+
 
 

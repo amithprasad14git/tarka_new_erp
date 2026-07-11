@@ -41,7 +41,7 @@ const { cookies } = require("next/headers");
 const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const pool = require("../../lib/db").default;
 const { apiUserMessage } = require("../../lib/apiUserMessages");
-const { GET } = require("../../app/api/new-case-inward/transaction-control/route");
+const { GET } = require("../../app/api/(cases)/new-case-inward/transaction-control/route");
 
 // Automated checks for: api/new-case-inward/transaction-control route.
 describe("api/new-case-inward/transaction-control route", () => {
@@ -94,5 +94,6 @@ describe("api/new-case-inward/transaction-control route", () => {
     });
   });
 });
+
 
 

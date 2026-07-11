@@ -9,7 +9,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/services/crud.service", () => ({
@@ -30,17 +31,18 @@ jest.mock("../../lib/modules/returnCasePdf", () => {
 });
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById } = require("../../lib/services/crud.service");
 const { queryWithRetry } = require("../../lib/db");
 const { buildReturnCasePdfBuffer, safeReturnCasePdfFilename } = require("../../lib/modules/returnCasePdf");
-const { GET } = require("../../app/api/return-case/pdf/[id]/route");
+const { GET } = require("../../app/api/(cases)/return-case/pdf/[id]/route");
 
 // Checks printable PDF output is built without crashing and includes expected content.
 describe("api/return-case/pdf/[id] route", () => {
   // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: () => ({ value: "sid" }) });
     getSessionUser.mockResolvedValue({ id: 1, role: 1 });
   });

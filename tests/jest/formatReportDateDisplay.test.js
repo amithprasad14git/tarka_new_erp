@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `formatReportDateDisplay`.
+ * Run with: npm test
+ */
+
 import { formatReportDateDisplay } from "../../lib/formatReportDateDisplay";
 import { formatReportCellValue } from "../../lib/formatReportCellValue";
 import { toYyyyMmDdForSqlDateField } from "../../lib/sqlDateFieldValue";
@@ -35,3 +42,4 @@ describe("formatReportCellValue date columns", () => {
     expect(formatReportCellValue({ type: "date" }, "2026-03-15")).toBe("15-03-2026");
   });
 });
+

@@ -106,3 +106,4 @@ describe("auth.authenticateLogin", () => {
     expect(sql).not.toContain(payload);
   });
 });
+

@@ -5,14 +5,14 @@
 /**
  * Landing widget for FY invoice billed vs received. Left: 2×3 KPI grid with drilldown modal.
  * Right: by-bank pie (share of billed). Data: GET /api/dashboard/invoice_collections.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { useState } from "react";
-import DashboardWidgetRefreshHeader from "../DashboardWidgetRefreshHeader";
-import DashboardSectionHeader from "../DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../shared/DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../shared/DashboardSectionHeader";
 import InvoiceCollectionKpis from "./InvoiceCollectionKpis";
-import BankRecoveryPie from "../BankRecoveryPie";
+import BankRecoveryPie from "../shared/BankRecoveryPie";
 import InvoiceCollectionsSummaryModal from "./InvoiceCollectionsSummaryModal";
 import "./invoice-collections.css";
 
@@ -153,3 +153,4 @@ export default function InvoiceCollectionsWidget({
     </>
   );
 }
+

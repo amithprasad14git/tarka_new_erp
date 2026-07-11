@@ -7,7 +7,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/dashboards/dashboardAccess", () => ({
@@ -19,16 +20,17 @@ jest.mock("../../lib/modules/reminderDashboard.service", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { canAccessDashboard } = require("../../lib/dashboards/dashboardAccess");
 const { loadReminderAlerts } = require("../../lib/modules/reminderDashboard.service");
-const { GET } = require("../../app/api/reminder/alerts/route");
+const { GET } = require("../../app/api/(workspace)/reminder/alerts/route");
 
 describe("api/reminder/alerts route", () => {
   let consoleErrorSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     cookies.mockResolvedValue({ get: jest.fn(() => ({ value: "sid-1" })) });
   });

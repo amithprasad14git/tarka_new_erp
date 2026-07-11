@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportPartRecoveredCases`.
+ * Run with: npm test
+ */
+
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
@@ -66,3 +73,4 @@ describe("report_part_recovered_cases SQL helpers", () => {
     expect(sql).toContain("NOT IN");
   });
 });
+

@@ -19,9 +19,6 @@ NUL
 .env.test.local
 .env.production.local
 
-# Keep the template (safe placeholders only)
-!.env.local.example
-
 # Debug / OS
 npm-debug.log*
 yarn-debug.log*

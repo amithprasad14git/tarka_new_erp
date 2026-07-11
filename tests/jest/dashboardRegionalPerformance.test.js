@@ -2,7 +2,7 @@
 
 /**
  * Verifies regional_performance is registered, aggregates use loanType not loanCategory,
- * and loadDashboard handles missing unit / missing FY. Guide: docs/DASHBOARDS.md
+ * and loadDashboard handles missing unit / missing FY. Guide: README.md#5a-landing-dashboards
  */
 
 jest.mock("../../lib/db", () => {
@@ -207,3 +207,4 @@ describe("loadDashboard", () => {
     expect(result.status).toBe(401);
   });
 });
+

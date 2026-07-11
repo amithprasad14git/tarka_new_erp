@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportAnnualCashDepositWithdrawLedger`.
+ * Run with: npm test
+ */
+
 import { getReportConfig } from "../../lib/reportConfig";
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { groupStandardLedgerSections } from "../../lib/reports/groupStandardLedgerSections";
@@ -90,3 +97,4 @@ describe("groupStandardLedgerSections annual cash grouping", () => {
     expect(grandTotal.amount).toBe(350);
   });
 });
+

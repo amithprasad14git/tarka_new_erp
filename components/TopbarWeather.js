@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * React UI component: TopbarWeather
- * Reusable screen piece used across dashboard modules.
- * Keep module-specific business rules in lib/modules/*Client.js, not here.
- */
-
 // Compact topbar weather (Open-Meteo via /api/dashboard/weather).
 
 import { useCallback, useEffect, useState } from "react";

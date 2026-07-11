@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `lookupLovCache`.
+ * Run with: npm test
+ */
+
 import { buildLookupLovCacheKey, clearLookupLovCache, fetchLookupLovCached } from "../../lib/lookupLovCache";
 
 describe("lookupLovCache", () => {
@@ -34,3 +41,4 @@ describe("lookupLovCache", () => {
     expect(calls).toBe(1);
   });
 });
+

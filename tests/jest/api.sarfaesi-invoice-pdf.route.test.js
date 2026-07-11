@@ -10,7 +10,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/services/crud.service", () => ({
@@ -31,7 +32,7 @@ jest.mock("../../lib/modules/sarfaesiInvoicePdf", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById } = require("../../lib/services/crud.service");
 const { queryWithRetry } = require("../../lib/db");
 const { loadInvoiceLinkedCaseByCaseId } = require("../../lib/modules/invoiceCaseSnapshot");
@@ -39,11 +40,12 @@ const {
   buildSarfaesiInvoicePdfBuffer,
   safeSarfaesiInvoicePdfFilename
 } = require("../../lib/modules/sarfaesiInvoicePdf");
-const { GET } = require("../../app/api/sarfaesi-invoice/pdf/[id]/route");
+const { GET } = require("../../app/api/(invoices)/sarfaesi-invoice/pdf/[id]/route");
 
 describe("api/sarfaesi-invoice/pdf/[id] route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-sarfaesi-pdf" }) });
   });
 
@@ -120,3 +122,4 @@ describe("api/sarfaesi-invoice/pdf/[id] route", () => {
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
   });
 });
+

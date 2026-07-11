@@ -84,11 +84,22 @@ describe("session auth behavior (getSessionUser focused)", () => {
     await expect(getSessionUser("sid-any")).rejects.toThrow("db down");
   });
 
-  test("database query failure in sliding refresh is propagated after valid user", async () => {
+  test("sliding refresh failure is swallowed and user is still returned", async () => {
+    const user = {
+      id: 7,
+      fullName: "Demo",
+      username: "demo.user",
+      email: "demo@example.com",
+      role: 2,
+      unit: 5
+    };
     pool.query
-      .mockResolvedValueOnce([[{ id: 7, fullName: "Demo", username: "demo.user", email: "demo@example.com", role: 2, unit: 5 }]])
+      .mockResolvedValueOnce([[user]])
       .mockRejectedValueOnce(new Error("refresh failed"));
-    await expect(getSessionUser("sid-refresh")).rejects.toThrow("refresh failed");
+    // Refresh is best-effort — a failed UPDATE must not log the user out.
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    await expect(getSessionUser("sid-refresh")).resolves.toEqual(user);
+    errSpy.mockRestore();
   });
 });
 
@@ -110,5 +121,6 @@ describe("session auth helper primitives", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 });
+
 
 

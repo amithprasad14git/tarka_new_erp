@@ -1,7 +1,17 @@
 "use client";
 
+/**
+ * React UI component: ReminderExpandableSearch
+ * Icon that expands into a search field for filtering the reminder list modal.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+/**
+ * Collapsible search input for the reminder list command bar.
+ * @param {{ open?: boolean, value: string, onChange?: (v: string) => void, placeholder?: string }} props
+ */
 export default function ReminderExpandableSearch({ open, value, onChange, placeholder = "Search reminders…" }) {
   const inputId = useId();
   const inputRef = useRef(null);

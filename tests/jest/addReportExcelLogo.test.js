@@ -27,3 +27,4 @@ describe("addReportExcelLogo", () => {
     expect(nextRow).toBe(1);
   });
 });
+

@@ -4,7 +4,8 @@
 // Keep module-specific business logic in lib/modules/<module> files.
 
 /**
- * React context for the logged-in user’s identity used by greeting and profile UI.
+ * React context for the logged-in user’s identity used by greeting, profile UI,
+ * and report Unit filter lock (role 2).
  */
 import { createContext, useContext, useMemo } from "react";
 
@@ -13,7 +14,8 @@ const DashboardUserContext = createContext({
   username: "",
   email: "",
   displayName: "",
-  unitId: null
+  unitId: null,
+  role: null
 });
 
 /**
@@ -34,10 +36,18 @@ export function displayNameFromEmail(email) {
 }
 
 /**
- * Supplies logged-in user to dashboard client pages (greeting, etc.).
- * @param {{ children: import("react").ReactNode, fullName?: string, username?: string, email?: string, unitId?: number }} props
+ * Supplies logged-in user to dashboard client pages (greeting, report Unit lock, etc.).
+ * `role` is used by ReportModuleClient to lock Unit on case reports for role 2.
+ * @param {{ children: import("react").ReactNode, fullName?: string, username?: string, email?: string, unitId?: number, role?: number | null }} props
  */
-export function DashboardUserProvider({ children, fullName = "", username = "", email = "", unitId = null }) {
+export function DashboardUserProvider({
+  children,
+  fullName = "",
+  username = "",
+  email = "",
+  unitId = null,
+  role = null
+}) {
   const normalizedFullName = String(fullName || "").trim();
   const normalizedUsername = String(username || "").trim();
   const value = useMemo(
@@ -47,9 +57,10 @@ export function DashboardUserProvider({ children, fullName = "", username = "", 
       email: email || "",
       displayName:
         normalizedFullName || displayNameFromEmail(email || "") || normalizedUsername,
-      unitId: unitId != null && Number.isFinite(Number(unitId)) ? Number(unitId) : null
+      unitId: unitId != null && Number.isFinite(Number(unitId)) ? Number(unitId) : null,
+      role: role != null && Number.isFinite(Number(role)) ? Number(role) : null
     }),
-    [normalizedFullName, normalizedUsername, email, unitId]
+    [normalizedFullName, normalizedUsername, email, unitId, role]
   );
 
   return (
@@ -60,4 +71,5 @@ export function DashboardUserProvider({ children, fullName = "", username = "", 
 export function useDashboardUser() {
   return useContext(DashboardUserContext);
 }
+
 

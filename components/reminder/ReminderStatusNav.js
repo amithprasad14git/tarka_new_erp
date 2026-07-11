@@ -1,9 +1,18 @@
 "use client";
 
+/**
+ * React UI component: ReminderStatusNav
+ * Sidebar status filter with counts for the reminder list modal.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { REMINDER_STATUSES, REMINDER_STATUS_COLORS, VIEW_ALL_STATUS } from "./reminderUtils";
 
 const NAV_ITEMS = [...REMINDER_STATUSES, VIEW_ALL_STATUS];
 
+/**
+ * @param {{ activeStatus: string, onChange?: (status: string) => void, counts?: Record<string, number>, loading?: boolean }} props
+ */
 export default function ReminderStatusNav({ activeStatus, onChange, counts, loading }) {
   return (
     <nav className="reminder-status-nav" aria-label="Filter by status">

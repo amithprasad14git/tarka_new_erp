@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `nciReportDimensionFilters`.
+ * Run with: npm test
+ */
+
 import {
   appendNciUnitFilterIfSelected,
   appendInvoiceBillToUnitFilterIfSelected,
@@ -67,3 +74,4 @@ describe("appendInvoicesReceivedBillToUnitFilterIfSelected", () => {
     expect(values).toEqual([4]);
   });
 });
+

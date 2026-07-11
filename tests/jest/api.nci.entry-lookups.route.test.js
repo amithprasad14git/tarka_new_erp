@@ -14,7 +14,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/rbac", () => ({
@@ -77,15 +78,16 @@ jest.mock("../../lib/lookupLabelFieldSql", () => ({
 
 const { cookies } = require("next/headers");
 const pool = require("../../lib/db").default;
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
-const { GET } = require("../../app/api/new-case-inward/entry-lookups/route");
+const { GET } = require("../../app/api/(cases)/new-case-inward/entry-lookups/route");
 
 // Automated checks for: api/new-case-inward/entry-lookups route.
 describe("api/new-case-inward/entry-lookups route", () => {
   // Reset mocks and default stubs before each example runs.
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-nci" }) });
   });
 
@@ -118,5 +120,6 @@ describe("api/new-case-inward/entry-lookups route", () => {
     expect(lookupValueQueryParams).toEqual(["Case Received From"]);
   });
 });
+
 
 

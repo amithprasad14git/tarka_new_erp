@@ -1,9 +1,19 @@
 "use client";
 
+/**
+ * React UI component: TaskDetailFeedTabs
+ * Activity / Comments tab switcher inside the task detail panel, with comment composer.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 import { useState } from "react";
 import TaskActivityList from "./TaskActivityList";
 import TaskCommentsList from "./TaskCommentsList";
 
+/**
+ * Feed tabs for task detail: activity timeline and comments thread.
+ * @param {{ activity?: object[], comments?: object[], userNamesById?: Record<number, string>, canComment?: boolean, commentText?: string, onCommentChange?: (v: string) => void, onPostComment?: () => void, postingComment?: boolean }} props
+ */
 export default function TaskDetailFeedTabs({
   activity,
   comments,

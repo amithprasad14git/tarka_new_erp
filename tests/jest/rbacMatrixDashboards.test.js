@@ -2,7 +2,7 @@
 
 /**
  * Ensures every config/dashboards.js permissionKey shows in User Permissions matrix.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { getRbacMatrixModuleEntries } from "../../lib/rbacMatrixModules";
@@ -32,3 +32,4 @@ describe("rbacMatrixDashboards", () => {
     expect(isDashboardPermissionKey("employee_master")).toBe(false);
   });
 });
+

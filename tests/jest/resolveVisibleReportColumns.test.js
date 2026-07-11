@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `resolveVisibleReportColumns`.
+ * Run with: npm test
+ */
+
 import {
   isReportFilterActive,
   resolveVisibleReportColumns
@@ -55,3 +62,4 @@ describe("resolveVisibleReportColumns", () => {
     expect(visible.map((c) => c.key)).toEqual(["slNo", "borrower"]);
   });
 });
+

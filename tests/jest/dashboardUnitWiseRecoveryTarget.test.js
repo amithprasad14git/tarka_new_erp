@@ -2,7 +2,7 @@
 
 /**
  * Verifies recovery target registration, settled-in-FY SQL (Unit Wise Cumulative rules), and unit scoping.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 jest.mock("mysql2", () => ({
@@ -356,3 +356,4 @@ describe("formatDashboardUpdatedAt", () => {
     expect(label).toMatch(/^Updated \d{1,2}:\d{2} (AM|PM)$/);
   });
 });
+

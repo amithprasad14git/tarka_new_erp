@@ -8,7 +8,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/rbac", () => ({
@@ -27,11 +28,11 @@ jest.mock("../../lib/modules/returnCase", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const pool = require("../../lib/db").default;
 const { loadActiveReturnReasonsForPreload } = require("../../lib/modules/returnCase");
-const { GET } = require("../../app/api/return-case/return-reasons/route");
+const { GET } = require("../../app/api/(cases)/return-case/return-reasons/route");
 
 function mockReturnCasePermissions({ view = false, create = false, edit = false } = {}) {
   hasModulePermission.mockImplementation(async (_user, moduleKey, action) => {
@@ -48,6 +49,7 @@ describe("api/return-case/return-reasons route", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: () => ({ value: "sid" }) });
     getSessionUser.mockResolvedValue({ id: 10, role: 2 });
     mockReturnCasePermissions({ view: false, create: true, edit: false });

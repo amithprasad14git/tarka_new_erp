@@ -35,3 +35,4 @@ describe("reportConfig", () => {
     expect(cfg?.exportTheme?.excel?.fontSize).toBe(9);
   });
 });
+

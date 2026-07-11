@@ -7,12 +7,12 @@
  * Two panels: scrollable reminder cards (filterable by calendar date) and due calendar.
  * Modals: ReminderListModal, ReminderCreateModal, ReminderDetailPanel.
  * Data: parent cache via DashboardWidgetLoader; falls back to GET /api/dashboard/my_reminders.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { useCallback, useEffect, useState } from "react";
-import DashboardSectionHeader from "../dashboards/DashboardSectionHeader";
-import DashboardWidgetRefreshHeader from "../dashboards/DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../dashboards/shared/DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../dashboards/shared/DashboardWidgetRefreshHeader";
 import ReminderDashboardList from "./ReminderDashboardList";
 import ReminderDueCalendarPanel from "./ReminderDueCalendarPanel";
 import ReminderListModal from "./ReminderListModal";
@@ -189,3 +189,4 @@ export default function MyRemindersWidget({ data, loading, lastFetchedAt, onRefr
     </>
   );
 }
+

@@ -90,7 +90,7 @@ const pool = require("../../lib/db").default;
 const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { hasModulePermission } = require("../../lib/rbac");
 const { createCrudRecord } = require("../../lib/services/crud.service");
-const { GET, POST } = require("../../app/api/crud/[module]/route");
+const { GET, POST } = require("../../app/api/(platform)/crud/[module]/route");
 
 function mockReq(url, cookieHeader = "session=sid-crud") {
   return {
@@ -213,3 +213,4 @@ describe("api/crud/[module] route", () => {
     });
   });
 });
+

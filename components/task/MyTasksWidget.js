@@ -7,12 +7,12 @@
  * Three panels: completion donut (click status → list modal), workload tiles, due calendar.
  * Modals: TaskStatusListModal (view all / status drilldown), TaskCreateModal, TaskDetailPanel.
  * Data: parent cache via DashboardWidgetLoader; falls back to GET /api/dashboard/my_tasks.
- * Guide: docs/DASHBOARDS.md
+ * Guide: README.md#5a-landing-dashboards
  */
 
 import { useCallback, useEffect, useState } from "react";
-import DashboardSectionHeader from "../dashboards/DashboardSectionHeader";
-import DashboardWidgetRefreshHeader from "../dashboards/DashboardWidgetRefreshHeader";
+import DashboardSectionHeader from "../dashboards/shared/DashboardSectionHeader";
+import DashboardWidgetRefreshHeader from "../dashboards/shared/DashboardWidgetRefreshHeader";
 import {
   TaskCompletionPanel,
   TaskWorkloadPanel
@@ -202,3 +202,4 @@ export default function MyTasksWidget({ data, loading, lastFetchedAt, onRefresh 
     </>
   );
 }
+

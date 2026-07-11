@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportSettledCases`.
+ * Run with: npm test
+ */
+
 import { FINAL_CASE_STATUSES, normalizeNciCaseStatusLabel } from "../../lib/modules/newCaseInwardCaseStatus";
 import { getYmdISTFromInstant } from "../../lib/istDateTime";
 import { getReportConfig } from "../../lib/reportConfig";
@@ -178,3 +185,4 @@ describe("buildSettledCaseStatusWhereSql", () => {
     }
   });
 });
+

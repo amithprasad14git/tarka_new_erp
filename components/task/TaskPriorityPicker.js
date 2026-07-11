@@ -1,7 +1,16 @@
 "use client";
 
+/**
+ * React UI component: TaskPriorityPicker
+ * Low / Medium / High priority pill control for task create and detail forms.
+ * Keep module-specific business rules in lib/modules/*Client.js, not here.
+ */
+
 const PRIORITIES = ["Low", "Medium", "High"];
 
+/**
+ * @param {{ value?: string, onChange?: (priority: string) => void, readOnly?: boolean }} props
+ */
 export default function TaskPriorityPicker({ value, onChange, readOnly = false }) {
   const current = String(value || "Medium");
 

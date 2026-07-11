@@ -1,3 +1,10 @@
+// Test file — automated checks so changes do not break existing behaviour.
+
+/**
+ * Tests for `reportFilterDefaults`.
+ * Run with: npm test
+ */
+
 import { getReportFilterInitialValues } from "../../lib/reports/reportFilterDefaults";
 import { getReportConfig } from "../../lib/reportConfig";
 
@@ -9,3 +16,4 @@ describe("getReportFilterInitialValues", () => {
     expect(values.outputFormat).toBe("HTML");
   });
 });
+

@@ -5,7 +5,8 @@ jest.mock("next/headers", () => ({
 }));
 
 jest.mock("../../lib/session", () => ({
-  getSessionUser: jest.fn()
+  getSessionUser: jest.fn(),
+  getSessionInvalidReason: jest.fn()
 }));
 
 jest.mock("../../lib/services/crud.service", () => ({
@@ -26,7 +27,7 @@ jest.mock("../../lib/modules/vehicleInvoicePdf", () => ({
 }));
 
 const { cookies } = require("next/headers");
-const { getSessionUser } = require("../../lib/session");
+const { getSessionUser, getSessionInvalidReason } = require("../../lib/session");
 const { getCrudRecordById } = require("../../lib/services/crud.service");
 const { queryWithRetry } = require("../../lib/db");
 const { loadInvoiceLinkedCaseByCaseId } = require("../../lib/modules/invoiceCaseSnapshot");
@@ -34,11 +35,12 @@ const {
   buildVehicleInvoicePdfBuffer,
   safeVehicleInvoicePdfFilename
 } = require("../../lib/modules/vehicleInvoicePdf");
-const { GET } = require("../../app/api/vehicle-invoice/pdf/[id]/route");
+const { GET } = require("../../app/api/(invoices)/vehicle-invoice/pdf/[id]/route");
 
 describe("api/vehicle-invoice/pdf/[id] route", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getSessionInvalidReason.mockResolvedValue("missing");
     cookies.mockResolvedValue({ get: jest.fn().mockReturnValue({ value: "sid-vehicle-pdf" }) });
   });
 
