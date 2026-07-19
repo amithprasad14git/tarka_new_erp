@@ -76,9 +76,9 @@ describe("sarfaesiCaseStatusUpdateCovering134Pdf", () => {
     expect(safeSarfaesiCovering134PdfFilename("SRFUP/2627/0001")).toBe(
       "COVERING_134_SRFUP_2627_0001.pdf"
     );
-    expect(COVERING_134_TITLE).toBe("13(4) NOTICE");
-    expect(COVERING_134_INTRO).toMatch(/13\(4\) notice/i);
-    expect(COVERING_134_NOTE).toMatch(/Speed Post/i);
-    expect(COVERING_134_NOTE).toMatch(/has been despatched/i);
+    expect(COVERING_134_TITLE).toBe("13(4) SYMBOLIC POSSESSION NOTICE");
+    expect(COVERING_134_INTRO).toMatch(/Possession Notice under Section 13\(4\)/i);
+    expect(COVERING_134_NOTE).toMatch(/Possession Notice issued under Section 13\(4\)/i);
+    expect(COVERING_134_NOTE).toMatch(/newspaper publications/i);
   });
 });

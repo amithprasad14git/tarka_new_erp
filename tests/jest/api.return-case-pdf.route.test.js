@@ -94,6 +94,7 @@ describe("api/return-case/pdf/[id] route", () => {
             branchCode: "001",
             branchPlace: "Mysore",
             rboFullName: "RBO South",
+            rboShortCode: "RBO-S",
             bankName: "State Bank of India"
           }
         ]
@@ -114,7 +115,8 @@ describe("api/return-case/pdf/[id] route", () => {
           { select: 1, returnReason: "Reason B" }
         ],
         borrowerLatestDetails: "Latest borrower info",
-        ccTo: "CC Recipient"
+        ccTo: "CC Recipient",
+        branchContext: expect.objectContaining({ rboName: "RBO-S" })
       })
     );
   });

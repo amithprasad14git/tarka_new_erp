@@ -10,7 +10,7 @@ export const REPORT_EXPORT_THEME = {
   reportStyle: {
     tableHeaderBold: true,
     tableHeaderAlign: "center",
-    zebra: { even: "#ffffff", odd: "#F0F4F8" },
+    zebra: { even: "#ffffff", odd: "#DCE6EF" },
     totalRow: {
       background: "#9FD4AD",
       label: "Total"
@@ -24,7 +24,8 @@ export const REPORT_EXPORT_THEME = {
     showFilterSummary: true,
     filterSummaryBelowTitle: true,
     filterSummaryExcludeFields: ["outputFormat"],
-    showGeneratedAt: true
+    showGeneratedAt: false,
+    showOutputMeta: false
   },
 
   html: {
@@ -68,14 +69,15 @@ export const REPORT_EXPORT_THEME = {
     titleFontSize: 12,
     filterFontSize: 10,
     logoRowCount: 2,
-    logoRowHeights: [34, 24],
-    // Excel logo — fixed pixels (addReportExcelLogo.js, editAs: absolute). Height matches HTML max 58px.
+    // Points reserved under the logo (addReportExcelLogo may bump if shorter than image).
+    logoRowHeights: [36, 28],
+    // Excel logo — fixed pixels (addReportExcelLogo.js, editAs: oneCell). Height matches HTML max 58px.
     logoExtHeight: 58,
     logoExtWidth: 396,
-    logoEndCol: 4.98, // legacy column anchor — no longer used for image placement
+    logoEndCol: 5,
     showGridLines: false,
     companyNameColor: "FF0D9488",
-    defaultZebra: { even: "#ffffff", odd: "#F0F4F8" },
+    defaultZebra: { even: "#ffffff", odd: "#DCE6EF" },
     defaultTotalBackground: "#9FD4AD",
     defaultHeaderBackground: "#9DB7C8"
   }

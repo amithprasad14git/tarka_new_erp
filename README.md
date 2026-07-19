@@ -548,7 +548,7 @@ No custom `beforeWrite` adapter. Saving only enforces what you see on the form (
 | `new_case_inward` | `newCaseInward.js` | Auto **Case No** after save; loan account length/numeric/duplicate rules; final-stage edit lock; case status + recovered amount dependencies; transaction-control backdates; FY freeze on case status date (non-admin). Child: amount recovered lines. |
 | `transfer_case` | `transferCase.js` | **Date = today**; case / from unit / to unit / assignee required; from unit must match case owner; to ≠ from; assignee in to-unit; **updates case owner** on save; ref `TRF/<FY>/<serial>`; FY freeze (role 2). |
 | `public_notice` | `publicNotice.js` | Date required, not future; FY freeze (role 2); case required; child **max 3** rows, display name + type required; ref `PN/<FY>/<serial>`; PDF print. |
-| `sarfaesi_case_status_update` | `sarfaesiCaseStatusUpdate.js` | Date required, not future; FY freeze (role 2); **SARFAESI** loan case only; **one status update per case**; ≥1 child row; particulars required (read-only in UI, preloaded); **remarks optional**; ref `SRFUP/<FY>/<####>`; case snapshot. Client: `sarfaesiCaseStatusUpdateClient.js`. Covering sheet PDFs: 13/2, 13/2 Paper Publication, 13(4) — see [SARFAESI covering sheet PDFs](#sarfaesi-covering-sheet-pdfs). |
+| `sarfaesi_case_status_update` | `sarfaesiCaseStatusUpdate.js` | Date required, not future; FY freeze (role 2); **SARFAESI** loan case only; **one status update per case**; ≥1 child row; particulars required (read-only in UI, preloaded); **remarks optional**; ref `SRFUP/<FY>/<####>`; case snapshot. Client: `sarfaesiCaseStatusUpdateClient.js`. Covering / acknowledgement PDFs: 13/2, 13/2 Paper Publication, 13(4), NPA Acknowledgement — see [SARFAESI covering sheet PDFs](#sarfaesi-covering-sheet-pdfs). |
 | `return_case` | `returnCase.js` + `returnCaseClient.js` + `returnCasePdf.js` | Date required, not future; FY freeze (role 2); case must exist and be in **Returned** status; duplicate case blocked; at least one **checked** child row with return reason; ref after save; 3-page letter PDF (selected detail rows only) — see [Return Case letter PDF](#return-case-letter-pdf). |
 
 ### Accounts modules
@@ -842,6 +842,7 @@ Most protected routes use `const auth = await requireRequestUser(req);` then `au
 - `GET /api/sarfaesi-case-status-update/covering-132-pdf/:id` - 13(2) Covering Sheet PDF
 - `GET /api/sarfaesi-case-status-update/covering-132-paper-publication-pdf/:id` - 13(2) Paper Publication covering PDF
 - `GET /api/sarfaesi-case-status-update/covering-134-pdf/:id` - 13(4) Covering Sheet PDF
+- `GET /api/sarfaesi-case-status-update/npa-acknowledgement-pdf/:id` - NPA Acknowledgement PDF
 - `GET /api/return-case/return-reasons` - preload return reasons (gated on `return_case`)
 - `GET /api/return-case/cc-to` - CC To helper
 - `GET /api/recovery-invoice/pdf/:id` / `sarfaesi-invoice` / `vehicle-invoice` - invoice PDFs
@@ -1039,7 +1040,8 @@ Client: `lib/modules/sarfaesiCaseStatusUpdateClient.js`
 - **Print buttons** (view-row select + edit toolbar only):
   - **Print 13/2 Covering Sheet**
   - **Print 13/2 Paper Publication**
-  - **Print 13(4) Covering Sheet**  
+  - **Print 13(4) Covering Sheet**
+  - **Print NPA Acknowledgement**  
   Details: [SARFAESI covering sheet PDFs](#sarfaesi-covering-sheet-pdfs).
 
 ---
@@ -1253,7 +1255,8 @@ Read-only reports are defined in **`config/reports.js`** — not in `config/modu
 | **Column widths** | `lib/reports/htmlColumnWidths.js` | `widthHtml` → proportional `%` |
 | **Column hide** | `lib/reports/resolveVisibleReportColumns.js` | `hideWhenFilterSet` when filter selected |
 | **Excel build** | `lib/reports/buildReportWorkbook.js` | Logo, borders, zebra, totals row |
-| **Excel logo** | `lib/reports/addReportExcelLogo.js` | Fixed pixel logo (`logoExtWidth` / `logoExtHeight`) — not stretched by column widths |
+| **Excel logo** | `lib/reports/addReportExcelLogo.js` | Fixed pixel logo (`logoExtWidth` / `logoExtHeight`, `editAs: oneCell`) — not stretched by column widths |
+| **Excel wrap layout** | `lib/reports/excelWrapLayout.js` | Config-capped widths for wrap columns; baked row heights so files open fitted |
 | **Custom HTML** | `components/ReportCustomOutputView.js`, `components/reports/*.js` | Opt-in bespoke layouts only |
 | **Filter summary** | `lib/reports/buildFilterSummary.js`, `resolveReportFilterLabels.js` | Selected filters only, display labels |
 | **UI shell** | `components/ReportModuleClient.js` | Filter form + generate; role-2 Unit lock on case report keys |
@@ -1271,7 +1274,7 @@ Do **not** duplicate styling, column-picker UI, or export logic in per-report fi
 
 Optional header filters apply **only when the user selects them** in the report form (admin / role 1). If Unit is left empty, the query does **not** filter by unit (all units). When Unit is selected, case-based reports use **`nci.unit`** on `new_case_inward` via `lib/reports/nciReportDimensionFilters.js`. Account ledgers use that module’s voucher `unit` column the same way (filter-only).
 
-**Role 2 (unit operators):** on the nine case-related report keys listed in `lib/reports/reportUnitFilterLock.js`, Unit is auto-filled from the session unit, disabled in the filter form, and forced on the server when the report runs. Accounts and other reports are unchanged — Unit stays optional. Admin (role 1) can still pick any unit.
+**Role 2 (unit operators):** on the eight case-related report keys listed in `lib/reports/reportUnitFilterLock.js`, Unit is auto-filled from the session unit, disabled in the filter form, and forced on the server when the report runs. **Unit Wise Cummulative** is excluded — Unit stays optional and selectable for all roles (no session-unit default). Accounts and other reports are unchanged. Admin (role 1) can still pick any unit on locked reports.
 
 Report filter LoVs load through `GET /api/crud/<master>?lov=1` (same auth as other screens). If options fail to load, see [AUTH-SESSIONS.md](#4-authentication--sessions).
 
@@ -1318,7 +1321,7 @@ HTML and Excel always receive the **same** visible column list and totals.
 **HTML layout & colours** (`app/globals.css` `.report-output*` — do not scatter report styles elsewhere):
 
 - Card uses app theme (`var(--panel)`, `var(--text)`) — not forced white in dark mode
-- **Light (enterprise v2):** zebra `#ffffff` / `#f0f4f8`; header band `#9db7c8` (black labels); totals `#9fd4ad` with top border
+- **Light (enterprise v2):** zebra `#ffffff` / `#dce6ef`; header band `#9db7c8` (black labels); totals `#9fd4ad` with top border
 - **Dark:** CSS vars — subtle brand-tinted zebra, header, and totals on `var(--panel)`
 - **Line-height:** `1.5` body; `1.45` header (denser rows)
 - **Borders:** horizontal row lines only (no vertical grid in body); sticky header with stronger bottom edge
@@ -1326,19 +1329,22 @@ HTML and Excel always receive the **same** visible column list and totals.
 - **Font toolbar:** top-right of report card when rows present — **A− / A / A+** (session-only; min/max disabled)
 - **Filter panel:** remains visible after Generate; use **Generate** again to refresh output with changed filters
 - **Dates:** all report date columns, filter summary dates, and Excel export use **DD-MM-YYYY** (`lib/formatReportDateDisplay.js`)
-- **Output meta:** filters left and `Generated: DD-MM-YYYY, HH:mm · N records` right on one row; centered reports (`contentAlign: center`) stack filter summary and generated meta on separate lines
+- **Filter summary:** selected filters only (left / stacked when centered); generated timestamp and record-count meta are off by default (`showGeneratedAt` / `showOutputMeta`)
 - **Loading:** skeleton placeholder in the output area while HTML runs (Excel still uses overlay)
-- **Table scroll:** hidden scrollbar; animated down-chevron while more rows below; animated up-chevron at bottom (click scrolls to top)
+- **Table scroll:** hidden scrollbar; animated down-chevron while more rows below (click scrolls to bottom); animated up-chevron at bottom (click scrolls to top)
 - **Full screen:** toolbar **⛶** shows table only (font controls + data); **✕** or **Esc** to exit
 - **Cell padding:** `0.28rem 0.55rem` on table body cells (standard and custom flat tables)
 
 **Excel** (`reportExportTheme.excel`):
 
 - Table: 9pt; title 12pt; filter 10pt
-- Logo: 2 rows `[34, 24]` height (title starts row 3); fixed size `logoExtWidth: 396`, `logoExtHeight: 58` pixels via `addReportExcelLogo.js` (`editAs: absolute` — immune to later column width changes)
+- Logo: 2 rows `[36, 28]` height (title starts row 3); fixed size `logoExtWidth: 396`, `logoExtHeight: 58` pixels via `addReportExcelLogo.js` (`editAs: oneCell` — older Excel compatible; does not stretch with column widths)
 - No gridlines; header/footer borders; vertical lines on data columns
-- **Wrap text** on filter summary, column headers, text data cells, and totals row; INR/number cells omit wrap (`buildReportWorkbook.js`)
-- Zebra / totals: `#ffffff` / `#F0F4F8`; header `#9DB7C8`; total row `#9FD4AD`
+- **Fitted open:** column widths and wrapped row heights are baked in (`excelWrapLayout.js`) — no manual Autofit/resize needed on older Excel
+- **Long text** (e.g. Remarks `widthExcel: 24`): stays at config width (capped ~40); wrap + explicit row height — Autofit must not stretch to full string length
+- **Dates / amounts / numbers:** single-line (no wrap); column width content-fits to the longest formatted value (capped ~28)
+- **Wrap text** on filter summary, column headers, and text data cells; date/INR/number cells omit wrap (`buildReportWorkbook.js`)
+- Zebra / totals: `#ffffff` / `#DCE6EF`; header `#9DB7C8`; total row `#9FD4AD`
 
 #### Changing frozen styling
 
@@ -1412,7 +1418,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 **`report_unit_wise_cumulative_report`** — Unit Wise Cummulative Report:
 
 - **Config:** `reportLayout.mode: "custom"`, `contentAlign: "center"`
-- **Filters:** mandatory Financial Year; optional unit, bank, HO/ZO, RBO/RO, branch; **Data Type** `Month Wise` (default) | `Summary`
+- **Filters:** mandatory Financial Year; optional unit (not role-2 locked — any role may select or leave blank), bank, HO/ZO, RBO/RO, branch; **Data Type** `Month Wise` (default) | `Summary`
 - **SQL:** same settled-case rules as Region Wise; grouped by calendar month + unit (Month Wise) or unit only (Summary)
 - **HTML:** `ReportCustomOutputView` + `UnitWiseCumulativeReport.js` — Month Wise uses `CumulativeBandedReport`; Summary uses flat `UnitWiseSummaryReport`
 - **Excel:** `lib/reports/custom/report_unit_wise_cumulative_report/buildCustomWorkbook.js` (banded or flat by Data Type)
@@ -1421,9 +1427,9 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 **`report_sarfaesi_case_report`** — SARFAESI Case Report:
 
 - **Config:** `reportLayout.mode: "custom"`, title `PENDING SARFAESI CASES STATUS`
-- **Filters:** As on Date (required, defaults to today); optional unit, bank, HO/ZO, RBO/RO, branch, received from; report type HTML | Excel
+- **Filters:** As on Date (required, defaults to today); optional unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance; report type HTML | Excel
 - **SQL:** open SARFAESI loan-category cases with a `sarfaesi_case_status_update` row; `entrustmentDate <= asOnDate`; excludes `FINAL_CASE_STATUSES` (same open-case rule as Pending Cases on Hand)
-- **Layout:** 4 rows per case — yellow primary header/data, blue particulars band starting under Case No; Sl. No. rowspan across data + particulars rows
+- **Layout:** 4 rows per case — yellow primary header/data, blue particulars band starting under Case No; Sl. No. rowspan across data + particulars rows; one blank row before each case after the first (HTML + Excel)
 - **Particulars columns:** all active `sarfaesi_case_particulars` ordered by `sequence`, then **Amount Recovered** (sum of `new_case_inward_amount_recovered`) and **Remarks** (`caseStatusRemarks`)
 - **HTML:** `ReportCustomOutputView` + `SarfaesiCaseReport.js`
 - **Excel:** `lib/reports/custom/report_sarfaesi_case_report/buildCustomWorkbook.js`
@@ -1459,11 +1465,12 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 
 - **Key:** `report_pending_cases_on_hand`
 - **SQL:** `lib/reports/report_pending_cases_on_hand.js` (from `new_case_inward` + branch/bank/lookup joins)
-- **Filters:** As on Date (defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, report type HTML | Excel
+- **Filters:** As on Date (defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, loan category/type, NPA status, **Data Type** (Detailed | Summary), report type HTML | Excel
+- **Data Type (default: Detailed):** case-level open cases. **Summary:** grouped by RBO/RO × Branch — Sl. No., RBO/RO, Branch, No. of Cases, Amount Recovered, Closure Balance
 - **Open cases only:** `caseStatus` blank or lookup label **not** in `FINAL_CASE_STATUSES` from `lib/modules/newCaseInwardCaseStatus.js` (excludes Returned and all other final statuses). Uses **current** case status; `entrustmentDate <= asOnDate`.
-- **Amount Recovered:** sum of **all** `new_case_inward_amount_recovered` rows per case (not capped by As on Date).
-- **Totals row:** sums Closure Balance and Amount Recovered.
-- **Remarks column:** `caseStatusRemarks` from the case record.
+- **Amount Recovered:** sum of **all** `new_case_inward_amount_recovered` rows per case (not capped by As on Date); Summary sums those per RBO × Branch.
+- **Totals row:** Detailed sums Closure Balance and Amount Recovered; Summary also sums No. of Cases.
+- **Remarks column:** `caseStatusRemarks` from the case record (Detailed only).
 
 #### Part Recovered Cases
 
@@ -1525,7 +1532,7 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Key:** `report_unit_wise_cumulative_report`
 - **SQL:** `lib/reports/report_unit_wise_cumulative_report.js`
 - **Layout:** custom — see § Custom-layout reports
-- **Filters:** Financial Year (required), unit, bank, HO/ZO, RBO/RO, branch, **Data Type** (Month Wise | Summary), report type HTML | Excel
+- **Filters:** Financial Year (required), optional unit (unlocked for role 2), bank, HO/ZO, RBO/RO, branch, **Data Type** (Month Wise | Summary), report type HTML | Excel
 - **Month Wise:** 5-column banded table — month rowspan × unit rows (`unitCode - personIncharge`); metrics: case count, cash recovered, NPA reduced = `closureBalance`
 - **Summary:** 4-column flat table — one row per unit (`unitCode - personIncharge`); columns: NO. OF CASES, AMOUNT RECOVERED, NPA REDUCED
 - **FY scope:** `caseStatusUpdatedDate` between FY start/end; settled statuses only (excludes Returned); per-case `amount_recovered > 0`
@@ -1535,9 +1542,10 @@ When `reportLayout.mode === "custom"` (or runner returns `layout: "custom"`):
 - **Key:** `report_sarfaesi_case_report`
 - **SQL:** `lib/reports/report_sarfaesi_case_report.js`
 - **Layout:** custom — see § Custom-layout reports
-- **Filters:** As on Date (required, defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, report type HTML | Excel
+- **Filters:** As on Date (required, defaults to **today**), unit, bank, HO/ZO, RBO/RO, branch, received from, file maintenance, report type HTML | Excel
 - **Scope:** SARFAESI loan category only; must have `sarfaesi_case_status_update`; open cases only (`FINAL_CASE_STATUSES` excluded); `entrustmentDate <= asOnDate`
 - **Particulars:** horizontal columns from active `sarfaesi_case_particulars` (sequence order); values from `sarfaesi_case_status_update_details`
+- **Banding:** 4 rows per case; one blank spacer row before each case after the first (HTML + Excel)
 - **Amount Recovered:** sum of all `new_case_inward_amount_recovered` rows per case
 - **Remarks:** `caseStatusRemarks` on the case record (trailing column)
 
@@ -1760,7 +1768,8 @@ Quick map of every report-related source file. Behaviour and styling rules live 
 | File | Role |
 |------|------|
 | `lib/reports/buildReportWorkbook.js` | Standard table Excel (logo, zebra, totals) |
-| `lib/reports/addReportExcelLogo.js` | Fixed-size logo in Excel (`editAs: absolute`) |
+| `lib/reports/addReportExcelLogo.js` | Fixed-size logo in Excel (`editAs: oneCell`) |
+| `lib/reports/excelWrapLayout.js` | Capped column widths + wrapped row heights for fitted Excel open |
 | `lib/reports/buildFilterSummary.js` | Pipe-separated filter line for report header |
 | `lib/reports/resolveReportFilterLabels.js` | Lookup ids → display labels for filter summary |
 | `lib/reports/resolveReportLogoFile.js` | `logoPath` → filesystem path under `public/` |
@@ -1843,6 +1852,7 @@ Quick map of every report-related source file. Behaviour and styling rules live 
 | `tests/jest/reportConfig.test.js` | Report keys and theme merge |
 | `tests/jest/reportExportTheme.test.js` | Frozen theme contract |
 | `tests/jest/addReportExcelLogo.test.js` | Excel logo row block |
+| `tests/jest/excelWrapLayout.test.js` | Excel capped widths / wrap row heights |
 | `tests/jest/buildReportWorkbook.test.js` | Excel alignment helper |
 | `tests/jest/reportRegionWiseCumulativeReport.test.js` | Custom report config + grouping |
 | `tests/jest/report*.test.js` | Per-report config and SQL helpers |
@@ -1861,14 +1871,14 @@ This page lists **printable PDFs** in the ERP: three invoice types, the **Return
 
 ### SARFAESI covering sheets (not invoices)
 
-Dual-half A4 letters printed from **SARFAESI Case Status Update**. See [SARFAESI covering sheet PDFs](#sarfaesi-covering-sheet-pdfs).
+Dual-half A4 letters / acknowledgement sheet printed from **SARFAESI Case Status Update**. See [SARFAESI covering sheet PDFs](#sarfaesi-covering-sheet-pdfs).
 
-| | 13(2) Covering | 13(2) Paper Publication | 13(4) Covering |
-|---|---|---|---|
-| **Button** | Print 13/2 Covering Sheet | Print 13/2 Paper Publication | Print 13(4) Covering Sheet |
-| **PDF module** | `sarfaesiCaseStatusUpdateCovering132Pdf.js` | same file (variant) | `sarfaesiCaseStatusUpdateCovering134Pdf.js` |
-| **API** | `…/covering-132-pdf/:id` | `…/covering-132-paper-publication-pdf/:id` | `…/covering-134-pdf/:id` |
-| **Download name** | `COVERING_132_<ref>.pdf` | `COVERING_132_PAPER_PUB_<ref>.pdf` | `COVERING_134_<ref>.pdf` |
+| | 13(2) Covering | 13(2) Paper Publication | 13(4) Covering | NPA Acknowledgement |
+|---|---|---|---|---|
+| **Button** | Print 13/2 Covering Sheet | Print 13/2 Paper Publication | Print 13(4) Covering Sheet | Print NPA Acknowledgement |
+| **PDF module** | `sarfaesiCaseStatusUpdateCovering132Pdf.js` | same file (variant) | `sarfaesiCaseStatusUpdateCovering134Pdf.js` | `sarfaesiCaseStatusUpdateNpaAckPdf.js` |
+| **API** | `…/covering-132-pdf/:id` | `…/covering-132-paper-publication-pdf/:id` | `…/covering-134-pdf/:id` | `…/npa-acknowledgement-pdf/:id` |
+| **Download name** | `COVERING_132_<ref>.pdf` | `COVERING_132_PAPER_PUB_<ref>.pdf` | `COVERING_134_<ref>.pdf` | `NPA_ACK_<ref>.pdf` |
 
 ---
 
@@ -1955,6 +1965,7 @@ Recovery invoice only: when `caseNo` is empty, case-linked header/borrower/recov
 | `HDR_*` | Header grid (bank, date, invoice no, GST, …) |
 | `ACCOUNT_*` | Current account block (11pt font, 19pt rows — all three invoice PDFs) |
 | `CHARGES_COLS_MM` | Full-width charges table (SARFAESI / Vehicle only) |
+| `BOX_LINE_W` / `COLOR_BOX_*` | Table and label/value borders — sharp black `#222222` at **0.75pt** (all three invoice PDFs) |
 
 Do **not** alias `HDR_*` to `ACCOUNT_*` — they are tuned independently.
 
@@ -1996,7 +2007,7 @@ Do **not** alias `HDR_*` to `ACCOUNT_*` — they are tuned independently.
 
 This note is for **operators**, **support staff**, and **developers** who need to understand the Recovery Invoice printout without reading all the drawing code.
 
-**Layout status:** Column positions remain tuned (May 2026 baseline). **July 2026 update:** 11pt body / 13pt section / 10pt table headers (same as SARFAESI & Vehicle); header, borrower, and account blocks use faint horizontal row dividers.
+**Layout status:** Column positions remain tuned (May 2026 baseline). **July 2026 update:** 11pt body / 13pt section / 10pt table headers (same as SARFAESI & Vehicle); header, borrower, account, and table borders are sharp black (`#222222`, 0.75pt).
 
 See also:
 - [invoices-pdf.md](#invoice--letter-pdfs) — comparison of all invoice PDFs + shared print behaviour
@@ -2061,9 +2072,9 @@ Cross-unit billing: the linked case is loaded by id for print even when New Case
 
 1. Company logo  
 2. Copy label (Triplicate / Duplicate / Original)  
-3. **Header block** — two columns separated by a faint vertical line: bank/branch on the left; date, invoice no, unit, case no, GST on the right (faint horizontal row lines; no label|value vertical dividers)  
+3. **Header block** — two columns separated by a vertical line: bank/branch on the left; date, invoice no, unit, case no, GST on the right (sharp black horizontal row lines; no label|value vertical dividers)  
 4. “Recovery Invoice” badge image  
-5. **Borrower block** — borrower, loan A/C, loan type, NPA date, account status (faint horizontal row lines)  
+5. **Borrower block** — borrower, loan A/C, loan type, NPA date, account status (sharp black horizontal row lines)  
 6. **Two tables** — Recovery Details (left) and Recovery Charges (right), with totals  
 7. **Amount in words** (bold)  
 8. **Current account** (left, 11pt / 19pt rows) + **RCM note** (right, auto-fit from 10pt)  
@@ -2141,7 +2152,7 @@ Same print pipeline; see [sarfaesi-invoice-pdf.md](#sarfaesi-invoice-pdf) and [v
 
 ## SARFAESI Invoice PDF
 
-This note explains the **SARFAESI Invoice** printout for operators and developers. Layout matches the **Recovery** and **Vehicle Invoice** PDFs (11pt body, 13pt section titles, 10pt table headers; faint horizontal row lines, darker grid lines). Uses **one full-width charges table** (no recovery-details / amount-recovered table).
+This note explains the **SARFAESI Invoice** printout for operators and developers. Layout matches the **Recovery** and **Vehicle Invoice** PDFs (11pt body, 13pt section titles, 10pt table headers; sharp black borders at 0.75pt). Uses **one full-width charges table** (no recovery-details / amount-recovered table).
 
 See also:
 - [invoices-pdf.md](#invoice--letter-pdfs) — comparison of all invoice PDFs
@@ -2201,9 +2212,9 @@ Case picker on entry is limited to **SARFAESI** loan category (server + LoV filt
 
 1. Company logo  
 2. Copy label  
-3. Header block — faint horizontal row lines; vertical split between bank/branch and date/invoice columns  
+3. Header block — sharp black horizontal row lines; vertical split between bank/branch and date/invoice columns  
 4. Centre badge (`npa_sarfaesi_invoice.png`, or recovery badge if missing)  
-5. Borrower block — borrower, loan A/C no., loan type (faint horizontal row lines)  
+5. Borrower block — borrower, loan A/C no., loan type (sharp black horizontal row lines)  
 6. Charges grid + TOTAL row  
 7. Amount in words (bold)  
 8. Current account (11pt / 19pt rows) + RCM note (auto-fit from 10pt)  
@@ -2267,7 +2278,7 @@ Vendor code follows the **case bank** (header), not the remittance account bank.
 
 ## Vehicle Invoice PDF
 
-This note explains the **Vehicle Invoice** printout for operators and developers. Layout matches the **Recovery** and **SARFAESI Invoice** PDFs: one full-width charges table, same header/account/footer pattern (11pt body, 13pt section titles, 10pt table headers; faint horizontal row lines, darker grid lines).
+This note explains the **Vehicle Invoice** printout for operators and developers. Layout matches the **Recovery** and **SARFAESI Invoice** PDFs: one full-width charges table, same header/account/footer pattern (11pt body, 13pt section titles, 10pt table headers; sharp black borders at 0.75pt).
 
 See also:
 - [invoices-pdf.md](#invoice--letter-pdfs) — comparison of all invoice PDFs
@@ -2328,9 +2339,9 @@ Case picker on entry is limited to **Vehicle Loan** category (server + LoV filte
 
 1. Company logo  
 2. Copy label (Triplicate / Duplicate / Original)  
-3. Header block — faint horizontal row lines; vertical split between bank/branch and date/invoice columns  
+3. Header block — sharp black horizontal row lines; vertical split between bank/branch and date/invoice columns  
 4. Centre badge (`npa_vehicle_invoice.png`, or recovery badge if missing)  
-5. Borrower block — borrower, loan A/C no., loan type (faint horizontal row lines)  
+5. Borrower block — borrower, loan A/C no., loan type (sharp black horizontal row lines)  
 6. Charges grid + TOTAL row  
 7. Amount in words (bold)  
 8. Current account (11pt / 19pt rows) + RCM note (auto-fit from 10pt)  
@@ -2434,7 +2445,7 @@ Each page is the **same letter content**; only the copy name changes.
 
 | Section | Main source |
 |---------|-------------|
-| Bank, branch, RBO/RO | Branch on the linked **New Case Inward** → branch master chain |
+| Bank, branch, RBO/RO | Branch on the linked **New Case Inward** → branch master chain; RBO/RO prints **short code** (falls back to full name) |
 | Date, ref no, unit, case no | Return Case record |
 | Borrower, loan A/C, category, type, NPA status, closure balance, entrustment date | Linked **New Case Inward** |
 | Investigating officer | Return Case (employee lookup) |
@@ -2505,7 +2516,7 @@ Unchecked detail rows are **not** printed or saved (only checked rows are kept o
 These notes are for **operators**, **support staff**, and **developers** who need to understand the SARFAESI Case Status Update covering-sheet printouts.
 
 **Module:** `sarfaesi_case_status_update`  
-**When used:** After recording 13(2) / paper publication / 13(4) particulars, staff print a **covering letter** for the bank. Each print is **one A4 page** with **two identical halves** separated by a dashed **Cut here** line (scissors icon). After printing, cut the sheet in half.
+**When used:** After recording 13(2) / paper publication / 13(4) particulars, staff print a **covering letter** for the bank, or an **NPA Acknowledgement** for hand-delivery seal/signature. Each print is **one A4 page** with **two identical halves** separated by a **dashed mid-page guide** (no scissors / “Cut here” label). After printing, cut the sheet in half. Case-table borders are sharp black `#222222` at **0.75pt**.
 
 There is **no** post-save Print on the acknowledgement modal (`showPrintPdf: false`). Print buttons appear only when a row is **selected in view** or the record is open in **edit**.
 
@@ -2515,19 +2526,20 @@ See also: [§15 SARFAESI Case Status Update](#15-sarfaesi-case-status-update), [
 
 ### Comparison
 
-| | Print 13/2 Covering Sheet | Print 13/2 Paper Publication | Print 13(4) Covering Sheet |
-|---|---|---|---|
-| **Title on PDF** | 13(2) DEMAND NOTICE | 13(2) DEMAND NOTICE - PAPER PUBLICATION | 13(4) SYMBOLIC POSSESSION NOTICE |
-| **Date-box label** | Date of 13(2) | 13(2) Paper Publication | Date of 13(4) |
-| **Date from child** | Particular matching Date of 13(2) (excludes Acknowledgements) | Particular matching **13(2) Acknowledgements Received?** | Particular matching **Date of 13(4)** |
-| **Fallback date** | Parent status-update `date` | Same | Same |
-| **PDF module** | `lib/modules/sarfaesiCaseStatusUpdateCovering132Pdf.js` | Same file (variant) | `lib/modules/sarfaesiCaseStatusUpdateCovering134Pdf.js` |
-| **API** | `GET /api/sarfaesi-case-status-update/covering-132-pdf/:id` | `…/covering-132-paper-publication-pdf/:id` | `…/covering-134-pdf/:id` |
-| **Download name** | `COVERING_132_<ref>.pdf` | `COVERING_132_PAPER_PUB_<ref>.pdf` | `COVERING_134_<ref>.pdf` |
-| **Note styling** | Bold red with **PLEASE NOTE:** | Bold red with **PLEASE NOTE:** | Bold red **without** PLEASE NOTE: (9pt) |
+| | Print 13/2 Covering Sheet | Print 13/2 Paper Publication | Print 13(4) Covering Sheet | Print NPA Acknowledgement |
+|---|---|---|---|---|
+| **Title on PDF** | 13(2) DEMAND NOTICE | 13(2) DEMAND NOTICE - PAPER PUBLICATION | 13(4) SYMBOLIC POSSESSION NOTICE | BRANCH ACKNOWLEDGEMENT — SARFAESI NOTICES / DOCUMENTS |
+| **Date-box label** | Date of 13(2) | 13(2) Paper Publication | Date of 13(4) | — (no date box) |
+| **Date from child** | Particular matching Date of 13(2) (excludes Acknowledgements) | Particular matching **13(2) Acknowledgements Received?** | Particular matching **Date of 13(4)** | — (checklist empty) |
+| **Fallback date** | Parent status-update `date` | Same | Same | — |
+| **PDF module** | `lib/modules/sarfaesiCaseStatusUpdateCovering132Pdf.js` | Same file (variant) | `lib/modules/sarfaesiCaseStatusUpdateCovering134Pdf.js` | `lib/modules/sarfaesiCaseStatusUpdateNpaAckPdf.js` |
+| **API** | `GET /api/sarfaesi-case-status-update/covering-132-pdf/:id` | `…/covering-132-paper-publication-pdf/:id` | `…/covering-134-pdf/:id` | `…/npa-acknowledgement-pdf/:id` |
+| **Download name** | `COVERING_132_<ref>.pdf` | `COVERING_132_PAPER_PUB_<ref>.pdf` | `COVERING_134_<ref>.pdf` | `NPA_ACK_<ref>.pdf` |
+| **Note styling** | Bold red with **PLEASE NOTE:** | Bold red with **PLEASE NOTE:** | Bold red **without** PLEASE NOTE: (9pt) | — (docs checklist + blank ack) |
 
-Top half copy label: `Branch Copy / AO Copy / ZO Copy`  
-Bottom half: `RBO/RO Copy / AMCC Copy / HLC Copy`
+**Covering sheets only:** Top half copy label: `Branch Copy / AO Copy / ZO Copy`  
+Bottom half: `RBO/RO Copy / AMCC Copy / HLC Copy`  
+**NPA Acknowledgement:** no green copy labels; File Maintenance row from NCI; empty Documents Submitted checkboxes + blank Acknowledgement stamp area.
 
 ---
 
@@ -2542,7 +2554,7 @@ Signatory on the PDF is the linked case unit’s **personIncharge** (`unit_maste
 
 ---
 
-### Page layout (each half, top to bottom)
+### Page layout — covering sheets (each half, top to bottom)
 
 1. Company logo  
 2. Green bold copy label (own line under logo)  
@@ -2553,7 +2565,16 @@ Signatory on the PDF is the linked case unit’s **personIncharge** (`unit_maste
 7. Red note paragraph  
 8. Footer: Printed On (left) | stamp space | signature line + person-in-charge (right)  
 
-Then the mid-page cut guide; then the same layout again for the second half.
+Then the mid-page dashed guide (line only); then the same layout again for the second half.
+
+### Page layout — NPA Acknowledgement (each half)
+
+1. Company logo  
+2. Red centred title (`BRANCH ACKNOWLEDGEMENT — SARFAESI NOTICES / DOCUMENTS`)  
+3. Case fields table (5 rows: Branch, Borrower, Loan AC No, Loan Type, File Maintenance)  
+4. Two-column block: **Documents Submitted** (hardcoded empty checkboxes) | **Acknowledgement** (blank stamp/signature space)  
+
+No green copy labels, no date box, no Printed On / person-in-charge footer.
 
 ---
 
@@ -2563,11 +2584,13 @@ Then the mid-page cut guide; then the same layout again for the second half.
 |------|------|
 | `lib/modules/sarfaesiCaseStatusUpdateCovering132Pdf.js` | 13(2) Covering + Paper Publication layout |
 | `lib/modules/sarfaesiCaseStatusUpdateCovering134Pdf.js` | 13(4) Covering layout (separate file) |
-| `lib/modules/sarfaesiCaseStatusUpdateClient.js` | Button labels, target id, `downloadSarfaesiCovering*` |
+| `lib/modules/sarfaesiCaseStatusUpdateNpaAckPdf.js` | NPA Acknowledgement layout |
+| `lib/modules/sarfaesiCaseStatusUpdateClient.js` | Button labels, target id, `downloadSarfaesiCovering*` / `downloadSarfaesiNpaAckPdf` |
 | `app/api/(cases)/sarfaesi-case-status-update/covering-132-pdf/[id]/route.js` | 13(2) covering download |
 | `app/api/(cases)/sarfaesi-case-status-update/covering-132-paper-publication-pdf/[id]/route.js` | Paper publication download |
 | `app/api/(cases)/sarfaesi-case-status-update/covering-134-pdf/[id]/route.js` | 13(4) covering download |
-| `components/MasterModuleClient.js` | Wires the three Print buttons |
+| `app/api/(cases)/sarfaesi-case-status-update/npa-acknowledgement-pdf/[id]/route.js` | NPA Acknowledgement download |
+| `components/MasterModuleClient.js` | Wires the four Print buttons |
 
 #### Code map — `sarfaesiCaseStatusUpdateCovering132Pdf.js`
 
@@ -2588,6 +2611,14 @@ Then the mid-page cut guide; then the same layout again for the second half.
 | `safeSarfaesiCovering134PdfFilename` | `COVERING_134_*.pdf` |
 | `COVERING_134_TITLE` / `INTRO` / `NOTE` | Fixed letter wording |
 
+#### Code map — `sarfaesiCaseStatusUpdateNpaAckPdf.js`
+
+| Export / area | Purpose |
+|---------------|---------|
+| `buildSarfaesiNpaAckPdfBuffer` | Full PDF buffer |
+| `safeSarfaesiNpaAckPdfFilename` | `NPA_ACK_*.pdf` |
+| `NPA_ACK_TITLE` / `NPA_ACK_DOCUMENT_LINES` | Fixed title + checklist lines |
+
 ---
 
 ### Tests
@@ -2599,6 +2630,8 @@ Then the mid-page cut guide; then the same layout again for the second half.
 | `tests/jest/api.sarfaesi-covering-132-paper-publication-pdf.route.test.js` | Auth + PDF response |
 | `tests/jest/sarfaesiCaseStatusUpdateCovering134Pdf.test.js` | Buffer, 1 page, Date of 13(4) resolve |
 | `tests/jest/api.sarfaesi-covering-134-pdf.route.test.js` | Auth + PDF response |
+| `tests/jest/sarfaesiCaseStatusUpdateNpaAckPdf.test.js` | Buffer, 1 page, filename |
+| `tests/jest/api.sarfaesi-npa-acknowledgement-pdf.route.test.js` | Auth + PDF response |
 
 ---
 
@@ -2609,5 +2642,4 @@ Then the mid-page cut guide; then the same layout again for the second half.
 | Print button missing | Need **view** permission; select a row in view or open edit |
 | Wrong date in the blue box | Child particular label/remarks not matching the expected particular text |
 | Empty borrower / branch | Linked New Case Inward missing, or branch chain incomplete |
-| Box instead of scissors on cut line | Brand font used for ✂ — cut guide uses ZapfDingbats on purpose |
 | Download fails | Session expired or server error — check network tab |

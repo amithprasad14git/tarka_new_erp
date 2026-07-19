@@ -339,6 +339,17 @@ export const reports = {
         }
       },
       {
+        name: "dataType",
+        type: "select",
+        label: "Data Type",
+        required: true,
+        default: "Detailed",
+        options: [
+          { label: "Detailed", value: "Detailed" },
+          { label: "Summary", value: "Summary" }
+        ]
+      },
+      {
         name: "outputFormat",
         type: "select",
         label: "Report Type",
@@ -362,42 +373,48 @@ export const reports = {
     },
 
     reportStyle: {
-      totalRow: { labelColumn: "entrustmentDate" }
+      totalRow: { labelColumn: "slNo" }
     },
 
     columns: [
       { key: "slNo", label: "SL. NO.", align: "center", widthExcel: 6, widthHtml: "4.5rem" },
       {
-        key: "entrustmentDate",
-        label: "ENTRUSTMENT DATE",
-        type: "date",
-        align: "center",
-        widthExcel: 14,
-        widthHtml: "7rem"
-      },
-      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem" },
-      { key: "hoZoLabel", label: "HO/ZO", align: "left", widthExcel: 10, widthHtml: "6rem", hideWhenFilterSet: "ho_zo" },
-      { key: "rboRoLabel", label: "RBO/RO", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "rbo_ro" },
-      { key: "branchLabel", label: "BRANCH", align: "left", widthExcel: 28, widthHtml: "12rem", hideWhenFilterSet: "branch" },
-      {
-        key: "receivedFromLabel",
-        label: "RECEIVED FROM",
+        key: "rboRoLabel",
+        label: "RBO/RO",
         align: "left",
-        widthExcel: 14,
-        widthHtml: "6rem",
-        hideWhenFilterSet: "receivedFrom"
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenDataType: "Detailed",
+        hideWhenFilterSet: "rbo_ro"
       },
-      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem" },
-      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem" },
-      { key: "loanTypeLabel", label: "LOAN TYPE", align: "left", widthExcel: 14, widthHtml: "7rem", hideWhenFilterSet: "loanType" },
-      { key: "npaStatusLabel", label: "NPA STATUS", align: "left", widthExcel: 10, widthHtml: "5rem", hideWhenFilterSet: "npaStatus" },
       {
-        key: "npaDate",
-        label: "NPA DATE",
-        type: "date",
+        key: "branchLabel",
+        label: "BRANCH",
+        align: "left",
+        widthExcel: 28,
+        widthHtml: "12rem",
+        hideWhenDataType: "Detailed",
+        hideWhenFilterSet: "branch"
+      },
+      {
+        key: "caseCount",
+        label: "NO. OF CASES",
+        type: "number",
         align: "center",
-        widthExcel: 14,
-        widthHtml: "7rem"
+        sum: true,
+        widthExcel: 12,
+        widthHtml: "6rem",
+        hideWhenDataType: "Detailed"
+      },
+      {
+        key: "amountRecovered",
+        label: "AMOUNT RECOVERED",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 20,
+        widthHtml: "10rem",
+        hideWhenDataType: "Detailed"
       },
       {
         key: "closureBalance",
@@ -406,9 +423,95 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 20,
-        widthHtml: "10rem"
+        widthHtml: "10rem",
+        hideWhenDataType: "Detailed"
       },
-      { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem" },
+      {
+        key: "entrustmentDate",
+        label: "ENTRUSTMENT DATE",
+        type: "date",
+        align: "center",
+        widthExcel: 14,
+        widthHtml: "7rem",
+        hideWhenDataType: "Summary"
+      },
+      { key: "caseNo", label: "CASE NO", align: "center", widthExcel: 12, widthHtml: "7.5rem", hideWhenDataType: "Summary" },
+      {
+        key: "hoZoLabel",
+        label: "HO/ZO",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "6rem",
+        hideWhenFilterSet: "ho_zo",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "rboRoLabel",
+        label: "RBO/RO",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenFilterSet: "rbo_ro",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "branchLabel",
+        label: "BRANCH",
+        align: "left",
+        widthExcel: 28,
+        widthHtml: "12rem",
+        hideWhenFilterSet: "branch",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "receivedFromLabel",
+        label: "RECEIVED FROM",
+        align: "left",
+        widthExcel: 14,
+        widthHtml: "6rem",
+        hideWhenFilterSet: "receivedFrom",
+        hideWhenDataType: "Summary"
+      },
+      { key: "borrower", label: "BORROWER", align: "left", widthExcel: 32, widthHtml: "11rem", hideWhenDataType: "Summary" },
+      { key: "loanAccountNo", label: "LOAN AC NO", align: "left", widthExcel: 14, widthHtml: "9rem", hideWhenDataType: "Summary" },
+      {
+        key: "loanTypeLabel",
+        label: "LOAN TYPE",
+        align: "left",
+        widthExcel: 14,
+        widthHtml: "7rem",
+        hideWhenFilterSet: "loanType",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "npaStatusLabel",
+        label: "NPA STATUS",
+        align: "left",
+        widthExcel: 10,
+        widthHtml: "5rem",
+        hideWhenFilterSet: "npaStatus",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "npaDate",
+        label: "NPA DATE",
+        type: "date",
+        align: "center",
+        widthExcel: 14,
+        widthHtml: "7rem",
+        hideWhenDataType: "Summary"
+      },
+      {
+        key: "closureBalance",
+        label: "CLOSURE BALANCE",
+        type: "inr",
+        align: "right",
+        sum: true,
+        widthExcel: 20,
+        widthHtml: "10rem",
+        hideWhenDataType: "Summary"
+      },
+      { key: "caseStatusLabel", label: "CASE STATUS", align: "left", widthExcel: 16, widthHtml: "8rem", hideWhenDataType: "Summary" },
       {
         key: "amountRecovered",
         label: "AMOUNT RECOVERED",
@@ -416,9 +519,10 @@ export const reports = {
         align: "right",
         sum: true,
         widthExcel: 20,
-        widthHtml: "10rem"
+        widthHtml: "10rem",
+        hideWhenDataType: "Summary"
       },
-      { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem" }
+      { key: "caseStatusRemarks", label: "REMARKS", align: "left", widthExcel: 24, widthHtml: "10rem", hideWhenDataType: "Summary" }
     ],
 
     maxRows: 50000
@@ -1477,6 +1581,17 @@ export const reports = {
           module: "lookup_value_master",
           valueField: "id",
           filterLookupTypeName: "Case Received From",
+          extraLovParams: { f_active: "Yes" }
+        }
+      },
+      {
+        name: "fileMaintenance",
+        type: "lookup",
+        label: "File Maintenance",
+        lookup: {
+          module: "lookup_value_master",
+          valueField: "id",
+          filterLookupTypeName: "File Maintenance",
           extraLovParams: { f_active: "Yes" }
         }
       },

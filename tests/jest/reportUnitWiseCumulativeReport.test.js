@@ -12,8 +12,8 @@ describe("report_unit_wise_cumulative_report config", () => {
     expect(cfg?.reportLayout?.mode).toBe("custom");
     expect(cfg?.reportLayout?.customRenderer).toBe("unit_wise_cumulative");
     expect(cfg?.reportLayout?.contentAlign).toBe("center");
-    expect(cfg?.reportLayout?.showGeneratedAt).toBe(true);
-    expect(cfg?.reportLayout?.showOutputMeta).not.toBe(false);
+    expect(cfg?.reportLayout?.showGeneratedAt).toBe(false);
+    expect(cfg?.reportLayout?.showOutputMeta).toBe(false);
     expect(cfg?.columns).toBeUndefined();
     expect(cfg?.fields?.find((f) => f.name === "financialYear")?.required).toBe(true);
 

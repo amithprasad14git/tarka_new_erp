@@ -30,7 +30,7 @@ describe("reportConfig", () => {
     const cfg = getReportConfig("report_new_case_inward_register");
     expect(cfg?.label).toMatch(/Case Inward Register/i);
     expect(Array.isArray(cfg?.columns)).toBe(true);
-    expect(cfg?.reportStyle?.zebra?.odd).toBe("#F0F4F8");
+    expect(cfg?.reportStyle?.zebra?.odd).toBe("#DCE6EF");
     expect(cfg?.reportLayout?.logoPath).toMatch(/npa_full_transparent_bg/);
     expect(cfg?.exportTheme?.excel?.fontSize).toBe(9);
   });

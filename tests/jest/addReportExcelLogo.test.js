@@ -1,4 +1,4 @@
-// Test file — Excel report logo placement (fixed pixel size).
+// Test file — Excel report logo placement (fixed pixel size, oneCell for older Excel).
 
 import ExcelJS from "exceljs";
 import { addReportExcelLogo } from "../../lib/reports/addReportExcelLogo";
@@ -16,8 +16,8 @@ describe("addReportExcelLogo", () => {
     expect(nextRow).toBe(3);
     expect(REPORT_EXPORT_THEME.excel.logoExtHeight).toBe(58);
     expect(REPORT_EXPORT_THEME.excel.logoExtWidth).toBe(396);
-    expect(ws.getRow(1).height).toBe(34);
-    expect(ws.getRow(2).height).toBe(24);
+    expect(ws.getRow(1).height).toBe(36);
+    expect(ws.getRow(2).height).toBe(28);
   });
 
   test("skips logo when showLogo is false", () => {

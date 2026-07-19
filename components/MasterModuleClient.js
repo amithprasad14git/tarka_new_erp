@@ -145,12 +145,15 @@ import {
   downloadSarfaesiCovering132Pdf,
   downloadSarfaesiCovering132PaperPublicationPdf,
   downloadSarfaesiCovering134Pdf,
+  downloadSarfaesiNpaAckPdf,
   getSarfaesiCovering132PrintButtonText,
   getSarfaesiCovering132PaperPublicationPrintButtonText,
   getSarfaesiCovering134PrintButtonText,
+  getSarfaesiNpaAckPrintButtonText,
   getSarfaesiCovering132PrintTargetId,
   getSarfaesiCovering132PaperPublicationPrintTargetId,
   getSarfaesiCovering134PrintTargetId,
+  getSarfaesiNpaAckPrintTargetId,
   isSarfaesiCaseStatusUpdateModule,
   sarfaesiCovering132RefHintFromRow,
   useSarfaesiCaseStatusUpdateClientModel
@@ -1500,6 +1503,14 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     editingRowId: editingRow?.id ?? null
   });
 
+  const printSarfaesiNpaAckTargetId = getSarfaesiNpaAckPrintTargetId({
+    moduleKey,
+    canView: permissions.canView,
+    effectiveViewMode,
+    selectedId,
+    editingRowId: editingRow?.id ?? null
+  });
+
   /** NCI: download Case Details PDF for the print target id. */
   async function handlePrintCaseDetails() {
     if (busy) return;
@@ -1655,6 +1666,24 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
     setBusy(true);
     try {
       await downloadSarfaesiCovering134Pdf(id, refHint || null);
+    } catch (err) {
+      showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** SARFAESI Case Update: download NPA Acknowledgement PDF from toolbar. */
+  async function handlePrintSarfaesiNpaAckFromToolbar() {
+    if (busy) return;
+    if (!isSarfaesiCaseStatusUpdate || !permissions.canView) return;
+    const id = printSarfaesiNpaAckTargetId;
+    if (id == null) return;
+    const rowForName = effectiveViewMode ? selectedRow : editingRow;
+    const refHint = sarfaesiCovering132RefHintFromRow(rowForName || {});
+    setBusy(true);
+    try {
+      await downloadSarfaesiNpaAckPdf(id, refHint || null);
     } catch (err) {
       showToast("error", formatUserFacingError(err, { fallback: apiUserMessage("downloadPdf") }));
     } finally {
@@ -2061,6 +2090,20 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
           >
             <PrintCaseDetailsIcon />
             {getSarfaesiCovering134PrintButtonText()}
+          </button>
+        ) : null}
+        {isSarfaesiCaseStatusUpdate &&
+        permissions.canView &&
+        printSarfaesiNpaAckTargetId != null ? (
+          <button
+            type="button"
+            onClick={handlePrintSarfaesiNpaAckFromToolbar}
+            title="Download NPA Acknowledgement PDF"
+            className="master-btn master-btn-outline"
+            disabled={busy}
+          >
+            <PrintCaseDetailsIcon />
+            {getSarfaesiNpaAckPrintButtonText()}
           </button>
         ) : null}
       </div>
@@ -2975,6 +3018,21 @@ export default function MasterModuleClient({ moduleKey, isActive = true }) {
                   >
                     <PrintCaseDetailsIcon />
                     {getSarfaesiCovering134PrintButtonText()}
+                  </button>
+                ) : null}
+                {isSarfaesiCaseStatusUpdate &&
+                effectiveViewMode &&
+                printSarfaesiNpaAckTargetId != null &&
+                permissions.canView ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintSarfaesiNpaAckFromToolbar}
+                    title="Download NPA Acknowledgement PDF"
+                    className="master-btn master-btn-outline"
+                    disabled={busy}
+                  >
+                    <PrintCaseDetailsIcon />
+                    {getSarfaesiNpaAckPrintButtonText()}
                   </button>
                 ) : null}
               </div>

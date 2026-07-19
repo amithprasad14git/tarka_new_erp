@@ -10,7 +10,6 @@
 
 import { useMemo, useState } from "react";
 import { formatReportCellValue } from "../lib/formatReportCellValue";
-import { formatReportAmountForDisplay } from "../lib/formatInrNumber";
 import { getReportHtmlCssVars } from "../config/reportExportTheme";
 import { htmlColumnWidthPercents } from "../lib/reports/htmlColumnWidths";
 import ReportFilterMetaRow from "./ReportFilterMetaRow";
@@ -52,7 +51,8 @@ function renderSumRowCells(columns, labelColKey, labelText, sumValues, tableFitC
     let content = "";
     if (col.key === labelColKey || (!labelColExists && columns[0]?.key === col.key)) content = labelText;
     else if (col.sum && sumValues?.[col.key] != null) {
-      content = formatReportAmountForDisplay(sumValues[col.key]);
+      // Use column type so counts (number) stay whole; amounts (inr) keep 2 decimals.
+      content = formatReportCellValue(col, sumValues[col.key]);
     }
     return (
       <td key={col.key} className={cellClassName(col)} style={cellStyle(col, tableFitContent)}>

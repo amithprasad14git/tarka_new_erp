@@ -21,6 +21,15 @@ import { apiUserMessage } from "../lib/apiUserMessages";
 import { toYyyyMmDdForSqlDateField } from "../lib/sqlDateFieldValue";
 import InrNumberInput from "./InrNumberInput";
 
+/** Snap YYYY-MM-DD into [min, max] when either bound is set. Empty stays empty. */
+function clampDateYmd(value, min, max) {
+  const v = value != null ? String(value).trim() : "";
+  if (!v) return v;
+  if (min && v < min) return min;
+  if (max && v > max) return max;
+  return v;
+}
+
 /** Temporary client-side id for a new unsaved child line. */
 function newRowId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -486,64 +495,65 @@ export default function ModuleChildTablesPanel({
                                 />
                               ) : isEditing ? (
                                 f.type === "date" ? (
-                                  <>
-                                    <input
-                                      className="master-inline-input"
-                                      type="date"
-                                      placeholder={inputPlaceholder(f)}
-                                      value={
-                                        row[f.name] != null && row[f.name] !== ""
-                                          ? toYyyyMmDdForSqlDateField(row[f.name])
-                                          : ""
-                                      }
-                                      disabled={inputsDisabled}
-                                      min={
-                                        hasUiMin
-                                          ? ui.min != null && String(ui.min).trim() !== ""
-                                            ? String(ui.min).trim()
-                                            : undefined
-                                          : undefined
-                                      }
-                                      max={
-                                        hasUiMax
-                                          ? ui.max != null && String(ui.max).trim() !== ""
-                                            ? String(ui.max).trim()
-                                            : undefined
-                                          : f.maxToday
-                                            ? todayYmd
-                                            : undefined
-                                      }
-                                      onChange={(e) => {
-                                        // Some browsers let users click out-of-range dates in picker UI.
-                                        // Clamp immediately so min/max rules are always enforced on screen.
-                                        const min = hasUiMin
-                                          ? ui.min != null && String(ui.min).trim() !== ""
-                                            ? String(ui.min).trim()
-                                            : undefined
-                                          : undefined;
-                                        const max = hasUiMax
-                                          ? ui.max != null && String(ui.max).trim() !== ""
-                                            ? String(ui.max).trim()
-                                            : undefined
-                                          : f.maxToday
-                                            ? todayYmd
-                                            : undefined;
-                                        let nextValue = e.target.value;
-                                        if (nextValue && min && nextValue < min) {
-                                          nextValue = min;
-                                          e.target.value = nextValue;
-                                        } else if (nextValue && max && nextValue > max) {
-                                          nextValue = max;
-                                          e.target.value = nextValue;
-                                        }
-                                        const next = [...(value[tableKey] || [])];
-                                        const prev = next[index] || {};
-                                        next[index] = { ...prev, [f.name]: nextValue, _lineSaved: false };
-                                        setRows(tableKey, next);
-                                      }}
-                                      aria-label={f.label || f.name}
-                                    />
-                                  </>
+                                  (() => {
+                                    const dateMin = hasUiMin
+                                      ? ui.min != null && String(ui.min).trim() !== ""
+                                        ? String(ui.min).trim()
+                                        : undefined
+                                      : undefined;
+                                    const dateMax = hasUiMax
+                                      ? ui.max != null && String(ui.max).trim() !== ""
+                                        ? String(ui.max).trim()
+                                        : undefined
+                                      : f.maxToday
+                                        ? todayYmd
+                                        : undefined;
+                                    return (
+                                      <>
+                                        <input
+                                          className="master-inline-input"
+                                          type="date"
+                                          placeholder={inputPlaceholder(f)}
+                                          value={
+                                            row[f.name] != null && row[f.name] !== ""
+                                              ? toYyyyMmDdForSqlDateField(row[f.name])
+                                              : ""
+                                          }
+                                          disabled={inputsDisabled}
+                                          min={dateMin}
+                                          max={dateMax}
+                                          onChange={(e) => {
+                                            // Do not clamp here: keyboard day edits emit intermediates
+                                            // (e.g. …-01 while typing 15) that would falsely snap to min.
+                                            const next = [...(value[tableKey] || [])];
+                                            const prev = next[index] || {};
+                                            next[index] = {
+                                              ...prev,
+                                              [f.name]: e.target.value,
+                                              _lineSaved: false
+                                            };
+                                            setRows(tableKey, next);
+                                          }}
+                                          onBlur={(e) => {
+                                            // Clamp once editing is finished (picker/browser may allow
+                                            // out-of-range commits in some themes).
+                                            const raw = e.target.value;
+                                            const nextValue = clampDateYmd(raw, dateMin, dateMax);
+                                            if (nextValue === raw) return;
+                                            const next = [...(value[tableKey] || [])];
+                                            const prev = next[index] || {};
+                                            next[index] = {
+                                              ...prev,
+                                              [f.name]: nextValue,
+                                              _lineSaved: false
+                                            };
+                                            setRows(tableKey, next);
+                                          }}
+                                          aria-label={f.label || f.name}
+                                        />
+                                      </>
+                                    );
+                                  })()
                                 ) : f.type === "number" && f.integerOnly ? (
                                   <input
                                     type="text"

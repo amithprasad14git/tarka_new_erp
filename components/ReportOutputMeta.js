@@ -10,7 +10,7 @@ import { formatReportGeneratedAtDisplay } from "../lib/formatReportGeneratedAt";
  *   showGeneratedAt?: boolean
  * }} props
  */
-export default function ReportOutputMeta({ meta = {}, showGeneratedAt = true }) {
+export default function ReportOutputMeta({ meta = {}, showGeneratedAt = false }) {
   const { generatedAt, total, truncated } = meta;
   const showTimestamp = showGeneratedAt !== false && Boolean(generatedAt);
   if (!showTimestamp && total == null) return null;

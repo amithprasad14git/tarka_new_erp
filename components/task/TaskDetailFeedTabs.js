@@ -26,8 +26,7 @@ export default function TaskDetailFeedTabs({
 }) {
   const activityCount = (activity || []).length;
   const commentCount = (comments || []).length;
-  const defaultTab = canComment && commentCount > 0 ? "comments" : "activity";
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState("activity");
 
   return (
     <div className="task-detail-feed-card">

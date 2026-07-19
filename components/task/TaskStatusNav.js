@@ -2,7 +2,7 @@
 
 /**
  * React UI component: TaskStatusNav
- * Sidebar status filter with counts for the task list modal.
+ * Status filter rendered as a strip of stat tiles with counts for the task list modal.
  * Keep module-specific business rules in lib/modules/*Client.js, not here.
  */
 
@@ -28,6 +28,7 @@ export default function TaskStatusNav({ activeStatus, onChange, counts, loading 
               <button
                 type="button"
                 className={`task-status-nav-item${active ? " is-active" : ""}`}
+                style={dotColor ? { "--lv-tint": dotColor } : undefined}
                 aria-current={active ? "true" : undefined}
                 onClick={() => onChange?.(status)}
               >

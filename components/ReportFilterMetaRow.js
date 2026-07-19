@@ -15,8 +15,8 @@ import ReportOutputMeta from "./ReportOutputMeta";
 export default function ReportFilterMetaRow({
   filterSummary = "",
   meta = {},
-  showGeneratedAt = true,
-  showOutputMeta = true
+  showGeneratedAt = false,
+  showOutputMeta = false
 }) {
   const hasSummary = Boolean(String(filterSummary || "").trim());
   const showMetaLine = showOutputMeta !== false;

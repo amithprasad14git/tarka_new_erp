@@ -10,16 +10,7 @@ import { useEffect, useId, useRef } from "react";
 import { useDashboardAlerts } from "./DashboardAlertsProvider";
 import { formatReminderDate } from "../reminder/reminderUtils";
 import DashboardAlertsBanner from "./DashboardAlertsBanner";
-
-/** CSS modifier for task status chips in the dropdown. */
-function alertStatusClass(status) {
-  const normalized = String(status || "")
-    .trim()
-    .toLowerCase();
-  if (normalized === "pending") return "reminder-alerts-dropdown-item-status--pending";
-  if (normalized === "in progress") return "reminder-alerts-dropdown-item-status--in-progress";
-  return "";
-}
+import { useDashboardUser } from "../DashboardUserProvider";
 
 /** Due-date line for a dropdown row (overdue vs plain date). */
 function formatAlertDueLine(item) {
@@ -29,11 +20,25 @@ function formatAlertDueLine(item) {
 }
 
 /**
+ * Top-right corner label: creator for admins, otherwise created date.
+ * @param {{ isAdmin: boolean, createdByLabel?: string, createdDate?: string | null }} args
+ */
+function topRightLabel({ isAdmin, createdByLabel, createdDate }) {
+  const creator = String(createdByLabel || "").trim();
+  const created = createdDate ? formatReminderDate(createdDate) : "";
+  if (isAdmin && creator) return `Created by ${creator}`;
+  if (created) return `Created ${created}`;
+  return "";
+}
+
+/**
  * Topbar bell + due-items dropdown; mounts DashboardAlertsBanner toast.
  */
 export default function DashboardAlertsBell() {
   const menuId = useId();
   const rootRef = useRef(null);
+  const { role } = useDashboardUser();
+  const isAdmin = Number(role) === 1;
   const {
     bellVisible,
     remindersEnabled,
@@ -104,25 +109,50 @@ export default function DashboardAlertsBell() {
                     <p className="reminder-alerts-dropdown-section-label">Reminders</p>
                     {hasReminderRows ? (
                       <ul className="reminder-alerts-dropdown-list">
-                        {reminderItems.map((item) => (
-                          <li key={`reminder-${item.id}`}>
-                            <div className="reminder-alerts-dropdown-item reminder-alerts-dropdown-item--static">
-                              <span className="reminder-alerts-dropdown-item-title">
-                                {item.reminderTitle || "Untitled"}
-                              </span>
-                              <div className="reminder-alerts-dropdown-item-meta">
-                                <span className="reminder-alerts-dropdown-item-lead">
-                                  {item.isOverdue ? "" : "Due today"}
-                                </span>
-                                <span
-                                  className={`reminder-alerts-dropdown-item-due${item.isOverdue ? " is-overdue" : ""}`}
-                                >
-                                  {formatAlertDueLine(item)}
-                                </span>
+                        {reminderItems.map((item) => {
+                          const corner = topRightLabel({
+                            isAdmin,
+                            createdByLabel: item.createdByLabel,
+                            createdDate: item.createdDate
+                          });
+                          const showCreatedMid =
+                            isAdmin &&
+                            String(item.createdByLabel || "").trim() &&
+                            item.createdDate;
+                          return (
+                            <li key={`reminder-${item.id}`}>
+                              <div className="reminder-alerts-dropdown-item reminder-alerts-dropdown-item--static">
+                                <div className="reminder-alerts-dropdown-item-row">
+                                  <span className="reminder-alerts-dropdown-item-title">
+                                    {item.reminderTitle || "Untitled"}
+                                  </span>
+                                  {corner ? (
+                                    <span className="reminder-alerts-dropdown-item-corner" title={corner}>
+                                      {corner}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="reminder-alerts-dropdown-item-meta">
+                                  <span className="reminder-alerts-dropdown-item-lead">
+                                    {[
+                                      item.isOverdue ? null : "Due today",
+                                      showCreatedMid
+                                        ? `Created ${formatReminderDate(item.createdDate)}`
+                                        : null
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </span>
+                                  <span
+                                    className={`reminder-alerts-dropdown-item-due${item.isOverdue ? " is-overdue" : ""}`}
+                                  >
+                                    {formatAlertDueLine(item)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="reminder-alerts-dropdown-section-empty">None due.</p>
@@ -135,27 +165,40 @@ export default function DashboardAlertsBell() {
                     <p className="reminder-alerts-dropdown-section-label">Tasks</p>
                     {hasTaskRows ? (
                       <ul className="reminder-alerts-dropdown-list">
-                        {taskItems.map((item) => (
-                          <li key={`task-${item.id}`}>
-                            <div className="reminder-alerts-dropdown-item reminder-alerts-dropdown-item--static">
-                              <span className="reminder-alerts-dropdown-item-title">
-                                {item.taskTitle || "Untitled"}
-                              </span>
-                              <div className="reminder-alerts-dropdown-item-meta">
-                                <span
-                                  className={`reminder-alerts-dropdown-item-status ${alertStatusClass(item.status)}`.trim()}
-                                >
-                                  {item.status}
-                                </span>
-                                <span
-                                  className={`reminder-alerts-dropdown-item-due${item.isOverdue ? " is-overdue" : ""}`}
-                                >
-                                  {formatAlertDueLine(item)}
-                                </span>
+                        {taskItems.map((item) => {
+                          const corner = topRightLabel({
+                            isAdmin,
+                            createdByLabel: item.createdByLabel,
+                            createdDate: item.createdDate
+                          });
+                          const assigneeLabel = String(item.assigneeLabel || "").trim();
+                          return (
+                            <li key={`task-${item.id}`}>
+                              <div className="reminder-alerts-dropdown-item reminder-alerts-dropdown-item--static">
+                                <div className="reminder-alerts-dropdown-item-row">
+                                  <span className="reminder-alerts-dropdown-item-title">
+                                    {item.taskTitle || "Untitled"}
+                                  </span>
+                                  {corner ? (
+                                    <span className="reminder-alerts-dropdown-item-corner" title={corner}>
+                                      {corner}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="reminder-alerts-dropdown-item-meta">
+                                  <span className="reminder-alerts-dropdown-item-lead">
+                                    {assigneeLabel ? `Assignee ${assigneeLabel}` : ""}
+                                  </span>
+                                  <span
+                                    className={`reminder-alerts-dropdown-item-due${item.isOverdue ? " is-overdue" : ""}`}
+                                  >
+                                    {formatAlertDueLine(item)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="reminder-alerts-dropdown-section-empty">None due.</p>

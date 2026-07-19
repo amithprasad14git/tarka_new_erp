@@ -16,6 +16,16 @@ import {
   isDueOverdue
 } from "./reminderUtils";
 import { formatApiErrorPayload, readJsonResponse } from "../../lib/fetchClientError";
+import { useDashboardUser } from "../DashboardUserProvider";
+
+const NOTES_SNIPPET_MAX = 60;
+
+function truncateNotes(notes) {
+  const text = String(notes || "").trim().replace(/\s+/g, " ");
+  if (!text) return "";
+  if (text.length <= NOTES_SNIPPET_MAX) return text;
+  return `${text.slice(0, NOTES_SNIPPET_MAX).trimEnd()}…`;
+}
 
 /**
  * Due date chip with overdue vs upcoming styling.
@@ -56,8 +66,22 @@ function isRecurringReminder(reminder) {
  * @param {{ reminder: object, onOpen?: (reminder: object) => void }} props
  */
 function ReminderCard({ reminder, onOpen }) {
+  const { role } = useDashboardUser();
+  const isAdmin = Number(role) === 1;
   const overdue = isDueOverdue(reminder.dueDate, reminder.status);
   const recurring = isRecurringReminder(reminder);
+  const createdByLabel = String(reminder.createdByLabel || "").trim();
+  const notesSnippet = isAdmin ? truncateNotes(reminder.notes) : "";
+  const createdDateLabel = reminder.createdDate ? formatReminderDate(reminder.createdDate) : "";
+  // Top-right: creator for admins, otherwise created date for everyone.
+  const topRightLabel =
+    isAdmin && createdByLabel
+      ? `Created by ${createdByLabel}`
+      : createdDateLabel
+        ? `Created ${createdDateLabel}`
+        : "";
+  // Bottom middle: created date when top-right already shows creator (admins).
+  const showCreatedInMiddle = Boolean(isAdmin && createdByLabel && createdDateLabel);
 
   return (
     <li>
@@ -67,14 +91,29 @@ function ReminderCard({ reminder, onOpen }) {
         onClick={() => onOpen?.(reminder)}
       >
         <div className="reminder-dash-card-main">
-          <span className="reminder-dash-card-title">{reminder.reminderTitle || "Untitled"}</span>
-          <div className="reminder-dash-card-meta">
+          <div className="reminder-dash-card-row reminder-dash-card-row--top">
+            <span className="reminder-dash-card-title">{reminder.reminderTitle || "Untitled"}</span>
+            {topRightLabel ? (
+              <span className="reminder-dash-card-corner" title={topRightLabel}>
+                {topRightLabel}
+              </span>
+            ) : null}
+          </div>
+          <div className="reminder-dash-card-row reminder-dash-card-row--bottom">
             <div className="reminder-dash-card-meta-lead">
               {recurring ? (
                 <ReminderRecurrenceBadge
                   recurrenceType={reminder.recurrenceType}
                   className="reminder-dash-card-recur"
                 />
+              ) : null}
+              {notesSnippet ? (
+                <span className="reminder-dash-card-notes" title={String(reminder.notes || "").trim()}>
+                  {notesSnippet}
+                </span>
+              ) : null}
+              {showCreatedInMiddle ? (
+                <span className="reminder-dash-card-created-mid">Created {createdDateLabel}</span>
               ) : null}
             </div>
             <DueChip dueDate={reminder.dueDate} status={reminder.status} />

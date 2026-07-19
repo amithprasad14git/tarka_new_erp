@@ -37,16 +37,17 @@ describe("report export theme (frozen v1)", () => {
       filterFontSize: 10,
       logoExtHeight: 58,
       logoExtWidth: 396,
-      logoEndCol: 4.98,
+      logoRowHeights: [36, 28],
+      logoEndCol: 5,
       showGridLines: false,
-      defaultZebra: { even: "#ffffff", odd: "#F0F4F8" },
+      defaultZebra: { even: "#ffffff", odd: "#DCE6EF" },
       defaultTotalBackground: "#9FD4AD",
       defaultHeaderBackground: "#9DB7C8"
     });
   });
 
   test("zebra and total row colours snapshot", () => {
-    expect(REPORT_EXPORT_THEME.reportStyle.zebra).toEqual({ even: "#ffffff", odd: "#F0F4F8" });
+    expect(REPORT_EXPORT_THEME.reportStyle.zebra).toEqual({ even: "#ffffff", odd: "#DCE6EF" });
     expect(REPORT_EXPORT_THEME.reportStyle.totalRow.background).toBe("#9FD4AD");
     expect(REPORT_EXPORT_THEME.reportStyle.tableHeaderBackground).toBe("#9DB7C8");
   });

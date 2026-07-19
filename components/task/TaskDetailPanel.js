@@ -50,6 +50,24 @@ function followUpValue(raw) {
   return String(raw);
 }
 
+/** Small stroke icon for property labels (presentation only). */
+function PropIcon({ children }) {
+  return (
+    <svg
+      className="task-dv-prop-icon"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 /** Overdue days readout in task detail header. */
 function DaysPastDueDisplay({ dueDate, status }) {
   const days = daysPastDue(dueDate, status);
@@ -334,11 +352,13 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
 
   if (!open) return null;
 
+  const statusSlug = String(task?.status || "pending").toLowerCase().replace(/\s+/g, "-");
+
   return (
     <TaskModalPortal>
       <div className="task-modal-backdrop" role="presentation">
         <div
-          className="task-modal task-modal--detail-enterprise"
+          className={`task-modal task-modal--detail-enterprise task-detail-accent--${statusSlug}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby={dialogTitleId}
@@ -350,176 +370,248 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
             </div>
           ) : (
             <form className="task-detail-form" onSubmit={handleSave}>
-              <header className="task-detail-modal-header">
-                <h2 id={dialogTitleId} className="task-detail-modal-title">
-                  Task Details
-                </h2>
-                <button
-                  type="button"
-                  className="task-detail-modal-close"
-                  onClick={() => onClose?.()}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+              <header className="task-hv-banner">
+                <div className="task-hv-banner-top">
+                  <div className="task-hv-banner-meta">
+                    <h2 id={dialogTitleId} className="task-hv-eyebrow">
+                      Task
+                    </h2>
+                    {task?.id ? <span className="task-hv-id">#{task.id}</span> : null}
+                    {task?.status ? <TaskStatusBadge status={task.status} /> : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="task-hv-close"
+                    onClick={() => onClose?.()}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {fieldsEditable ? (
+                  <input
+                    id={titleId}
+                    type="text"
+                    className="task-hv-title-input"
+                    value={taskTitle}
+                    onChange={(e) => setTaskTitle(e.target.value)}
+                    placeholder="Brief summary of the task…"
+                    aria-label="Task name"
+                    required
+                  />
+                ) : (
+                  <h2 id={titleId} className="task-hv-title">
+                    {task?.taskTitle || "Task"}
+                  </h2>
+                )}
+
               </header>
 
               {error ? <p className="task-form-error task-form-error--detail">{error}</p> : null}
 
-              <div className="task-detail-body">
-                <section className="task-detail-details">
-                  <div className="task-detail-details-card">
-                    {fieldsEditable ? (
-                      <input
-                        id={titleId}
-                        type="text"
-                        className="task-detail-title-input"
-                        value={taskTitle}
-                        onChange={(e) => setTaskTitle(e.target.value)}
-                        placeholder="Brief summary of the task…"
-                        aria-label="Task name"
-                        required
-                      />
-                    ) : (
-                      <h2 id={titleId} className="task-detail-title">
-                        {task?.taskTitle || "Task"}
-                      </h2>
-                    )}
-
-                    {fieldsEditable ? (
-                      <textarea
-                        className="task-textarea task-detail-description-input"
-                        rows={2}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Add details, context, or links…"
-                        aria-label="Description"
-                      />
-                    ) : task?.description ? (
-                      <p className="task-detail-description task-detail-description--prose">{task.description}</p>
-                    ) : (
-                      <p className="task-empty-inline task-detail-description-empty">No description provided.</p>
-                    )}
-                  </div>
+              <div className="task-hv-scroll">
+                <section className="task-hv-section task-hv-section--desc">
+                  <h3 className="task-hv-section-label">Description</h3>
+                  {fieldsEditable ? (
+                    <textarea
+                      className="task-textarea task-hv-desc-input"
+                      rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Add details, context, or links…"
+                      aria-label="Description"
+                    />
+                  ) : task?.description ? (
+                    <p className="task-hv-desc">{task.description}</p>
+                  ) : (
+                    <p className="task-hv-desc-empty">No description provided.</p>
+                  )}
                 </section>
 
-                <aside className="task-detail-meta-panel">
-                  <div className="task-detail-meta-card">
-                    <div className="task-detail-meta-group">
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Status</h3>
-                        <div className="task-detail-property-value">
-                          {statusEditable ? (
-                            <TaskStatusPills value={status} onChange={setStatus} />
-                          ) : (
-                            <TaskStatusBadge status={task?.status} />
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Priority</h3>
-                        <div className="task-detail-property-value">
-                          <TaskPriorityPicker
-                            value={priority}
-                            onChange={setPriority}
-                            readOnly={!fieldsEditable}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="task-detail-meta-group">
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Due date</h3>
-                        <div className="task-detail-property-value">
-                          {fieldsEditable ? (
-                            <input
-                              type="date"
-                              className="task-input"
-                              value={dueDate}
-                              onChange={(e) => setDueDate(e.target.value)}
-                            />
-                          ) : (
-                            <p className="task-detail-meta-value">
-                              {task?.dueDate ? formatTaskDate(task.dueDate) : "—"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Days past due</h3>
-                        <div className="task-detail-property-value">
-                          <DaysPastDueDisplay dueDate={effectiveDueDate} status={effectiveStatus} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="task-detail-meta-group">
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Assignee</h3>
-                        <div className="task-detail-property-value">
-                          <div className="task-detail-person">
-                            <TaskAvatar name={task?.assigneeLabel} size="sm" />
-                            <span>{task?.assigneeLabel || "—"}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Follow-up person</h3>
-                        <div className="task-detail-property-value">
-                          {fieldsEditable ? (
-                            <LookupSelect
-                              name="followUpPerson"
-                              id="task-detail-follow-up"
-                              fieldLabel="Follow-up person"
-                              lookup={{
-                                module: "users",
-                                valueField: "id",
-                                labelField: "fullName",
-                                extraLovParams: { f_active: "Yes" }
-                              }}
-                              initialValue={followUpPerson}
-                              onValueChange={(v) => setFollowUpPerson(v)}
-                            />
-                          ) : task?.followUpPersonLabel ? (
-                            <div className="task-detail-person">
-                              <TaskAvatar name={task.followUpPersonLabel} size="sm" />
-                              <span>{task.followUpPersonLabel}</span>
-                            </div>
-                          ) : (
-                            <p className="task-detail-meta-value">—</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="task-detail-meta-group">
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Assigned by</h3>
-                        <div className="task-detail-property-value">
-                          <div className="task-detail-person">
-                            <TaskAvatar name={task?.createdByLabel} size="sm" />
-                            <span>{task?.createdByLabel || "—"}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="task-detail-property">
-                        <h3 className="task-detail-property-label">Created</h3>
-                        <div className="task-detail-property-value">
-                          <p className="task-detail-meta-value">
-                            {task?.createdDate ? formatTaskDate(String(task.createdDate).slice(0, 10)) : "—"}
-                          </p>
-                        </div>
-                      </div>
+                <div className="task-hv-tiles">
+                  <div className="task-hv-tile task-hv-tile--status">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <circle cx="8" cy="8" r="6" />
+                          <circle cx="8" cy="8" r="2" fill="currentColor" stroke="none" />
+                        </PropIcon>
+                      </span>
+                      Status
+                    </span>
+                    <div className="task-hv-tile-value">
+                      {statusEditable ? (
+                        <TaskStatusPills value={status} onChange={setStatus} />
+                      ) : (
+                        <TaskStatusBadge status={task?.status} />
+                      )}
                     </div>
                   </div>
-                </aside>
 
-                <div className="task-detail-feed">
+                  <div className="task-hv-tile task-hv-tile--priority">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <path d="M3.5 14V2.5" />
+                          <path d="M3.5 3h8.5l-2 3 2 3H3.5" />
+                        </PropIcon>
+                      </span>
+                      Priority
+                    </span>
+                    <div className="task-hv-tile-value">
+                      <TaskPriorityPicker
+                        value={priority}
+                        onChange={setPriority}
+                        readOnly={!fieldsEditable}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--due">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                          <path d="M5.5 2v3M10.5 2v3M2.5 7.5h11" />
+                        </PropIcon>
+                      </span>
+                      Due date
+                    </span>
+                    <div className="task-hv-tile-value">
+                      {fieldsEditable ? (
+                        <input
+                          type="date"
+                          className="task-input"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                        />
+                      ) : (
+                        <p className="task-detail-meta-value">
+                          {task?.dueDate ? formatTaskDate(task.dueDate) : "—"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--overdue">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <circle cx="8" cy="8" r="6" />
+                          <path d="M8 5v3l2 2" />
+                        </PropIcon>
+                      </span>
+                      Days past due
+                    </span>
+                    <div className="task-hv-tile-value">
+                      <DaysPastDueDisplay dueDate={effectiveDueDate} status={effectiveStatus} />
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--assignee">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <circle cx="8" cy="5" r="2.8" />
+                          <path d="M2.8 13.5c.9-2.6 2.9-4 5.2-4s4.3 1.4 5.2 4" />
+                        </PropIcon>
+                      </span>
+                      Assigned to
+                    </span>
+                    <div className="task-hv-tile-value">
+                      {task?.assigneeLabel ? (
+                        <div className="task-detail-person">
+                          <TaskAvatar name={task.assigneeLabel} size="sm" />
+                          <span>{task.assigneeLabel}</span>
+                        </div>
+                      ) : (
+                        <p className="task-detail-meta-value">—</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--followup">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8Z" />
+                          <circle cx="8" cy="8" r="2" />
+                        </PropIcon>
+                      </span>
+                      Follow-up
+                    </span>
+                    <div className="task-hv-tile-value">
+                      {fieldsEditable ? (
+                        <LookupSelect
+                          name="followUpPerson"
+                          id="task-detail-follow-up"
+                          fieldLabel="Follow-up person"
+                          lookup={{
+                            module: "users",
+                            valueField: "id",
+                            labelField: "fullName",
+                            extraLovParams: { f_active: "Yes" }
+                          }}
+                          initialValue={followUpPerson}
+                          onValueChange={(v) => setFollowUpPerson(v)}
+                        />
+                      ) : task?.followUpPersonLabel ? (
+                        <div className="task-detail-person">
+                          <TaskAvatar name={task.followUpPersonLabel} size="sm" />
+                          <span>{task.followUpPersonLabel}</span>
+                        </div>
+                      ) : (
+                        <p className="task-detail-meta-value">—</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--creator">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <circle cx="6.5" cy="5" r="2.8" />
+                          <path d="M1.8 13.5c.8-2.6 2.6-4 4.7-4 1.1 0 2.1.4 2.9 1" />
+                          <path d="M12.5 9.5v4M10.5 11.5h4" />
+                        </PropIcon>
+                      </span>
+                      Created by
+                    </span>
+                    <div className="task-hv-tile-value">
+                      {task?.createdByLabel ? (
+                        <div className="task-detail-person">
+                          <TaskAvatar name={task.createdByLabel} size="sm" />
+                          <span>{task.createdByLabel}</span>
+                        </div>
+                      ) : (
+                        <p className="task-detail-meta-value">—</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="task-hv-tile task-hv-tile--created">
+                    <span className="task-hv-tile-label">
+                      <span className="task-hv-tile-icon">
+                        <PropIcon>
+                          <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                          <path d="M5.5 2v3M10.5 2v3M2.5 7.5h11" />
+                          <path d="M5.8 10.7l1.5 1.5 2.9-2.9" />
+                        </PropIcon>
+                      </span>
+                      Created
+                    </span>
+                    <div className="task-hv-tile-value">
+                      <p className="task-detail-meta-value">
+                        {task?.createdDate
+                          ? formatTaskDate(String(task.createdDate).slice(0, 10))
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <section className="task-hv-section task-hv-section--feed">
                   <TaskDetailFeedTabs
                     key={taskId}
                     activity={activity}
@@ -531,7 +623,7 @@ export default function TaskDetailPanel({ open, taskId, onClose, onUpdated }) {
                     onPostComment={handlePostComment}
                     postingComment={postingComment}
                   />
-                </div>
+                </section>
               </div>
 
               <footer className="task-detail-footer">

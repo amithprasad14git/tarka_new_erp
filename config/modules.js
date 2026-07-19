@@ -372,7 +372,7 @@ export const modules = {
     lookupDisplayField: "name",
     fields: [
       { name: "name", type: "text", label: "Name", required: true, showInView: true },
-      { name: "email", type: "email", label: "Email", required: true, showInView: true },
+      { name: "email", type: "email", label: "Email", showInView: true },
       {
         name: "unit",
         type: "lookup",

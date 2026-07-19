@@ -25,6 +25,34 @@ describe("rbacMatrixDashboards", () => {
     expect(dash.some((e) => e.group === "Dashboards")).toBe(true);
   });
 
+  test("matrix entries are ordered modules then reports then dashboards", () => {
+    const all = getRbacMatrixModuleEntries();
+    const firstReport = all.findIndex((e) => e.isReport);
+    const firstDashboard = all.findIndex((e) => e.isDashboard);
+    const lastCrud = all.reduce((acc, e, i) => (!e.isReport && !e.isDashboard ? i : acc), -1);
+    const lastReport = all.reduce((acc, e, i) => (e.isReport ? i : acc), -1);
+
+    expect(firstReport).toBeGreaterThan(-1);
+    expect(firstDashboard).toBeGreaterThan(-1);
+    expect(lastCrud).toBeGreaterThan(-1);
+    expect(firstReport).toBeGreaterThan(lastCrud);
+    expect(firstDashboard).toBeGreaterThan(lastReport);
+
+    // No type should appear after a later section has started.
+    for (let i = 0; i < all.length; i++) {
+      const e = all[i];
+      if (i < firstReport) {
+        expect(e.isReport).toBeFalsy();
+        expect(e.isDashboard).toBeFalsy();
+      } else if (i < firstDashboard) {
+        expect(e.isReport).toBe(true);
+        expect(e.isDashboard).toBeFalsy();
+      } else {
+        expect(e.isDashboard).toBe(true);
+      }
+    }
+  });
+
   test("isDashboardPermissionKey recognizes dashboard permission keys", () => {
     expect(isDashboardPermissionKey("dashboard_unit_wise_recovery_target")).toBe(true);
     expect(isDashboardPermissionKey("dashboard_search_bank_branch")).toBe(true);

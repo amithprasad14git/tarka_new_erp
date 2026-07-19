@@ -58,7 +58,7 @@ async function loadBranchChainForPdf(branchId) {
   const branchDisplay =
     branchName && branchCode ? `${branchName} (${branchCode})` : branchName || branchCode || "";
   const rboName = String(
-    rowValueForField(br, "rboFullName") ?? rowValueForField(br, "rboShortCode") ?? ""
+    rowValueForField(br, "rboShortCode") ?? rowValueForField(br, "rboFullName") ?? ""
   ).trim();
   return {
     bankName: String(rowValueForField(br, "bankName") ?? "").trim(),

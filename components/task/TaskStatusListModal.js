@@ -45,32 +45,16 @@ function resolveInitialStatus(initialStatus) {
   return "Pending";
 }
 
-/** Assignee + follow-up avatar cells in the task table. */
-function PeopleCell({ assigneeLabel, followUpLabel }) {
-  const assignee = String(assigneeLabel || "").trim();
-  const followUp = String(followUpLabel || "").trim();
-  const showFollowUp = followUp && followUp !== assignee;
-  const ariaParts = [];
-  if (assignee) ariaParts.push(`Assignee: ${assignee}`);
-  if (showFollowUp) ariaParts.push(`Follow-up: ${followUp}`);
-
-  if (!assignee && !showFollowUp) {
+/** Compact person cell: avatar only (or em dash). */
+function PersonCell({ name, label }) {
+  const display = String(name || "").trim();
+  if (!display) {
     return <span className="task-group-muted">—</span>;
   }
-
   return (
-    <div className="task-group-people" aria-label={ariaParts.join("; ") || undefined}>
-      {assignee ? (
-        <span className="task-group-people-avatar" title={`Assignee: ${assignee}`}>
-          <TaskAvatar name={assignee} size="sm" />
-        </span>
-      ) : null}
-      {showFollowUp ? (
-        <span className="task-group-people-avatar" title={`Follow-up: ${followUp}`}>
-          <TaskAvatar name={followUp} size="sm" />
-        </span>
-      ) : null}
-    </div>
+    <span className="task-group-person" title={label ? `${label}: ${display}` : display}>
+      <TaskAvatar name={display} size="sm" />
+    </span>
   );
 }
 
@@ -104,7 +88,7 @@ function DaysPastDueCell({ dueDate, status }) {
   );
 }
 
-/** Single row in the task list table — Edit opens detail panel. */
+/** Single row in the task list table — View opens detail panel. */
 function TaskListTableRow({ task, onOpen }) {
   return (
     <tr className="task-group-row">
@@ -116,8 +100,11 @@ function TaskListTableRow({ task, onOpen }) {
           {task.description ? truncateText(task.description, 60) : "—"}
         </span>
       </td>
-      <td className="task-group-col-people">
-        <PeopleCell assigneeLabel={task.assigneeLabel} followUpLabel={task.followUpPersonLabel} />
+      <td className="task-group-col-assigned-by">
+        <PersonCell name={task.createdByLabel} label="Assigned by" />
+      </td>
+      <td className="task-group-col-follow-up">
+        <PersonCell name={task.followUpPersonLabel} label="Follow Up" />
       </td>
       <td className="task-group-col-due">
         {task.dueDate ? formatTaskDate(task.dueDate) : <span className="task-group-muted">—</span>}
@@ -134,7 +121,7 @@ function TaskListTableRow({ task, onOpen }) {
           className="master-btn master-btn-sm master-btn-outline task-group-edit-btn"
           onClick={() => onOpen(task)}
         >
-          Edit
+          View
         </button>
       </td>
     </tr>
@@ -309,16 +296,44 @@ export default function TaskStatusListModal({
           aria-modal="true"
           aria-labelledby={titleId}
         >
-          <header className="task-modal-header task-list-modal-header">
-            <div className="task-modal-heading">
-              <h2 id={titleId} className="task-modal-title">
+          <header className="task-lv-banner">
+            <div className="task-lv-banner-top">
+              <h2 id={titleId} className="task-lv-title">
                 Tasks
               </h2>
-              <p className="task-modal-subtitle">{bucketSubtitle(bucket, scopeTotalCount)}</p>
+              <button type="button" className="task-lv-close" onClick={() => onClose?.()} aria-label="Close">
+                ×
+              </button>
             </div>
-            <button type="button" className="task-modal-close" onClick={() => onClose?.()} aria-label="Close">
-              ×
-            </button>
+            <p className="task-lv-subtitle">{bucketSubtitle(bucket, scopeTotalCount)}</p>
+
+            <div className="task-lv-toolbar">
+              <TaskExpandableSearch key={bucket} open={open} value={search} onChange={setSearch} />
+              <TaskBucketSwitch
+                variant="pill"
+                value={bucket}
+                onChange={handleBucketChange}
+                showHelp={false}
+              />
+              <button
+                type="button"
+                className={`task-list-modal-refresh${loading ? " is-spinning" : ""}`}
+                onClick={loadTasks}
+                disabled={loading}
+                aria-label="Refresh list"
+                title="Refresh"
+              >
+                ↻
+              </button>
+              <button
+                type="button"
+                className="master-btn master-btn-primary task-list-toolbar-add-btn"
+                onClick={() => onAddTask?.()}
+              >
+                <span className="task-list-toolbar-add-icon" aria-hidden="true">+</span>
+                Add Task
+              </button>
+            </div>
           </header>
 
           {error ? (
@@ -327,7 +342,7 @@ export default function TaskStatusListModal({
             </p>
           ) : null}
 
-          <div className="task-list-split-body">
+          <div className="task-lv-body">
             <TaskStatusNav
               activeStatus={activeStatus}
               onChange={setActiveStatus}
@@ -336,42 +351,6 @@ export default function TaskStatusListModal({
             />
 
             <div className="task-list-table-pane">
-              <div className="task-list-table-toolbar">
-                <TaskExpandableSearch key={bucket} open={open} value={search} onChange={setSearch} />
-                <span className="task-list-command-divider" aria-hidden="true" />
-                <TaskBucketSwitch
-                  variant="pill"
-                  value={bucket}
-                  onChange={handleBucketChange}
-                  showHelp={false}
-                />
-                <span className="task-list-command-divider" aria-hidden="true" />
-                <div className="task-list-modal-toolbar-meta">
-                  {!loading ? (
-                    <span className="task-list-modal-count">
-                      {scopeTotalCount} {scopeTotalCount === 1 ? "task" : "tasks"}
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className={`task-list-modal-refresh${loading ? " is-spinning" : ""}`}
-                    onClick={loadTasks}
-                    disabled={loading}
-                    aria-label="Refresh list"
-                    title="Refresh"
-                  >
-                    ↻
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="master-btn master-btn-primary task-list-toolbar-add-btn"
-                  onClick={() => onAddTask?.()}
-                >
-                  Add Task
-                </button>
-              </div>
-
               {loading ? (
                 <TableListSkeleton />
               ) : statusTotalCount === 0 ? (
@@ -384,10 +363,11 @@ export default function TaskStatusListModal({
                         <tr>
                           <th>Task</th>
                           <th>Description</th>
-                          <th>People</th>
-                          <th>Due date</th>
-                          <th>Days past due</th>
-                          <th>Priority</th>
+                          <th className="task-group-col-assigned-by">Assigned by</th>
+                          <th className="task-group-col-follow-up">Follow Up</th>
+                          <th className="task-group-col-due">Due date</th>
+                          <th className="task-group-col-overdue">Days past due</th>
+                          <th className="task-group-col-priority">Priority</th>
                           <th className="task-group-col-action">
                             <span className="sr-only">Action</span>
                           </th>

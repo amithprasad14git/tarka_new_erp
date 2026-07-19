@@ -43,6 +43,12 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
     el.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function scrollToBottom() {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }
+
   const showScrollDown = overflowY && !atBottom;
   const showScrollTop = overflowY && atBottom;
 
@@ -62,14 +68,26 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
       {overflowY ? (
         <div className="report-output-scroll-footer-slot">
           {showScrollDown ? (
-            <div className="report-output-scroll-hint" aria-hidden="true">
-              <img src={SCROLL_DOWN_SRC} alt="" className="report-output-scroll-hint-img" width={28} height={35} />
-            </div>
+            <button
+              type="button"
+              className="report-output-scroll-nav report-output-scroll-down"
+              aria-label="Scroll to bottom of report"
+              title="Scroll to bottom"
+              onClick={scrollToBottom}
+            >
+              <img
+                src={SCROLL_DOWN_SRC}
+                alt=""
+                className="report-output-scroll-hint-img"
+                width={28}
+                height={35}
+              />
+            </button>
           ) : null}
           {showScrollTop ? (
             <button
               type="button"
-              className="report-output-scroll-top"
+              className="report-output-scroll-nav report-output-scroll-top"
               aria-label="Scroll to top of report"
               title="Scroll to top"
               onClick={scrollToTop}
@@ -88,4 +106,3 @@ export default function ReportTableScrollRegion({ children, ariaLabel = "Report 
     </div>
   );
 }
-

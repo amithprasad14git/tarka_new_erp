@@ -281,10 +281,6 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
           <tr key={row.module}>
             <td className="perm-matrix-module">
               <span className="perm-matrix-module-label">{row.label}</span>
-              <span className="perm-matrix-module-sep" aria-hidden>
-                ·
-              </span>
-              <span className="perm-matrix-module-key muted">{row.module}</span>
             </td>
             <td className="perm-matrix-cb perm-matrix-divider-left muted" colSpan={10}>
               <label className="perm-matrix-report-view-only">
@@ -305,10 +301,6 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
         <tr key={row.module}>
           <td className="perm-matrix-module">
             <span className="perm-matrix-module-label">{row.label}</span>
-            <span className="perm-matrix-module-sep" aria-hidden>
-              ·
-            </span>
-            <span className="perm-matrix-module-key muted">{row.module}</span>
           </td>
           <td className="perm-matrix-cb perm-matrix-divider-left">
             <input
@@ -372,13 +364,6 @@ export default function UserPermissionsMatrixClient({ isActive = true }) {
       <div className="master-module-header perm-matrix-page-header">
         <div>
           <h1 className="module-page-title">{title}</h1>
-          <p className="muted master-module-sub perm-matrix-lead">
-            Choose a person, then set each module: <strong>Add</strong> lets them create new records;{" "}
-            <strong>View</strong>, <strong>Edit</strong>, and <strong>Delete</strong> use <strong>Own</strong>,{" "}
-            <strong>Unit</strong>, or <strong>All</strong> to say whether that action applies to their own work, their
-            unit, or more broadly. <strong>Check all</strong> / <strong>Uncheck all</strong> updates every module at
-            once—use with care. Click <strong>Save permissions</strong> when you are done.
-          </p>
         </div>
       </div>
 

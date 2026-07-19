@@ -22,8 +22,14 @@ describe("getLockedReportUnitId", () => {
     expect(getLockedReportUnitId("report_invoice_ledger", 2, 7)).toBeNull();
   });
 
-  test("case lock set includes the nine case report keys", () => {
-    expect(CASE_REPORT_UNIT_LOCK_KEYS.size).toBe(9);
+  test("Unit Wise Cummulative is not unit-locked", () => {
+    expect(CASE_REPORT_UNIT_LOCK_KEYS.has("report_unit_wise_cumulative_report")).toBe(false);
+    expect(getLockedReportUnitId("report_unit_wise_cumulative_report", 2, 7)).toBeNull();
+  });
+
+  test("case lock set includes eight case report keys", () => {
+    expect(CASE_REPORT_UNIT_LOCK_KEYS.size).toBe(8);
     expect(CASE_REPORT_UNIT_LOCK_KEYS.has("report_sarfaesi_case_report")).toBe(true);
+    expect(CASE_REPORT_UNIT_LOCK_KEYS.has("report_region_wise_cumulative_report")).toBe(true);
   });
 });

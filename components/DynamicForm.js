@@ -22,6 +22,15 @@ import { getNciDynamicFormLayoutSections, isNewCaseInwardModule } from "../lib/m
 import InrNumberInput from "./InrNumberInput";
 import LookupSelect from "./LookupSelect";
 
+/** Snap YYYY-MM-DD into [min, max] when either bound is set. Empty stays empty. */
+function clampDateYmd(value, min, max) {
+  const v = value != null ? String(value).trim() : "";
+  if (!v) return v;
+  if (min && v < min) return min;
+  if (max && v > max) return max;
+  return v;
+}
+
 /**
  * Renders one module’s create/edit fields from config (text, number, date, lookup, …).
  * @param {object} props
@@ -234,16 +243,17 @@ export default function DynamicForm({
             min={resolvedMin}
             max={resolvedMax}
             onChange={(e) => {
-              let nextValue = e.target.value;
-              // Native date pickers still allow selecting out-of-range days in some browsers/OS themes.
-              // Enforce range immediately so transaction-control limits feel strict in the UI.
-              if (nextValue && resolvedMin && nextValue < resolvedMin) {
-                nextValue = resolvedMin;
-                e.target.value = nextValue;
-              } else if (nextValue && resolvedMax && nextValue > resolvedMax) {
-                nextValue = resolvedMax;
-                e.target.value = nextValue;
-              }
+              // Do not clamp here: keyboard day edits emit intermediates (e.g. …-01 while typing 15)
+              // that would falsely snap to min before the user finishes.
+              if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, e.target.value);
+            }}
+            onBlur={(e) => {
+              // Native date pickers can still commit out-of-range days in some browsers/OS themes.
+              // Clamp once editing is finished so min/max still feel strict without blocking typing.
+              const raw = e.target.value;
+              const nextValue = clampDateYmd(raw, resolvedMin, resolvedMax);
+              if (nextValue === raw) return;
+              e.target.value = nextValue;
               if (typeof onFieldValueChange === "function") onFieldValueChange(f.name, nextValue);
             }}
           />

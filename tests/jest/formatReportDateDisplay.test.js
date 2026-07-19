@@ -43,3 +43,16 @@ describe("formatReportCellValue date columns", () => {
   });
 });
 
+describe("formatReportCellValue number and inr totals", () => {
+  test("number type stays whole (No. of Cases totals)", () => {
+    expect(formatReportCellValue({ type: "number" }, 12)).toBe("12");
+    expect(formatReportCellValue({ type: "number" }, 12.9)).toBe("12");
+    expect(formatReportCellValue({ type: "number" }, 1234)).toBe("1,234");
+  });
+
+  test("inr type keeps two decimals", () => {
+    expect(formatReportCellValue({ type: "inr" }, 12)).toBe("12.00");
+    expect(formatReportCellValue({ type: "inr" }, 1234.5)).toBe("1,234.50");
+  });
+});
+

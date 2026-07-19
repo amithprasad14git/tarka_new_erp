@@ -96,14 +96,15 @@ export default function SarfaesiCaseReport({ custom = {} }) {
         <tbody>
           {cases.map((caseRow, caseIdx) => {
             const blockKey = caseRow.sarfaesiUpdateId ?? caseRow.slNo;
-            const headClass =
-              caseIdx > 0
-                ? "report-custom-sarfaesi-primary-head report-custom-sarfaesi-case-separator"
-                : "report-custom-sarfaesi-primary-head";
 
             return (
               <Fragment key={blockKey}>
-                <tr className={headClass}>
+                {caseIdx > 0 ? (
+                  <tr className="report-custom-sarfaesi-spacer" aria-hidden="true">
+                    <td colSpan={columnCount}>&nbsp;</td>
+                  </tr>
+                ) : null}
+                <tr className="report-custom-sarfaesi-primary-head">
                   {PRIMARY_HEADERS.map((label) => (
                     <th key={label} scope="col">
                       {label}

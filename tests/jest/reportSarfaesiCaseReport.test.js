@@ -23,10 +23,15 @@ describe("report_sarfaesi_case_report config", () => {
     expect(cfg?.reportLayout?.mode).toBe("custom");
     expect(cfg?.reportLayout?.customRenderer).toBe("sarfaesi_case_report");
     expect(cfg?.reportLayout?.title).toBe("SARFAESI CASE STATUS REPORT");
-    expect(cfg?.reportLayout?.showGeneratedAt).toBe(true);
-    expect(cfg?.reportLayout?.showOutputMeta).not.toBe(false);
+    expect(cfg?.reportLayout?.showGeneratedAt).toBe(false);
+    expect(cfg?.reportLayout?.showOutputMeta).toBe(false);
     expect(cfg?.columns).toBeUndefined();
     expect(cfg?.fields?.find((f) => f.name === "asOnDate")?.required).toBe(true);
+    const fieldNames = cfg?.fields?.map((f) => f.name);
+    expect(fieldNames.indexOf("fileMaintenance")).toBe(fieldNames.indexOf("receivedFrom") + 1);
+    expect(cfg?.fields?.find((f) => f.name === "fileMaintenance")?.lookup?.filterLookupTypeName).toBe(
+      "File Maintenance"
+    );
   });
 
   test("asOnDate defaults to today in IST", () => {
